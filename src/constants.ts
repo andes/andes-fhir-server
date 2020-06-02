@@ -10,4 +10,3 @@ module.exports = {
         ORGANIZACION: 'organizacion'
     }
 };
-//# sourceMappingURL=constants.js.map

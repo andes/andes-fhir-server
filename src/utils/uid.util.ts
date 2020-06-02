@@ -1,5 +1,6 @@
 const hash = require('object-hash');
 const { ObjectID } = require('mongodb').ObjectID;
+
 /**
  * Return a random int, used by `utils.getUid()`.
 *
@@ -11,6 +12,7 @@ const { ObjectID } = require('mongodb').ObjectID;
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
 /**
  * Validates the date(s) and return the object containing the prefix and date.
  *
@@ -22,11 +24,14 @@ let getUid = function (length) {
     let uid = '';
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charsLength = chars.length;
+
     for (let i = 0; i < length; ++i) {
         uid += chars[getRandomInt(0, charsLength - 1)];
     }
+
     return uid;
 };
+
 /**
  * Make a hash of the object for use as a UUID.
  * TODO Improve this. Stuck this in just because it's more of a uniqueness guarantee than the above 'getUID' function.
@@ -37,16 +42,18 @@ let getUid = function (length) {
 const getUuid = (obj) => {
     return hash(obj);
 };
+
 const getObjectId = () => {
     return new ObjectID();
 };
+
 const setObjectId = (id) => {
     return new ObjectID(id);
 };
+
 module.exports = {
     getUid,
     getUuid,
     getObjectId,
     setObjectId
 };
-//# sourceMappingURL=uid.util.js.map

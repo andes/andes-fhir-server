@@ -1,5 +1,7 @@
-const { MongoClient } = require('mongodb');
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mongoConnect = void 0;
+const mongodb_1 = require("mongodb");
 /**
  * @name connect
  * @summary Connect to Mongo
@@ -7,18 +9,16 @@ const { MongoClient } = require('mongodb');
  * @param {Object} options - Any options for Mongo
  * @return {Promise}
  */
-let connect = (url) => new Promise((resolve, reject) => {
-
+exports.mongoConnect = (url) => new Promise((resolve, reject) => {
     const options = {
         useUnifiedTopology: true
     };
     // Connect to mongo
-    MongoClient.connect(url, options, (err, client) => {
-        if (err) { return reject(err); }
+    mongodb_1.MongoClient.connect(url, options, (err, client) => {
+        if (err) {
+            return reject(err);
+        }
         return resolve(client);
     });
-
 });
-
-
-module.exports = connect;
+//# sourceMappingURL=mongo.js.map

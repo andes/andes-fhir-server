@@ -1,4 +1,5 @@
 const moment = require('moment-timezone');
+
 /**
  * Parses a single date and determine what the comparator is.  The regex
  * will attempt to parse the FHIR date with and without prefix and ISO date.
@@ -10,6 +11,7 @@ function parseDate(date) {
     const regex = /(^\D\D)?([\d-Tt:+]+)([\d: ]+)?/;
     const match = date.match(regex);
     let prefix = '$eq';
+
     // match[1] = prefix
     // match[2] = date string
     // match[3] = positive offset if there is one
@@ -23,13 +25,14 @@ function parseDate(date) {
         if (match[3] !== null && match[3] !== undefined) {
             dateStr += match[3].replace(' ', '+');
         }
+
         // return in desired ISO format
         return { [prefix]: moment.utc(dateStr).format('YYYY-MM-DDTHH:mm:ssZ') };
-    }
-    else {
+    } else {
         return { [prefix]: moment.utc(date).format('YYYY-MM-DDTHH:mm:ssZ') };
     }
 }
+
 /**
  * Validates the date(s) and return the object containing the prefix and date.
  *
@@ -48,12 +51,14 @@ let validateDate = function (dates) {
             }
         }
     }
+
     return parsedDate;
 };
+
+
 // @TODO Update these, validateDate will always return something truthy and current
 // implementation checks the result to create a query, if given no dates, this could
 // create a query that returns unexpected results
 module.exports = {
     validateDate
 };
-//# sourceMappingURL=data.util.js.map

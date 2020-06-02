@@ -1,5 +1,3 @@
-/**
- * @name exports
- * @summary Simple map to store globals in
- */
+"use strict";
 module.exports = new Map();
+//# sourceMappingURL=globals.js.map

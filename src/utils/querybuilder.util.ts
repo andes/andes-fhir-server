@@ -8,6 +8,7 @@ let stringQueryBuilder = function (target) {
     let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
     return { $regex: new RegExp('^' + t2, 'i') };
 };
+
 /**
  * @name addressQueryBuilder
  * @description brute force method of matching addresses. Splits the input and checks to see if every piece matches to
@@ -33,6 +34,7 @@ let addressQueryBuilder = function (target) {
     }
     return ors;
 };
+
 /**
  * @name nameQueryBuilder
  * @description brute force method of matching human names. Splits the input and checks to see if every piece matches to
@@ -43,6 +45,7 @@ let addressQueryBuilder = function (target) {
 let nameQueryBuilder = function (target) {
     let split = target.split(/[\s.,]+/);
     let ors = [];
+
     for (let i in split) {
         ors.push({
             $or: [
@@ -56,6 +59,7 @@ let nameQueryBuilder = function (target) {
     }
     return ors;
 };
+
 /**
  * @name tokenQueryBuilder
  * @param {string} target what we are searching for
@@ -65,9 +69,9 @@ let nameQueryBuilder = function (target) {
  * @return {JSON} queryBuilder
  * Using to assign a single variable:
  *      let queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier');
-         for (let i in queryBuilder) {
-             query[i] = queryBuilder[i];
-        }
+		 for (let i in queryBuilder) {
+			 query[i] = queryBuilder[i];
+		}
 * Use in an or query
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
@@ -75,6 +79,7 @@ let tokenQueryBuilder = function (target, type, field, required) {
     let queryBuilder = {};
     let system = '';
     let value = '';
+
     if (target.includes('|')) {
         [system, value] = target.split('|');
         if (required) {
@@ -85,11 +90,14 @@ let tokenQueryBuilder = function (target, type, field, required) {
         // Asumo el documento como identifier
         queryBuilder = { documento: target };
     }
+
     if (system) {
         queryBuilder[`${field}`] = { entidad: system, valor: value };
     }
+
     return queryBuilder;
 };
+
 /**
  * @name referenceQueryBuilder
  * @param {string} target
@@ -100,6 +108,7 @@ let referenceQueryBuilder = function (target, field) {
     const regex = /http(.*)?\/(\w+\/.+)$/;
     const match = target.match(regex);
     let queryBuilder = {};
+
     // Check if target is a url
     if (match) {
         queryBuilder[field] = match[2];
@@ -113,8 +122,10 @@ let referenceQueryBuilder = function (target, field) {
     else {
         queryBuilder[field] = { $regex: new RegExp(`${target}$`) };
     }
+
     return queryBuilder;
 };
+
 /**
  * @name numberQueryBuilder
  * @description takes in number query and returns a mongo query. The target parameter can have a 2 letter prefix to
@@ -126,6 +137,7 @@ let numberQueryBuilder = function (target) {
     let prefix = '';
     let number;
     let sigfigs;
+
     // Check if there is a prefix
     if (isNaN(target)) {
         prefix = target.substring(0, 2);
@@ -136,6 +148,7 @@ let numberQueryBuilder = function (target) {
         number = parseFloat(target);
         sigfigs = target;
     }
+
     // Check for prefix and return the appropriate query
     // Missing eq(default), sa, eb, and ap prefixes
     switch (prefix) {
@@ -150,6 +163,7 @@ let numberQueryBuilder = function (target) {
         case 'ne':
             return { $ne: number };
     }
+
     // Return an approximation query
     let decimals = sigfigs.split('.')[1];
     if (decimals) {
@@ -158,9 +172,12 @@ let numberQueryBuilder = function (target) {
     else {
         decimals = 1;
     }
-    let aprox = (1 / Math.pow(10, decimals)) * 5;
+    let aprox = (1 / 10 ** decimals) * 5;
+
     return { $gte: number - aprox, $lt: number + aprox };
+
 };
+
 /**
  * @name quantityQueryBuilder
  * @description builds quantity data types
@@ -171,15 +188,18 @@ let quantityQueryBuilder = function (target, field) {
     let qB = {};
     //split by the two pipes
     let [num, system, code] = target.split('|');
+
     if (system) {
         qB[`${field}.system`] = system;
     }
     if (code) {
         qB[`${field}.code`] = code;
     }
+
     if (isNaN(num)) { //with prefixes
         let prefix = num.substring(0, 2);
         num = Number(num.substring(2));
+
         // Missing eq(default), sa, eb, and ap prefixes
         switch (prefix) {
             case 'lt':
@@ -202,18 +222,22 @@ let quantityQueryBuilder = function (target, field) {
     else { //no prefixes
         qB[`${field}.value`] = Number(num);
     }
+
     return qB;
 };
+
 //for modular arithmetic because % is just for remainder -> JS is a cruel joke
 function mod(n, m) {
     return ((n % m) + m) % m;
 }
+
 //gives the number of days from year 0, used for adding or subtracting days from a date
 let getDayNum = function (year, month, day) {
     month = mod((month + 9), 12);
     year = year - Math.floor(month / 10);
     return (365 * year + Math.floor(year / 4) - Math.floor(year / 100) + Math.floor(year / 400) + Math.floor((month * 306 + 5) / 10) + (day - 1));
 };
+
 //returns a date given the number of days from year 0;
 let getDateFromNum = function (days) {
     let year = Math.floor((10000 * days + 14780) / 3652425);
@@ -228,6 +252,7 @@ let getDateFromNum = function (days) {
     let rDay = day2 - Math.floor((m1 * 306 + 5) / 10) + 1;
     return year.toString() + '-' + ('0' + month).slice(-2) + '-' + ('0' + rDay).slice(-2);
 };
+
 //deals with date, dateTime, instant, period, and timing
 //use like this: query['whatever'] = dateQueryBuilder(whatever, 'dateTime'), but it's different for period and timing
 //the condition service has some examples you might want to look at.
@@ -235,7 +260,7 @@ let getDateFromNum = function (days) {
 //Also doesn't work foe when things are stored in different time zones in the .json files (with the + or -)
 //  UNLESS, the search parameter is teh exact same as what is stored.  So, if something is stored as 2016-06-03T05:00-03:00, then the search parameter must be 2016-06-03T05:00-03:00
 //It's important to make sure formatting is right, dont forget a leading 0 when dealing with single digit times.
-let dateQueryBuilder = function (date, type, path) {
+let dateQueryBuilder = function (date, type, path): any {
     let regex = /^(\D{2})?(\d{4})(-\d{2})?(-\d{2})?(?:(T\d{2}:\d{2})(:\d{2})?)?(Z|(\+|-)(\d{2}):(\d{2}))?$/;
     let match = date.match(regex);
     let str = '';
@@ -260,6 +285,7 @@ let dateQueryBuilder = function (date, type, path) {
                 return { $regex: new RegExp('^' + '(?:' + str + ')|(?:' + pArr[0] + ')|(?:' + pArr[1] + ')|(?:' + pArr[2] + ')', 'i') };
             }
         }
+
         if (type === 'dateTime' || type === 'instant' || type === 'period' || type === 'timing') { //now we have to worry about hours, minutes, seconds, and TIMEZONES
             if (prefix === '$eq') {
                 if (match[5]) { //to see if time is included
@@ -267,8 +293,7 @@ let dateQueryBuilder = function (date, type, path) {
                         str = str + match[i];
                         if (i === 5) {
                             pArr[i - 2] = str + 'Z?$';
-                        }
-                        else {
+                        } else {
                             pArr[i - 2] = str + '$';
                         }
                     }
@@ -292,12 +317,10 @@ let dateQueryBuilder = function (date, type, path) {
                             if (hrs < 0) { //when hours goes below zero, we have to adjust the date
                                 hrs = mod(hrs, 24);
                                 str = getDateFromNum(getDayNum(Number(match[2]), Number(match[3].replace('-', '')), Number(match[4].replace('-', ''))) - 1);
-                            }
-                            else {
+                            } else {
                                 str = getDateFromNum(getDayNum(Number(match[2]), Number(match[3].replace('-', '')), Number(match[4].replace('-', ''))));
                             }
-                        }
-                        else { //time is behind UTC so we add
+                        } else { //time is behind UTC so we add
                             let hM = match[5].split(':');
                             hM[0] = hM[0].replace('T', '');
                             mins = Number(hM[1]) + Number(match[10]);
@@ -309,8 +332,7 @@ let dateQueryBuilder = function (date, type, path) {
                             if (hrs > 23) { //if we go above 23 hours, new day
                                 hrs = mod(hrs, 24);
                                 str = getDateFromNum(getDayNum(Number(match[2]), Number(match[3].replace('-', '')), Number(match[4].replace('-', ''))) + 1);
-                            }
-                            else {
+                            } else {
                                 str = getDateFromNum(getDayNum(Number(match[2]), Number(match[3].replace('-', '')), Number(match[4].replace('-', ''))));
                             }
                         }
@@ -331,8 +353,7 @@ let dateQueryBuilder = function (date, type, path) {
                             pArr[4] = '^$';
                         }
                     }
-                }
-                else {
+                } else {
                     for (let i = 2; i < 5; i++) { //add up the date parts in a string, done to make sure to update anything if timezone changed anything
                         if (match[i]) {
                             str = str + match[i];
@@ -346,7 +367,7 @@ let dateQueryBuilder = function (date, type, path) {
                     let pS = path + '.start';
                     let pE = path + '.end';
                     toRet = [{ $and: [{ [pS]: { $lte: str } }, { $or: [{ [pE]: { $gte: str } }, { [pE]: regPoss }] }] }, { $and: [{ [pS]: { $lte: str } }, { [pE]: undefined }] },
-                        { $and: [{ $or: [{ [pE]: { $gte: str } }, { [pE]: regPoss }] }, { [pS]: undefined }] }];
+                    { $and: [{ $or: [{ [pE]: { $gte: str } }, { [pE]: regPoss }] }, { [pS]: undefined }] }];
                     return toRet;
                 }
                 let tempFill = pArr.toString().replace(/,/g, ')|(?:') + ')'; //turning the pArr to a string that can be used as a regex
@@ -355,8 +376,8 @@ let dateQueryBuilder = function (date, type, path) {
                     let pBPS = path + '.repeat.boundsPeriod.start';
                     let pBPE = path + '.repeat.boundsPeriod.end';
                     toRet = [{ [pDT]: { $regex: new RegExp('^' + '(?:' + str + ')|(?:' + match[0].replace('+', '\\+') + ')|(?:' + tempFill, 'i') } },
-                        { $and: [{ [pBPS]: { $lte: str } }, { $or: [{ [pBPE]: { $gte: str } }, { [pBPE]: regPoss }] }] }, { $and: [{ [pBPS]: { $lte: str } }, { [pBPE]: undefined }] },
-                        { $and: [{ $or: [{ [pBPE]: { $gte: str } }, { [pBPE]: regPoss }] }, { [pBPS]: undefined }] }];
+                    { $and: [{ [pBPS]: { $lte: str } }, { $or: [{ [pBPE]: { $gte: str } }, { [pBPE]: regPoss }] }] }, { $and: [{ [pBPS]: { $lte: str } }, { [pBPE]: undefined }] },
+                    { $and: [{ $or: [{ [pBPE]: { $gte: str } }, { [pBPE]: regPoss }] }, { [pBPS]: undefined }] }];
                     return toRet;
                 }
                 return { $regex: new RegExp('^' + '(?:' + str + ')|(?:' + match[0].replace('+', '\\+') + ')|(?:' + tempFill, 'i') };
@@ -364,6 +385,7 @@ let dateQueryBuilder = function (date, type, path) {
         }
     }
 };
+
 /**
  * @name compositeQueryBuilder
  * @description from looking at where composites are used, the fields seem to be implicit
@@ -377,6 +399,7 @@ let compositeQueryBuilder = function (target, field1, field2) {
     let [target1, target2] = target.split(/[$,]/);
     let [path1, type1] = field1.split('|');
     let [path2, type2] = field2.split('|');
+
     // Call the right queryBuilder based on type
     switch (type1) {
         case 'string':
@@ -387,7 +410,7 @@ let compositeQueryBuilder = function (target, field1, field2) {
         case 'token':
             composite.push({
                 $or: [{ $and: [tokenQueryBuilder(target1, 'code', path1, '')] },
-                    { $and: [tokenQueryBuilder(target1, 'value', path1, '')] }]
+                { $and: [tokenQueryBuilder(target1, 'value', path1, '')] }]
             });
             break;
         case 'reference':
@@ -404,8 +427,8 @@ let compositeQueryBuilder = function (target, field1, field2) {
         case 'date':
             composite.push({
                 $or: [{ [path1]: dateQueryBuilder(target1, 'date', '') },
-                    { [path1]: dateQueryBuilder(target1, 'dateTime', '') }, { [path1]: dateQueryBuilder(target1, 'instant', '') },
-                    { $or: dateQueryBuilder(target1, 'period', path1) }, { $or: dateQueryBuilder(target1, 'timing', path1) }]
+                { [path1]: dateQueryBuilder(target1, 'dateTime', '') }, { [path1]: dateQueryBuilder(target1, 'instant', '') },
+                { $or: dateQueryBuilder(target1, 'period', path1) }, { $or: dateQueryBuilder(target1, 'timing', path1) }]
             });
             break;
         default:
@@ -422,7 +445,7 @@ let compositeQueryBuilder = function (target, field1, field2) {
         case 'token':
             composite.push({
                 $or: [{ $and: [tokenQueryBuilder(target2, 'code', path2, '')] },
-                    { $and: [tokenQueryBuilder(target2, 'value', path2, '')] }]
+                { $and: [tokenQueryBuilder(target2, 'value', path2, '')] }]
             });
             break;
         case 'reference':
@@ -439,8 +462,8 @@ let compositeQueryBuilder = function (target, field1, field2) {
         case 'date':
             composite.push({
                 $or: [{ [path2]: dateQueryBuilder(target2, 'date', '') },
-                    { [path2]: dateQueryBuilder(target2, 'dateTime', '') }, { [path2]: dateQueryBuilder(target2, 'instant', '') },
-                    { $or: dateQueryBuilder(target2, 'period', path2) }, { $or: dateQueryBuilder(target2, 'timing', path2) }]
+                { [path2]: dateQueryBuilder(target2, 'dateTime', '') }, { [path2]: dateQueryBuilder(target2, 'instant', '') },
+                { $or: dateQueryBuilder(target2, 'period', path2) }, { $or: dateQueryBuilder(target2, 'timing', path2) }]
             });
             break;
         default:
@@ -448,13 +471,16 @@ let compositeQueryBuilder = function (target, field1, field2) {
             temp[`${path2}`] = target2;
             composite.push(temp);
     }
+
     if (target.includes('$')) {
         return { $and: composite };
     }
     else {
         return { $or: composite };
     }
+
 };
+
 /**
  * @todo build out all prefix functionality for number and quantity and add date queries
  */
@@ -469,4 +495,3 @@ module.exports = {
     compositeQueryBuilder,
     dateQueryBuilder
 };
-//# sourceMappingURL=querybuilder.util.js.map

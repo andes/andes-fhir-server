@@ -13,7 +13,12 @@
     "node": ">=8.6"
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=production; node src/index.js;",
+    "start": "concurrently -r \"npm run tsc:w\" \"npm run fhirServer\" ",
+    "fhirServer": "cross-env NODE_ENV=production; node src/index.js;",
+    "tsc": "tsc",
+    "tsc:w": "tsc -w",
+    "tsc:next": "tsc --target es2018 --lib es2018",
+    "prod": "cross-env NODE_ENV=production; node src/index.js;",
     "nodemon": "cross-env NODE_ENV=development; node scripts/nodemon;",
     "test": "npm run test:lint;",
     "test:lint": "eslint \"src/**/*.js\"",
@@ -35,16 +40,20 @@
   "dependencies": {
     "@andes/fhir": "^1.2.0",
     "@asymmetrik/node-fhir-server-core": "git+https://github.com/Asymmetrik/node-fhir-server-core.git",
+    "concurrently": "^5.2.0",
     "jsonwebtoken": "^8.1.0",
     "moment-timezone": "^0.5.14",
     "mongodb": "^3.5.8",
+    "object-hash": "^2.0.3",
     "var": "^0.3.2"
   },
   "devDependencies": {
+    "@types/node": "^14.0.9",
     "cross-env": "^5.1.6",
     "eslint": "^4.14.0",
     "jest": "^25.0.0",
-    "nodemon": "^1.17.2"
+    "nodemon": "^1.17.2",
+    "typescript": "^3.9.3"
   },
   "private": false
 }
