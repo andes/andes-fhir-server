@@ -1,5 +1,5 @@
 {
-  "name": "@fhir-facadeServer-andes",
+  "name": "@sychus/fhir-facade-server-andes",
   "version": "1.0.0",
   "description": "FHIR Facade Server implementing for ANDES",
   "main": "src/index.js",
