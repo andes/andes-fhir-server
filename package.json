@@ -1,12 +1,13 @@
 {
-  "name": "@asymmetrik/fhir-facade-starter",
-  "version": "1.0.3",
-  "description": "FHIR Facade Server implementing @asymmetrik/node-fhir-server-core",
+  "name": "@fhir-facadeServer-andes",
+  "version": "1.0.0",
+  "description": "FHIR Facade Server implementing for ANDES",
   "main": "src/index.js",
-  "repository": "https://github.com/Asymmetrik/fhir-facade-starter.git",
+  "repository": "https://github.com/sychus/fhir-facadeServer-andes.git",
   "contributors": [
     "Robert Winterbottom <rwinterbottom@asymmetrik.com>",
-    "Jon Lee <jlee@asymmetrik.com>"
+    "Jon Lee <jlee@asymmetrik.com>",
+    "Hugo H. Fernández"
   ],
   "license": "MIT",
   "engines": {
