@@ -1,11 +1,15 @@
-import { resolveFromVersion } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
+import { stringQueryBuilder } from './../../utils/querybuilder.util';
+import { setObjectId as objectId } from './../../utils/uid.util';
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 
+
 let getPractitioner = (base_version) => {
-	return require(resolveFromVersion(base_version, 'practitioner'));
+	return require(resolveSchema(base_version, 'Practitioner'));
 };
+
 
 let buildAndesSearchQuery = (args) => {
 
@@ -29,10 +33,7 @@ let buildAndesSearchQuery = (args) => {
 		query.nombre = stringQueryBuilder(given);
 	}
 	if (identifier) {
-		let queryBuilder = tokenQueryBuilder(identifier, '', 'identificadores', '');
-		for (let i in queryBuilder) {
-			query[i] = queryBuilder[i];
-		}
+		query.documento = stringQueryBuilder(identifier);
 	}
 	return query;
 };
@@ -46,7 +47,6 @@ export = {
 			const db = globals.get(CLIENT_DB);
 			let collection = db.collection(`${COLLECTION.PRACTITIONER}`)
 			let Practitioner = getPractitioner(base_version);
-			// let practitioner = new Practitioner();
 			let practitioners = await collection.find(query).toArray();
 			return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
 		} catch (err) {
@@ -54,11 +54,20 @@ export = {
 		}
 	},
 	searchById: async (args) => {
-
-		// TODO
-
+		try {
+			let { base_version, id } = args;
+			let Practitioner = getPractitioner(base_version);
+			let db = globals.get(CLIENT_DB);
+			let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
+			let practitioner = await collection.findOne({ _id: objectId(id) });
+			return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : null;
+		} catch (err) {
+			return err;
+		}
 	}
+
 };
+
 
 
 

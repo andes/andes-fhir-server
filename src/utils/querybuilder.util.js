@@ -1,10 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.compositeQueryBuilder = exports.dateQueryBuilder = exports.quantityQueryBuilder = exports.numberQueryBuilder = exports.referenceQueryBuilder = exports.keyQueryBuilder = exports.tokenQueryBuilder = exports.nameQueryBuilder = exports.addressQueryBuilder = exports.stringQueryBuilder = void 0;
 /**
  * @name stringQueryBuilder
  * @description builds mongo default query for string inputs, no modifiers
  * @param {string} target what we are querying for
  * @return a mongo regex query
  */
-let stringQueryBuilder = function (target) {
+exports.stringQueryBuilder = function (target) {
     let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
     return { $regex: new RegExp('^' + t2, 'i') };
 };
@@ -15,7 +18,7 @@ let stringQueryBuilder = function (target) {
  * @param {string} target
  * @return {array} ors
  */
-let addressQueryBuilder = function (target) {
+exports.addressQueryBuilder = function (target) {
     // Tokenize the input as mush as possible
     let totalSplit = target.split(/[\s,]+/);
     let ors = [];
@@ -40,7 +43,7 @@ let addressQueryBuilder = function (target) {
  * @param {string} target
  * @return {array} ors
  */
-let nameQueryBuilder = function (target) {
+exports.nameQueryBuilder = function (target) {
     let split = target.split(/[\s.,]+/);
     let ors = [];
     for (let i in split) {
@@ -71,7 +74,7 @@ let nameQueryBuilder = function (target) {
 * Use in an or query
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
-let tokenQueryBuilder = function (target, type, field, required) {
+exports.tokenQueryBuilder = function (target, type, field, required) {
     let queryBuilder = {};
     let system = '';
     let value = '';
@@ -92,11 +95,29 @@ let tokenQueryBuilder = function (target, type, field, required) {
 };
 /**
  * @name referenceQueryBuilder
+ * @param {string} target Campo a parsear
+ * @param {string} field Nombre que se le a concatear a la query
+ * @return {JSON} queryBuilder
+ */
+exports.keyQueryBuilder = function (target, field) {
+    let queryBuilder = {};
+    let system = '';
+    let value = '';
+    if (target.includes('|')) {
+        [system, value] = target.split('|');
+    }
+    if (system) {
+        queryBuilder[`${field}.${system}`] = value;
+    }
+    return queryBuilder;
+};
+/**
+ * @name referenceQueryBuilder
  * @param {string} target
  * @param {string} field
  * @return {JSON} queryBuilder
  */
-let referenceQueryBuilder = function (target, field) {
+exports.referenceQueryBuilder = function (target, field) {
     const regex = /http(.*)?\/(\w+\/.+)$/;
     const match = target.match(regex);
     let queryBuilder = {};
@@ -122,7 +143,7 @@ let referenceQueryBuilder = function (target, field) {
  * @param target
  * @returns {JSON} a mongo query
  */
-let numberQueryBuilder = function (target) {
+exports.numberQueryBuilder = function (target) {
     let prefix = '';
     let number;
     let sigfigs;
@@ -167,7 +188,7 @@ let numberQueryBuilder = function (target) {
  * @param target [prefix][number]|[system]|[code]
  * @param field path to specific field in the resource
  */
-let quantityQueryBuilder = function (target, field) {
+exports.quantityQueryBuilder = function (target, field) {
     let qB = {};
     //split by the two pipes
     let [num, system, code] = target.split('|');
@@ -235,7 +256,7 @@ let getDateFromNum = function (days) {
 //Also doesn't work foe when things are stored in different time zones in the .json files (with the + or -)
 //  UNLESS, the search parameter is teh exact same as what is stored.  So, if something is stored as 2016-06-03T05:00-03:00, then the search parameter must be 2016-06-03T05:00-03:00
 //It's important to make sure formatting is right, dont forget a leading 0 when dealing with single digit times.
-let dateQueryBuilder = function (date, type, path) {
+exports.dateQueryBuilder = function (date, type, path) {
     let regex = /^(\D{2})?(\d{4})(-\d{2})?(-\d{2})?(?:(T\d{2}:\d{2})(:\d{2})?)?(Z|(\+|-)(\d{2}):(\d{2}))?$/;
     let match = date.match(regex);
     let str = '';
@@ -371,7 +392,7 @@ let dateQueryBuilder = function (date, type, path) {
  * @param field1 contains the path and search type
  * @param field2 contains the path and search type
  */
-let compositeQueryBuilder = function (target, field1, field2) {
+exports.compositeQueryBuilder = function (target, field1, field2) {
     let composite = [];
     let temp = {};
     let [target1, target2] = target.split(/[$,]/);
@@ -381,31 +402,31 @@ let compositeQueryBuilder = function (target, field1, field2) {
     switch (type1) {
         case 'string':
             temp = {};
-            temp[`${path1}`] = stringQueryBuilder(target1);
+            temp[`${path1}`] = exports.stringQueryBuilder(target1);
             composite.push(temp);
             break;
         case 'token':
             composite.push({
-                $or: [{ $and: [tokenQueryBuilder(target1, 'code', path1, '')] },
-                    { $and: [tokenQueryBuilder(target1, 'value', path1, '')] }]
+                $or: [{ $and: [exports.tokenQueryBuilder(target1, 'code', path1, '')] },
+                    { $and: [exports.tokenQueryBuilder(target1, 'value', path1, '')] }]
             });
             break;
         case 'reference':
-            composite.push(referenceQueryBuilder(target1, path1));
+            composite.push(exports.referenceQueryBuilder(target1, path1));
             break;
         case 'quantity':
-            composite.push(quantityQueryBuilder(target1, path1));
+            composite.push(exports.quantityQueryBuilder(target1, path1));
             break;
         case 'number':
             temp = {};
-            temp[`${path1}`] = numberQueryBuilder(target1);
+            temp[`${path1}`] = exports.numberQueryBuilder(target1);
             composite.push(temp);
             break;
         case 'date':
             composite.push({
-                $or: [{ [path1]: dateQueryBuilder(target1, 'date', '') },
-                    { [path1]: dateQueryBuilder(target1, 'dateTime', '') }, { [path1]: dateQueryBuilder(target1, 'instant', '') },
-                    { $or: dateQueryBuilder(target1, 'period', path1) }, { $or: dateQueryBuilder(target1, 'timing', path1) }]
+                $or: [{ [path1]: exports.dateQueryBuilder(target1, 'date', '') },
+                    { [path1]: exports.dateQueryBuilder(target1, 'dateTime', '') }, { [path1]: exports.dateQueryBuilder(target1, 'instant', '') },
+                    { $or: exports.dateQueryBuilder(target1, 'period', path1) }, { $or: exports.dateQueryBuilder(target1, 'timing', path1) }]
             });
             break;
         default:
@@ -416,31 +437,31 @@ let compositeQueryBuilder = function (target, field1, field2) {
     switch (type2) {
         case 'string':
             temp = {};
-            temp[`${path2}`] = stringQueryBuilder(target2);
+            temp[`${path2}`] = exports.stringQueryBuilder(target2);
             composite.push(temp);
             break;
         case 'token':
             composite.push({
-                $or: [{ $and: [tokenQueryBuilder(target2, 'code', path2, '')] },
-                    { $and: [tokenQueryBuilder(target2, 'value', path2, '')] }]
+                $or: [{ $and: [exports.tokenQueryBuilder(target2, 'code', path2, '')] },
+                    { $and: [exports.tokenQueryBuilder(target2, 'value', path2, '')] }]
             });
             break;
         case 'reference':
-            composite.push(referenceQueryBuilder(target2, path2));
+            composite.push(exports.referenceQueryBuilder(target2, path2));
             break;
         case 'quantity':
-            composite.push(quantityQueryBuilder(target2, path2));
+            composite.push(exports.quantityQueryBuilder(target2, path2));
             break;
         case 'number':
             temp = {};
-            temp[`${path2}`] = composite.push(numberQueryBuilder(target2));
+            temp[`${path2}`] = composite.push(exports.numberQueryBuilder(target2));
             composite.push(temp);
             break;
         case 'date':
             composite.push({
-                $or: [{ [path2]: dateQueryBuilder(target2, 'date', '') },
-                    { [path2]: dateQueryBuilder(target2, 'dateTime', '') }, { [path2]: dateQueryBuilder(target2, 'instant', '') },
-                    { $or: dateQueryBuilder(target2, 'period', path2) }, { $or: dateQueryBuilder(target2, 'timing', path2) }]
+                $or: [{ [path2]: exports.dateQueryBuilder(target2, 'date', '') },
+                    { [path2]: exports.dateQueryBuilder(target2, 'dateTime', '') }, { [path2]: exports.dateQueryBuilder(target2, 'instant', '') },
+                    { $or: exports.dateQueryBuilder(target2, 'period', path2) }, { $or: exports.dateQueryBuilder(target2, 'timing', path2) }]
             });
             break;
         default:
@@ -454,19 +475,5 @@ let compositeQueryBuilder = function (target, field1, field2) {
     else {
         return { $or: composite };
     }
-};
-/**
- * @todo build out all prefix functionality for number and quantity and add date queries
- */
-module.exports = {
-    stringQueryBuilder,
-    tokenQueryBuilder,
-    referenceQueryBuilder,
-    addressQueryBuilder,
-    nameQueryBuilder,
-    numberQueryBuilder,
-    quantityQueryBuilder,
-    compositeQueryBuilder,
-    dateQueryBuilder
 };
 //# sourceMappingURL=querybuilder.util.js.map

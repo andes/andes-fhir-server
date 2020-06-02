@@ -85,6 +85,10 @@ exports.fhirServerConfig = {
         practitioner: {
             service: './src/services/practitioner/practitioner.service.js',
             versions: [VERSIONS['4_0_0']]
+        },
+        organization: {
+            service: './src/services/organization/organization.service.js',
+            versions: [VERSIONS['4_0_0']]
         }
     }
 };

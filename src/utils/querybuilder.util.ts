@@ -4,7 +4,7 @@
  * @param {string} target what we are querying for
  * @return a mongo regex query
  */
-let stringQueryBuilder = function (target) {
+export const stringQueryBuilder = function (target) {
     let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
     return { $regex: new RegExp('^' + t2, 'i') };
 };
@@ -16,7 +16,7 @@ let stringQueryBuilder = function (target) {
  * @param {string} target
  * @return {array} ors
  */
-let addressQueryBuilder = function (target) {
+export const addressQueryBuilder = function (target) {
     // Tokenize the input as mush as possible
     let totalSplit = target.split(/[\s,]+/);
     let ors = [];
@@ -42,7 +42,7 @@ let addressQueryBuilder = function (target) {
  * @param {string} target
  * @return {array} ors
  */
-let nameQueryBuilder = function (target) {
+export const nameQueryBuilder = function (target) {
     let split = target.split(/[\s.,]+/);
     let ors = [];
 
@@ -75,7 +75,7 @@ let nameQueryBuilder = function (target) {
 * Use in an or query
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
-let tokenQueryBuilder = function (target, type, field, required) {
+export const tokenQueryBuilder = function (target, type, field, required) {
     let queryBuilder = {};
     let system = '';
     let value = '';
@@ -100,11 +100,34 @@ let tokenQueryBuilder = function (target, type, field, required) {
 
 /**
  * @name referenceQueryBuilder
+ * @param {string} target Campo a parsear
+ * @param {string} field Nombre que se le a concatear a la query
+ * @return {JSON} queryBuilder
+ */
+export const keyQueryBuilder = function (target, field) {
+    let queryBuilder = {};
+    let system = '';
+    let value = '';
+
+    if (target.includes('|')) {
+        [system, value] = target.split('|');
+    }
+
+    if (system) {
+        queryBuilder[`${field}.${system}`] = value;
+    }
+
+    return queryBuilder;
+};
+
+
+/**
+ * @name referenceQueryBuilder
  * @param {string} target
  * @param {string} field
  * @return {JSON} queryBuilder
  */
-let referenceQueryBuilder = function (target, field) {
+export const referenceQueryBuilder = function (target, field) {
     const regex = /http(.*)?\/(\w+\/.+)$/;
     const match = target.match(regex);
     let queryBuilder = {};
@@ -133,7 +156,7 @@ let referenceQueryBuilder = function (target, field) {
  * @param target
  * @returns {JSON} a mongo query
  */
-let numberQueryBuilder = function (target) {
+export const numberQueryBuilder = function (target) {
     let prefix = '';
     let number;
     let sigfigs;
@@ -184,7 +207,7 @@ let numberQueryBuilder = function (target) {
  * @param target [prefix][number]|[system]|[code]
  * @param field path to specific field in the resource
  */
-let quantityQueryBuilder = function (target, field) {
+export const quantityQueryBuilder = function (target, field) {
     let qB = {};
     //split by the two pipes
     let [num, system, code] = target.split('|');
@@ -260,7 +283,7 @@ let getDateFromNum = function (days) {
 //Also doesn't work foe when things are stored in different time zones in the .json files (with the + or -)
 //  UNLESS, the search parameter is teh exact same as what is stored.  So, if something is stored as 2016-06-03T05:00-03:00, then the search parameter must be 2016-06-03T05:00-03:00
 //It's important to make sure formatting is right, dont forget a leading 0 when dealing with single digit times.
-let dateQueryBuilder = function (date, type, path): any {
+export const dateQueryBuilder = function (date, type, path): any {
     let regex = /^(\D{2})?(\d{4})(-\d{2})?(-\d{2})?(?:(T\d{2}:\d{2})(:\d{2})?)?(Z|(\+|-)(\d{2}):(\d{2}))?$/;
     let match = date.match(regex);
     let str = '';
@@ -393,7 +416,7 @@ let dateQueryBuilder = function (date, type, path): any {
  * @param field1 contains the path and search type
  * @param field2 contains the path and search type
  */
-let compositeQueryBuilder = function (target, field1, field2) {
+export const compositeQueryBuilder = function (target, field1, field2) {
     let composite = [];
     let temp = {};
     let [target1, target2] = target.split(/[$,]/);
@@ -481,17 +504,4 @@ let compositeQueryBuilder = function (target, field1, field2) {
 
 };
 
-/**
- * @todo build out all prefix functionality for number and quantity and add date queries
- */
-module.exports = {
-    stringQueryBuilder,
-    tokenQueryBuilder,
-    referenceQueryBuilder,
-    addressQueryBuilder,
-    nameQueryBuilder,
-    numberQueryBuilder,
-    quantityQueryBuilder,
-    compositeQueryBuilder,
-    dateQueryBuilder
-};
+
