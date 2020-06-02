@@ -20,7 +20,7 @@ function getRandomInt(min, max) {
  *
  * @param {*} dates
  */
-let getUid = function (length) {
+export let getUid = function (length) {
     let uid = '';
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charsLength = chars.length;
@@ -39,21 +39,16 @@ let getUid = function (length) {
  * @param obj
  * @returns {*|*}
  */
-const getUuid = (obj) => {
+export const getUuid = (obj) => {
     return hash(obj);
 };
 
-const getObjectId = () => {
+export const getObjectId = () => {
     return new ObjectID();
 };
 
-const setObjectId = (id) => {
+export const setObjectId = (id) => {
     return new ObjectID(id);
 };
 
-module.exports = {
-    getUid,
-    getUuid,
-    getObjectId,
-    setObjectId
-};
+

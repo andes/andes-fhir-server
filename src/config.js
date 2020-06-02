@@ -1,11 +1,13 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fhirServerConfig = exports.mongoConfig = void 0;
 const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
 const env = require('var');
 /**
  * @name mongoConfig
  * @summary Configurations for our Mongo instance
  */
-let mongoConfig = {
+exports.mongoConfig = {
     connection: env.MONGO_HOSTNAME,
     db_name: env.MONGO_DB_NAME,
     options: {
@@ -25,7 +27,7 @@ let whitelist = whitelist_env && whitelist_env.length === 1
  * @name fhirServerConfig
  * @summary @asymmetrik/node-fhir-server-core configurations.
  */
-let fhirServerConfig = {
+exports.fhirServerConfig = {
     auth: {
         // This servers URI
         resourceServer: env.RESOURCE_SERVER,
@@ -85,9 +87,5 @@ let fhirServerConfig = {
             versions: [VERSIONS['4_0_0']]
         }
     }
-};
-module.exports = {
-    fhirServerConfig,
-    mongoConfig
 };
 //# sourceMappingURL=config.js.map

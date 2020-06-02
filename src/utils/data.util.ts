@@ -1,4 +1,4 @@
-const moment = require('moment-timezone');
+import * as moment from 'moment-timezone';
 
 /**
  * Parses a single date and determine what the comparator is.  The regex

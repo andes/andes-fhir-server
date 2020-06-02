@@ -6,8 +6,10 @@ module.exports = {
     CLIENT: 'client',
     CLIENT_DB: 'andes',
     COLLECTION: {
-        PACIENTE: 'paciente',
-        ORGANIZACION: 'organizacion'
+        PATIENT: 'paciente',
+        ORGANIZATION: 'organizacion',
+        PRACTITIONER: 'profesional'
+        // Agregar todas las colecciones que hagan falta
     }
 };
 //# sourceMappingURL=constants.js.map

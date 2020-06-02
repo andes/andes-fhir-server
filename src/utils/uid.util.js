@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setObjectId = exports.getObjectId = exports.getUuid = exports.getUid = void 0;
 const hash = require('object-hash');
 const { ObjectID } = require('mongodb').ObjectID;
 /**
@@ -18,7 +21,7 @@ function getRandomInt(min, max) {
  *
  * @param {*} dates
  */
-let getUid = function (length) {
+exports.getUid = function (length) {
     let uid = '';
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charsLength = chars.length;
@@ -34,19 +37,13 @@ let getUid = function (length) {
  * @param obj
  * @returns {*|*}
  */
-const getUuid = (obj) => {
+exports.getUuid = (obj) => {
     return hash(obj);
 };
-const getObjectId = () => {
+exports.getObjectId = () => {
     return new ObjectID();
 };
-const setObjectId = (id) => {
+exports.setObjectId = (id) => {
     return new ObjectID(id);
-};
-module.exports = {
-    getUid,
-    getUuid,
-    getObjectId,
-    setObjectId
 };
 //# sourceMappingURL=uid.util.js.map

@@ -1,4 +1,6 @@
-const moment = require('moment-timezone');
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const moment = require("moment-timezone");
 /**
  * Parses a single date and determine what the comparator is.  The regex
  * will attempt to parse the FHIR date with and without prefix and ISO date.
