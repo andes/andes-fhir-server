@@ -101,6 +101,10 @@ export const fhirServerConfig = {
 		organization: {
 			service: './src/services/organization/organization.service.js',
 			versions: [VERSIONS['4_0_0']]
+		},
+		documentReference: {
+			service: './src/services/documentreference/documentreference.service.js',
+			versions: [VERSIONS['4_0_0']]
 		}
 	}
 };

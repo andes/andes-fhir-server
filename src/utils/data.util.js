@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createResource = exports.fullurl = void 0;
 const moment = require("moment-timezone");
+const env = require('var');
 /**
  * Parses a single date and determine what the comparator is.  The regex
  * will attempt to parse the FHIR date with and without prefix and ISO date.
@@ -52,10 +54,15 @@ let validateDate = function (dates) {
     }
     return parsedDate;
 };
-// @TODO Update these, validateDate will always return something truthy and current
-// implementation checks the result to create a query, if given no dates, this could
-// create a query that returns unexpected results
-module.exports = {
-    validateDate
-};
+function fullurl(resource) {
+    return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;
+}
+exports.fullurl = fullurl;
+function createResource(resource) {
+    return {
+        fullUrl: fullurl(resource),
+        resource
+    };
+}
+exports.createResource = createResource;
 //# sourceMappingURL=data.util.js.map

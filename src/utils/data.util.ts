@@ -1,4 +1,5 @@
 import * as moment from 'moment-timezone';
+const env = require('var');
 
 /**
  * Parses a single date and determine what the comparator is.  The regex
@@ -56,9 +57,14 @@ let validateDate = function (dates) {
 };
 
 
-// @TODO Update these, validateDate will always return something truthy and current
-// implementation checks the result to create a query, if given no dates, this could
-// create a query that returns unexpected results
-module.exports = {
-    validateDate
-};
+export function fullurl(resource) {
+    return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;
+}
+
+export function createResource(resource) {
+    return {
+        fullUrl: fullurl(resource),
+        resource
+    };
+}
+

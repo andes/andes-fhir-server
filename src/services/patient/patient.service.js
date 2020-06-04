@@ -8,54 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
-const fhir_1 = require("@andes/fhir");
-const uid_util_1 = require("./../../utils/uid.util");
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
-const globals = require('../../globals');
-const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
-let getPatient = (base_version) => {
-    return require(node_fhir_server_core_1.resolveSchema(base_version, 'Patient'));
-};
-let buildAndesSearchQuery = (args) => {
-    // Filtros de búsqueda para pacientes
-    let id = args['id'];
-    let active = args['active'];
-    let family = args['family'];
-    let given = args['given'];
-    let identifier = args['identifier'];
-    let query = {};
-    if (id) {
-        query.id = id;
-    }
-    if (active) {
-        query.activo = active === true ? true : false;
-    }
-    if (family) {
-        query.apellido = stringQueryBuilder(family);
-    }
-    if (given) {
-        query.nombre = stringQueryBuilder(given);
-    }
-    if (identifier) {
-        let queryBuilder = tokenQueryBuilder(identifier, '', 'identificadores', '');
-        for (let i in queryBuilder) {
-            query[i] = queryBuilder[i];
-        }
-    }
-    return query;
-};
+const patient_1 = require("./../../controller/patient/patient");
 module.exports = {
     search: (args) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             let { base_version } = args;
-            let query = {};
-            query = buildAndesSearchQuery(args);
-            const db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PATIENT}`);
-            let Patient = getPatient(base_version);
-            let patients = yield collection.find(query).toArray();
-            return patients.map(pac => new Patient(fhir_1.Patient.encode(pac)));
+            return yield patient_1.buscarPaciente(base_version, args);
         }
         catch (err) {
             return err;
@@ -64,11 +22,7 @@ module.exports = {
     searchById: (args) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             let { base_version, id } = args;
-            let Patient = getPatient(base_version);
-            let db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PATIENT}`);
-            let patient = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-            return patient ? new Patient(fhir_1.Patient.encode(patient)) : null;
+            return yield patient_1.buscarPacienteId(base_version, id);
         }
         catch (err) {
             return err;
