@@ -43,6 +43,7 @@
     "@asymmetrik/node-fhir-server-core": "git+https://github.com/Asymmetrik/node-fhir-server-core.git",
     "concurrently": "^5.2.0",
     "jsonwebtoken": "^8.1.0",
+    "moment": "^2.26.0",
     "moment-timezone": "^0.5.14",
     "mongodb": "^3.5.8",
     "object-hash": "^2.0.3",

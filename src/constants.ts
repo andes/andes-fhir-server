@@ -8,7 +8,9 @@ module.exports = {
     COLLECTION: {
         PATIENT: 'paciente',
         ORGANIZATION: 'organizacion',
-        PRACTITIONER: 'profesional'
+        PRACTITIONER: 'profesional',
+        PRESTATIONS: 'prestaciones',
+        VACCINES: 'nomivac'
         // Agregar todas las colecciones que hagan falta
     }
 };

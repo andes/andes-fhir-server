@@ -38,9 +38,20 @@ let buildAndesSearchQuery = (args) => {
             query[i] = queryBuilder[i];
         }
     }
-    console.log(query);
     return query;
 };
+
+
+// Esta función la vamos a deprecar....
+export async function buscarPacienteIdAndes(id) {
+    try {
+        let db = globals.get(CLIENT_DB);
+        let collection = db.collection(`${COLLECTION.PATIENT}`);
+        return await collection.findOne({ _id: objectId(id) });
+    } catch (err) {
+        return err
+    }
+}
 
 export async function buscarPacienteId(version, id) {
     try {

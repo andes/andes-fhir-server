@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buscarPaciente = exports.buscarPacienteId = void 0;
+exports.buscarPaciente = exports.buscarPacienteId = exports.buscarPacienteIdAndes = void 0;
 const fhir_1 = require("@andes/fhir");
 const uid_util_1 = require("./../../utils/uid.util");
 const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
@@ -45,9 +45,22 @@ let buildAndesSearchQuery = (args) => {
             query[i] = queryBuilder[i];
         }
     }
-    console.log(query);
     return query;
 };
+// Esta función la vamos a deprecar....
+function buscarPacienteIdAndes(id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let db = globals.get(CLIENT_DB);
+            let collection = db.collection(`${COLLECTION.PATIENT}`);
+            return yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
+        }
+        catch (err) {
+            return err;
+        }
+    });
+}
+exports.buscarPacienteIdAndes = buscarPacienteIdAndes;
 function buscarPacienteId(version, id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {

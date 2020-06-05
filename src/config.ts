@@ -105,6 +105,10 @@ export const fhirServerConfig = {
 		documentReference: {
 			service: './src/services/documentreference/documentreference.service.js',
 			versions: [VERSIONS['4_0_0']]
+		},
+		bundle: {
+			service: './src/services/bundle/bundle.service.js',
+			versions: [VERSIONS['4_0_0']]
 		}
 	}
 };
