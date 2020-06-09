@@ -20,7 +20,6 @@ function getVacunas(paciente) {
             documento: paciente.documento
         };
         const sort = { fechaAplicacion: -1 };
-        console.log('query: ', conditions);
         return yield collection.find(conditions).sort(sort).toArray();
     });
 }

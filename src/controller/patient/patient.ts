@@ -47,7 +47,9 @@ export async function buscarPacienteIdAndes(id) {
     try {
         let db = globals.get(CLIENT_DB);
         let collection = db.collection(`${COLLECTION.PATIENT}`);
-        return await collection.findOne({ _id: objectId(id) });
+        let pac = await collection.findOne({ _id: objectId(id) });
+        pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose
+        return pac;
     } catch (err) {
         return err
     }

@@ -1,4 +1,4 @@
-import { Device, Bundle, Immunization, Condition, Composition, Patient } from '@andes/fhir';
+import { Device, Bundle, Immunization, Condition, Composition, Patient, Organization } from '@andes/fhir';
 import { buscarPacienteIdAndes } from './../../controller/patient/patient';
 import { buscarOrganizacionSisa } from './../../controller/organization/organization';
 import { createResource, fullurl } from './../../utils/data.util';
@@ -6,27 +6,28 @@ import { getPrestaciones, filtrarRegistros } from './../../controller/ips/presta
 import { getVacunas } from './../../controller/ips/vacunas';
 
 const { ObjectID } = require('mongodb').ObjectID;
-const env = require('var');
 
-export async function ips(version, id) {
-    const patient = await buscarPacienteIdAndes(id);
+export async function ips(version, pacienteID) {
+    const patient = await buscarPacienteIdAndes(pacienteID);
     if (patient) {
         // Recuperar datos de la historia clinica
-        const FHIRCustodian = await buscarOrganizacionSisa(version, '0');
+        const organizacion = await buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud
         const prestaciones = await getPrestaciones(patient, {});
-        const semanticTags = ['trastorno', /* 'hallazgo', 'evento', 'situacion' */]; // [TODO] Revisar listado de semtags
+        const semanticTags = ['trastorno', /* 'hallazgo', 'evento', 'situacion' */]; // [TODO] Revisar listado de semtags con el equipo
         const registros: any = filtrarRegistros(prestaciones, { semanticTags });
         const vacunas: any = await getVacunas(patient);
         // Armar documento
-        const FHIRDevice = Device.encode(); // [TODO] ver que hacer
+        const FHIRDevice = Device.encode();
         const FHIRPatient = Patient.encode(patient);
         const FHIRImmunization = vacunas.map((vacuna) => {
             return Immunization.encode(fullurl(FHIRPatient), vacuna);
         });
+        const FHIRCustodian = Organization.encode(organizacion);
         const FHIRCondition = registros.map((registro) => {
             return Condition.encode(fullurl(FHIRPatient), registro);
         });
         const CompositionID = new ObjectID;
+
         const FHIRComposition = Composition.encode(CompositionID, fullurl(FHIRPatient), fullurl(FHIRCustodian), fullurl(FHIRDevice), FHIRImmunization.map(fullurl), FHIRCondition.map(fullurl));
         const BundleID = new ObjectID;
         const FHIRBundle = Bundle.encode(BundleID, [
@@ -42,3 +43,4 @@ export async function ips(version, id) {
     }
     return null;
 }
+

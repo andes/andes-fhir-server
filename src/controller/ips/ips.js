@@ -16,36 +16,31 @@ const organization_1 = require("./../../controller/organization/organization");
 const data_util_1 = require("./../../utils/data.util");
 const prestaciones_1 = require("./../../controller/ips/prestaciones");
 const vacunas_1 = require("./../../controller/ips/vacunas");
-const { ObjectID } = require('mongodb').ObjectID;
 const env = require('var');
-function ips(version, id) {
+const { ObjectID } = require('mongodb').ObjectID;
+function ips(version, pacienteID) {
     return __awaiter(this, void 0, void 0, function* () {
-        const patient = yield patient_1.buscarPacienteIdAndes(id);
+        const patient = yield patient_1.buscarPacienteIdAndes(pacienteID);
         if (patient) {
             // Recuperar datos de la historia clinica
-            const FHIRCustodian = yield organization_1.buscarOrganizacionSisa(version, '0');
+            const organizacion = yield organization_1.buscarOrganizacionSisa(version, '0');
             const prestaciones = yield prestaciones_1.getPrestaciones(patient, {});
             const semanticTags = ['trastorno',]; // [TODO] Revisar listado de semtags
             const registros = prestaciones_1.filtrarRegistros(prestaciones, { semanticTags });
             const vacunas = yield vacunas_1.getVacunas(patient);
             // Armar documento
-            console.log('luego de las vacunas');
-            const FHIRDevice = fhir_1.Device.encode(); // [TODO] ver que hacer
-            console.log('acaaaa 0');
+            const FHIRDevice = fhir_1.Device.encode();
             const FHIRPatient = fhir_1.Patient.encode(patient);
-            console.log('dfdsfsdfsd');
             const FHIRImmunization = vacunas.map((vacuna) => {
                 return fhir_1.Immunization.encode(data_util_1.fullurl(FHIRPatient), vacuna);
             });
-            console.log('acaaaaa 1');
+            const FHIRCustodian = fhir_1.Organization.encode(organizacion);
             const FHIRCondition = registros.map((registro) => {
                 return fhir_1.Condition.encode(data_util_1.fullurl(FHIRPatient), registro);
             });
-            console.log('acaaaaa 2');
             const CompositionID = new ObjectID;
             const FHIRComposition = fhir_1.Composition.encode(CompositionID, data_util_1.fullurl(FHIRPatient), data_util_1.fullurl(FHIRCustodian), data_util_1.fullurl(FHIRDevice), FHIRImmunization.map(data_util_1.fullurl), FHIRCondition.map(data_util_1.fullurl));
             const BundleID = new ObjectID;
-            console.log('acaaaaa 3');
             const FHIRBundle = fhir_1.Bundle.encode(BundleID, [
                 data_util_1.createResource(FHIRComposition),
                 data_util_1.createResource(FHIRPatient),
@@ -54,7 +49,6 @@ function ips(version, id) {
                 data_util_1.createResource(FHIRDevice),
                 data_util_1.createResource(FHIRCustodian)
             ]);
-            console.log('llega okaaaa');
             return FHIRBundle;
         }
         return null;
