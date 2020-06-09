@@ -55,7 +55,6 @@ let validateDate = function (dates) {
     return parsedDate;
 };
 function fullurl(resource) {
-    console.log('recurso: ', resource);
     return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;
 }
 exports.fullurl = fullurl;

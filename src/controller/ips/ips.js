@@ -16,16 +16,15 @@ const organization_1 = require("./../../controller/organization/organization");
 const data_util_1 = require("./../../utils/data.util");
 const prestaciones_1 = require("./../../controller/ips/prestaciones");
 const vacunas_1 = require("./../../controller/ips/vacunas");
-const env = require('var');
 const { ObjectID } = require('mongodb').ObjectID;
 function ips(version, pacienteID) {
     return __awaiter(this, void 0, void 0, function* () {
         const patient = yield patient_1.buscarPacienteIdAndes(pacienteID);
         if (patient) {
             // Recuperar datos de la historia clinica
-            const organizacion = yield organization_1.buscarOrganizacionSisa(version, '0');
+            const organizacion = yield organization_1.buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud
             const prestaciones = yield prestaciones_1.getPrestaciones(patient, {});
-            const semanticTags = ['trastorno',]; // [TODO] Revisar listado de semtags
+            const semanticTags = ['trastorno',]; // [TODO] Revisar listado de semtags con el equipo
             const registros = prestaciones_1.filtrarRegistros(prestaciones, { semanticTags });
             const vacunas = yield vacunas_1.getVacunas(patient);
             // Armar documento
