@@ -31,6 +31,20 @@ exports.fhirServerConfig = {
     auth: {
         // This servers URI
         resourceServer: env.RESOURCE_SERVER,
+        //
+        // if you use this strategy, you need to add the corresponding env vars to docker-compose
+        //
+        // type: 'smart',
+        // Define our strategy here, for smart to work, we need the name to be bearer
+        // and to point to a service that exports a Smart on FHIR compatible strategy
+        strategy: {
+            name: 'bearer',
+            service: './src/services/auth/auth.service.js'
+        }
+        // strategy: {
+        // 	name: 'basic',
+        // 	service: './src/services/auth/auth.service.js'
+        // }
     },
     server: {
         // support various ENV that uses PORT vs SERVER_PORT
@@ -73,10 +87,6 @@ exports.fhirServerConfig = {
         // AllergyIntolerance: {
         // 	service: './src/services/allergyintolerance/allergyintolerance.service.js',
         // 	versions: [ VERSIONS['4_0_0'] ]
-        // },
-        // organization: {
-        // 	service: './src/services/organization/organization.service.js',
-        // 	versions: [VERSIONS['4_0_0']]
         // },
         patient: {
             service: './src/services/patient/patient.service.js',

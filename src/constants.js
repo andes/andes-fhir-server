@@ -10,7 +10,8 @@ module.exports = {
         ORGANIZATION: 'organizacion',
         PRACTITIONER: 'profesional',
         PRESTATIONS: 'prestaciones',
-        VACCINES: 'nomivac'
+        VACCINES: 'nomivac',
+        AUTHAPPS: 'authApps'
         // Agregar todas las colecciones que hagan falta
     }
 };
