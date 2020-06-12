@@ -1,14 +1,7 @@
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
-const globals = require('../../globals');
+import * as jwt from 'jsonwebtoken';
+const env = require('var');
 
-
-export async function buscarToken(token) {
-    try {
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.AUTHAPPS}`);
-        let result = await collection.findOne({ token });
-        return result ? result : null;
-    } catch (err) {
-        return err
-    }
+export function verificar(token) {
+    const tokenData = jwt.verify(token, env.TOKEN_PASS);
+    return tokenData ? tokenData : null;
 }

@@ -15,8 +15,9 @@ const auth_1 = require("./../../controller/auth/auth");
 // Validación muy sencilla, voy directo a buscar el token en ANDES, si existe lo dejo pasar
 exports.strategy = new Strategy((token, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const resultado = yield auth_1.buscarToken(token);
-        if (resultado) {
+        const data = auth_1.verificar(token);
+        if (data) {
+            // TODO revisar tema array permisos
             return done(null, {}); // Todo ok
         }
         else {
