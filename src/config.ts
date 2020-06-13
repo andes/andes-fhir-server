@@ -39,19 +39,10 @@ export const fhirServerConfig = {
 		// type: 'smart',
 		// Define our strategy here, for smart to work, we need the name to be bearer
 		// and to point to a service that exports a Smart on FHIR compatible strategy
-
 		strategy: {
 			name: 'bearer',
 			service: './src/services/auth/auth.service.js'
 		}
-
-
-		// strategy: {
-		// 	name: 'basic',
-		// 	service: './src/services/auth/auth.service.js'
-		// }
-
-
 	},
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT
@@ -91,10 +82,6 @@ export const fhirServerConfig = {
 	// },
 	//
 	profiles: {
-		// AllergyIntolerance: {
-		// 	service: './src/services/allergyintolerance/allergyintolerance.service.js',
-		// 	versions: [ VERSIONS['4_0_0'] ]
-		// },
 		patient: {
 			service: './src/services/patient/patient.service.js',
 			versions: [VERSIONS['4_0_0']]
