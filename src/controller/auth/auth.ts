@@ -6,8 +6,12 @@ const globals = require('../../globals');
 
 
 export function verifyToken(token) {
-    const tokenData = jwt.verify(token, env.TOKEN_PASS);
-    return tokenData ? tokenData : null;
+    try {
+        return jwt.verify(token, env.TOKEN_PASS);
+    } catch (err) {
+        return null
+    }
+
 }
 
 export async function searchToken(id) {

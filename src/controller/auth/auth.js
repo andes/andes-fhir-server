@@ -16,8 +16,12 @@ const env = require('var');
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 function verifyToken(token) {
-    const tokenData = jwt.verify(token, env.TOKEN_PASS);
-    return tokenData ? tokenData : null;
+    try {
+        return jwt.verify(token, env.TOKEN_PASS);
+    }
+    catch (err) {
+        return null;
+    }
 }
 exports.verifyToken = verifyToken;
 function searchToken(id) {
