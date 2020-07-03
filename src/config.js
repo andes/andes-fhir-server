@@ -31,12 +31,6 @@ exports.fhirServerConfig = {
     auth: {
         // This servers URI
         resourceServer: env.RESOURCE_SERVER,
-        //
-        // if you use this strategy, you need to add the corresponding env vars to docker-compose
-        //
-        // type: 'smart',
-        // Define our strategy here, for smart to work, we need the name to be bearer
-        // and to point to a service that exports a Smart on FHIR compatible strategy
         strategy: {
             name: 'bearer',
             service: './src/services/auth/auth.service.js'
@@ -54,10 +48,6 @@ exports.fhirServerConfig = {
     logging: {
         level: env.LOGGING_LEVEL
     },
-    //
-    // If you want to set up conformance statement with security enabled
-    // Uncomment the following block
-    //
     security: [
         {
             url: 'authorize',
@@ -67,7 +57,6 @@ exports.fhirServerConfig = {
             url: 'token',
             valueUri: `${env.AUTH_SERVER_URI}/token`
         }
-        // optional - registration
     ],
     //
     // Add any profiles you want to support.  Each profile can support multiple versions
