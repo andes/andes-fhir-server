@@ -9,9 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const organization_1 = require("./../../controller/organization/organization");
+const permissions_1 = require("./../../lib/permissions");
+const p = permissions_1.Permissions;
 module.exports = {
-    search: (args) => __awaiter(void 0, void 0, void 0, function* () {
+    search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            if (context && context.req.authInfo) {
+                const scope = context.req.authInfo.scope;
+                if (!p.check(scope, 'fhir:organization:read')) {
+                    // TODO: Usar el handler de errores del core
+                    return { unauthorized: 403 };
+                }
+            }
             let { base_version } = args;
             return yield organization_1.buscarOrganizacion(base_version, args);
         }
@@ -20,7 +29,7 @@ module.exports = {
         }
     })
 };
-// Ver si necesitamos algo de esto más adelante
+// TODO: Implementar más adelante el byID pero por ahora no lo necesitamos
 // module.exports.searchById = (args, context, logger) => new Promise((resolve, reject) => {
 // 		logger.info('Organization >>> searchById');
 // 		let { base_version, id } = args;

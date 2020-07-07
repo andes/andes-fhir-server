@@ -26,7 +26,9 @@ exports.strategy = new Strategy((token, done) => __awaiter(void 0, void 0, void 
             // Lo buscamos a ver si todavía existe y está activo
             let t = yield auth_1.searchToken(data.app.id);
             if (t && t.activo) {
-                return done(null, {});
+                //Devuelvo la información del token
+                const user = t.nombre;
+                return done(null, user, { scope: t });
             }
             else {
                 return done(new Error('Token dado de baja'));
@@ -37,6 +39,8 @@ exports.strategy = new Strategy((token, done) => __awaiter(void 0, void 0, void 
             let busClient = new autenticacion_1.SaludDigitalClient(env.FHIR_DOMAIN, env.IPS_HOST, env.IPS_SECRET);
             const data = yield busClient.validarToken(token);
             if (data) {
+                // Ver a futuro si necesito enviar algún permiso extra por tema federador
+                // por ahora le doy acceso full.
                 return done(null, {});
             }
             else {

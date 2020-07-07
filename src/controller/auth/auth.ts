@@ -4,7 +4,6 @@ const env = require('var');
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 
-
 export function verifyToken(token) {
     try {
         return jwt.verify(token, env.TOKEN_PASS);
@@ -17,7 +16,6 @@ export function verifyToken(token) {
 export async function searchToken(id) {
     let db = globals.get(CLIENT_DB);
     let collection = db.collection(`${COLLECTION.AUTHAPPS}`);
-    let token = await collection.findOne({ _id: objectId(id) });
-    return token;
-
+    let registroDelToken = await collection.findOne({ _id: objectId(id) });
+    return registroDelToken;
 }

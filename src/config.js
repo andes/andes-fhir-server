@@ -33,6 +33,8 @@ exports.fhirServerConfig = {
         resourceServer: env.RESOURCE_SERVER,
         strategy: {
             name: 'bearer',
+            // Queda para implementar a futuro
+            // service: './src/strategies/bearer.strategy.js'
             service: './src/services/auth/auth.service.js'
         }
     },

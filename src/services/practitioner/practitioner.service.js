@@ -12,8 +12,10 @@ const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
 const fhir_1 = require("@andes/fhir");
 const querybuilder_util_1 = require("./../../utils/querybuilder.util");
 const uid_util_1 = require("./../../utils/uid.util");
+const permissions_1 = require("./../../lib/permissions");
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
+const p = permissions_1.Permissions;
 let getPractitioner = (base_version) => {
     return require(node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner'));
 };
@@ -43,8 +45,15 @@ let buildAndesSearchQuery = (args) => {
     return query;
 };
 module.exports = {
-    search: (args) => __awaiter(void 0, void 0, void 0, function* () {
+    search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            if (context && context.req.authInfo) {
+                const scope = context.req.authInfo.scope;
+                if (!p.check(scope, 'fhir:practitioner:read')) {
+                    // TODO: Usar el handler de errores del core
+                    return { unauthorized: 403 };
+                }
+            }
             let { base_version } = args;
             let query = buildAndesSearchQuery(args);
             const db = globals.get(CLIENT_DB);
@@ -57,14 +66,22 @@ module.exports = {
             return err;
         }
     }),
-    searchById: (args) => __awaiter(void 0, void 0, void 0, function* () {
+    searchById: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            if (context && context.req.authInfo) {
+                const scope = context.req.authInfo.scope;
+                if (!p.check(scope, 'fhir:practitioner:read')) {
+                    // TODO: Usar el handler de errores del core
+                    return { unauthorized: 403 };
+                }
+            }
             let { base_version, id } = args;
             let Practitioner = getPractitioner(base_version);
             let db = globals.get(CLIENT_DB);
             let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
             let practitioner = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-            return practitioner ? new Practitioner(fhir_1.Practitioner.encode(practitioner)) : null;
+            console.log('El practitioner: ', practitioner);
+            return practitioner ? new Practitioner(fhir_1.Practitioner.encode(practitioner)) : { notFound: 404 };
         }
         catch (err) {
             return err;

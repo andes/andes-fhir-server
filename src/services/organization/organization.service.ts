@@ -1,8 +1,18 @@
 import { buscarOrganizacion } from './../../controller/organization/organization';
+import { Permissions } from './../../lib/permissions';
+
+const p = Permissions;
 
 export = {
-	search: async (args) => {
+	search: async (args, context) => {
 		try {
+			if (context && context.req.authInfo) {
+				const scope = context.req.authInfo.scope;
+				if (!p.check(scope, 'fhir:organization:read')) {
+					// TODO: Usar el handler de errores del core
+					return { unauthorized: 403 }
+				}
+			}
 			let { base_version } = args;
 			return await buscarOrganizacion(base_version, args);
 		} catch (err) {
@@ -12,7 +22,7 @@ export = {
 }
 
 
-// Ver si necesitamos algo de esto más adelante
+// TODO: Implementar más adelante el byID pero por ahora no lo necesitamos
 
 // module.exports.searchById = (args, context, logger) => new Promise((resolve, reject) => {
 // 		logger.info('Organization >>> searchById');

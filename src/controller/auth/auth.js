@@ -28,8 +28,8 @@ function searchToken(id) {
     return __awaiter(this, void 0, void 0, function* () {
         let db = globals.get(CLIENT_DB);
         let collection = db.collection(`${COLLECTION.AUTHAPPS}`);
-        let token = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-        return token;
+        let registroDelToken = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
+        return registroDelToken;
     });
 }
 exports.searchToken = searchToken;

@@ -9,6 +9,8 @@ const env = require('var');
  *
  * Requires ENV variables for introspecting the token
  */
+// Esto lo podemos dejar para más adelante para tener un único servidor que valide los tokens
+// Per no es nuestro caso y vamos a usar el Auth que implemente.
 module.exports.strategy = new Strategy(function (token, done) {
     if (!env.INTROSPECTION_URL) {
         return done(new Error('Invalid introspection endpoint.'));
@@ -19,6 +21,7 @@ module.exports.strategy = new Strategy(function (token, done) {
         .send({ token: token, client_id: env.CLIENT_ID, client_secret: env.CLIENT_SECRET })
         .then((introspectionResponse) => {
         const decoded_token = introspectionResponse.body;
+        console.log('pasa por aca?');
         if (decoded_token.active) {
             // TODO: context could come in many forms, you need to decide how to handle it.
             // it could also be decodedToken.patient etc...

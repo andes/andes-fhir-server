@@ -9,9 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const patient_1 = require("./../../controller/patient/patient");
+const permissions_1 = require("./../../lib/permissions");
+const p = permissions_1.Permissions;
 module.exports = {
-    search: (args) => __awaiter(void 0, void 0, void 0, function* () {
+    search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            if (context && context.req.authInfo) {
+                const scope = context.req.authInfo.scope;
+                if (!p.check(scope, 'fhir:patient:read')) {
+                    // TODO: Usar el handler de errores del core
+                    return { unauthorized: 403 };
+                }
+            }
             let { base_version } = args;
             return yield patient_1.buscarPaciente(base_version, args);
         }
@@ -19,8 +28,15 @@ module.exports = {
             return err;
         }
     }),
-    searchById: (args) => __awaiter(void 0, void 0, void 0, function* () {
+    searchById: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            if (context && context.req.authInfo) {
+                const scope = context.req.authInfo.scope;
+                if (!p.check(scope, 'fhir:patient:read')) {
+                    // TODO: Usar el handler de errores del core
+                    return { unauthorized: 403 };
+                }
+            }
             let { base_version, id } = args;
             return yield patient_1.buscarPacienteId(base_version, id);
         }
