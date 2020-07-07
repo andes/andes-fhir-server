@@ -22,7 +22,7 @@
     "prod": "cross-env NODE_ENV=production; node src/index.js;",
     "nodemon": "cross-env NODE_ENV=development; node scripts/nodemon;",
     "test": "npm run test:lint;",
-    "test:lint": "eslint \"src/**/*.js\"",
+    "test:lint": "eslint \"src/**/*.ts\"",
     "test:jest": "jest --forceExit"
   },
   "jest": {
@@ -49,6 +49,7 @@
     "object-hash": "^2.0.3",
     "passport-http-bearer": "^1.0.1",
     "request-promise-native": "^1.0.8",
+    "shiro-trie": "^0.4.9",
     "var": "^0.3.2"
   },
   "devDependencies": {
