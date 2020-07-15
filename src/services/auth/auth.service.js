@@ -44,7 +44,7 @@ exports.strategy = new Strategy((token, done) => __awaiter(void 0, void 0, void 
                 // Por el momento dejamos el scope hardcodeado: Que la organización (en este caso nación) puede leer todos los recursos fhir
                 let user = {
                     name: data.name,
-                    scope: 'organization/*.read'
+                    scope: 'patient/*.read'
                 };
                 return done(null, user, {});
             }

@@ -32,7 +32,7 @@ export const strategy = new Strategy(async (token, done) => {
                 // Por el momento dejamos el scope hardcodeado: Que la organización (en este caso nación) puede leer todos los recursos fhir
                 let user: any = {
                     name: data.name,
-                    scope: 'organization/*.read'
+                    scope: 'patient/*.read'
                 }
                 return done(null, user, {});
             } else {
