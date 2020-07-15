@@ -41,6 +41,7 @@
   "dependencies": {
     "@andes/fhir": "^1.2.0",
     "@asymmetrik/node-fhir-server-core": "git+https://github.com/Asymmetrik/node-fhir-server-core.git",
+    "@asymmetrik/sof-scope-checker": "^1.0.2",
     "concurrently": "^5.2.0",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.26.0",

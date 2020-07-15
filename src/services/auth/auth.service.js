@@ -41,9 +41,10 @@ exports.strategy = new Strategy((token, done) => __awaiter(void 0, void 0, void 
             let busClient = new autenticacion_1.SaludDigitalClient(env.FHIR_DOMAIN, env.IPS_HOST, env.IPS_SECRET);
             const data = yield busClient.validarToken(token);
             if (data && data.valid) {
+                // Por el momento dejamos el scope hardcodeado: Que la organización (en este caso nación) puede leer todos los recursos fhir
                 let user = {
                     name: data.name,
-                    scope: 'federador/*.*' // Por el momento dejamos el scope hardcodeado
+                    scope: 'organization/*.read'
                 };
                 return done(null, user, {});
             }
