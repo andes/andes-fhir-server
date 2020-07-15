@@ -14,13 +14,6 @@ const p = permissions_1.Permissions;
 module.exports = {
     search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (context && context.req.authInfo) {
-                const scope = context.req.authInfo.scope;
-                if (!p.check(scope, 'fhir:organization:read')) {
-                    // TODO: Usar el handler de errores del core
-                    return { unauthorized: 403 };
-                }
-            }
             let { base_version } = args;
             return yield organization_1.buscarOrganizacion(base_version, args);
         }

@@ -75,7 +75,13 @@ class SaludDigitalClient {
                 },
             };
             const [status, body] = yield requestHandler_1.handleHttpRequest(options);
-            return status >= 200 && status <= 299;
+            if (status >= 200 && status <= 299) {
+                const data = {
+                    valid: true,
+                    name: body.name
+                };
+                return data;
+            }
         });
     }
     federar(patient) {

@@ -74,7 +74,13 @@ export class SaludDigitalClient {
             },
         };
         const [status, body] = await handleHttpRequest(options);
-        return status >= 200 && status <= 299;
+        if (status >= 200 && status <= 299) {
+            const data: any = {
+                valid: true,
+                name: body.name
+            }
+            return data
+        }
     }
 
     async federar(patient: any) {

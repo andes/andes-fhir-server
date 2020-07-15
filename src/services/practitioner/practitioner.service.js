@@ -47,13 +47,15 @@ let buildAndesSearchQuery = (args) => {
 module.exports = {
     search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (context && context.req.authInfo) {
-                const scope = context.req.authInfo.scope;
-                if (!p.check(scope, 'fhir:practitioner:read')) {
-                    // TODO: Usar el handler de errores del core
-                    return { unauthorized: 403 };
-                }
-            }
+            // No necesito más esta parte, ya que lo soluciono con smart on fhir
+            // if (context && context.req.authInfo) {
+            // 	const scope = context.req.authInfo.scope;
+            // 	if (!p.check(scope, 'fhir:practitioner:rad')) {
+            // 		// console.log('res: ', res);
+            // 		return null;
+            // 		// throw new Error(`No está autorizado para este recurso`);
+            // 	}
+            // }
             let { base_version } = args;
             let query = buildAndesSearchQuery(args);
             const db = globals.get(CLIENT_DB);
@@ -68,13 +70,6 @@ module.exports = {
     }),
     searchById: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (context && context.req.authInfo) {
-                const scope = context.req.authInfo.scope;
-                if (!p.check(scope, 'fhir:practitioner:read')) {
-                    // TODO: Usar el handler de errores del core
-                    return { unauthorized: 403 };
-                }
-            }
             let { base_version, id } = args;
             let Practitioner = getPractitioner(base_version);
             let db = globals.get(CLIENT_DB);

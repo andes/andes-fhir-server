@@ -31,12 +31,16 @@ let whitelist = whitelist_env && whitelist_env.length === 1
  */
 export const fhirServerConfig = {
 	auth: {
+		// En este caso estoy poniendo esto para que me lea el scope automáticamente.
+		type: 'smart',
 		// This servers URI
 		resourceServer: env.RESOURCE_SERVER,
 		strategy: {
 			name: 'bearer',
 			// Queda para implementar a futuro
 			// service: './src/strategies/bearer.strategy.js'
+
+			// Vamos con estrategia propia :-)
 			service: './src/services/auth/auth.service.js'
 		}
 	},

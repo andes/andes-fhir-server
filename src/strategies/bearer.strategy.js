@@ -21,7 +21,6 @@ module.exports.strategy = new Strategy(function (token, done) {
         .send({ token: token, client_id: env.CLIENT_ID, client_secret: env.CLIENT_SECRET })
         .then((introspectionResponse) => {
         const decoded_token = introspectionResponse.body;
-        console.log('pasa por aca?');
         if (decoded_token.active) {
             // TODO: context could come in many forms, you need to decide how to handle it.
             // it could also be decodedToken.patient etc...

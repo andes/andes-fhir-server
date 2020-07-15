@@ -14,13 +14,6 @@ const p = permissions_1.Permissions;
 module.exports = {
     search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (context && context.req.authInfo) {
-                const scope = context.req.authInfo.scope;
-                if (!p.check(scope, 'fhir:patient:read')) {
-                    // TODO: Usar el handler de errores del core
-                    return { unauthorized: 403 };
-                }
-            }
             let { base_version } = args;
             return yield patient_1.buscarPaciente(base_version, args);
         }
@@ -30,13 +23,6 @@ module.exports = {
     }),
     searchById: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (context && context.req.authInfo) {
-                const scope = context.req.authInfo.scope;
-                if (!p.check(scope, 'fhir:patient:read')) {
-                    // TODO: Usar el handler de errores del core
-                    return { unauthorized: 403 };
-                }
-            }
             let { base_version, id } = args;
             return yield patient_1.buscarPacienteId(base_version, id);
         }

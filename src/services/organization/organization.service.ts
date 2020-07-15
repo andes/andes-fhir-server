@@ -6,13 +6,6 @@ const p = Permissions;
 export = {
 	search: async (args, context) => {
 		try {
-			if (context && context.req.authInfo) {
-				const scope = context.req.authInfo.scope;
-				if (!p.check(scope, 'fhir:organization:read')) {
-					// TODO: Usar el handler de errores del core
-					return { unauthorized: 403 }
-				}
-			}
 			let { base_version } = args;
 			return await buscarOrganizacion(base_version, args);
 		} catch (err) {
