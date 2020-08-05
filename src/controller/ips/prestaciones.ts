@@ -22,13 +22,20 @@ export async function getPrestaciones(paciente, { estado = 'validada', desde = n
 }
 
 export function filtrarRegistros(prestaciones: any[], { semanticTags }) {
-    let registros = [];
+    let registrosMedicos = [];
+    let prestacionMedicamentos = [];
     prestaciones.forEach(prestacion => {
-        const regis = prestacion.ejecucion.registros.filter(registro => {
-            const semTag = registro.concepto.semanticTag;
-            return semanticTags.find(el => el === semTag);
+        prestacion.ejecucion.registros.forEach(registro => {
+            if (registro.concepto.semanticTag === 'producto' || registro.concepto.semanticTag === 'fármaco de uso clínico') {
+                prestacionMedicamentos = [...prestacionMedicamentos, registro]
+            } else {
+                const semTag = registro.concepto.semanticTag;
+                const exist = semanticTags.find(el => el === semTag);
+                if (exist) {
+                    registrosMedicos = [...registrosMedicos, registro];
+                }
+            }
         });
-        registros = [...registros, ...regis];
     });
-    return registros;
+    return { registrosMedicos, prestacionMedicamentos }
 }
