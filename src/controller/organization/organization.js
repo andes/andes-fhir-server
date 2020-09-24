@@ -16,7 +16,7 @@ const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const { stringQueryBuilder, keyQueryBuilder } = require('../../utils/querybuilder.util');
 let getOrganization = (base_version) => {
-    return require(node_fhir_server_core_1.resolveSchema(base_version, 'organization'));
+    return node_fhir_server_core_1.resolveSchema(base_version, 'organization');
 };
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para organizaciones

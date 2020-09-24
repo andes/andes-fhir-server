@@ -73,7 +73,6 @@ export = {
 			let db = globals.get(CLIENT_DB);
 			let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
 			let practitioner = await collection.findOne({ _id: objectId(id) });
-			console.log('El practitioner: ', practitioner);
 			return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : { notFound: 404 };
 		} catch (err) {
 			return err;

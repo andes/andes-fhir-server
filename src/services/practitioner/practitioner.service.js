@@ -75,7 +75,6 @@ module.exports = {
             let db = globals.get(CLIENT_DB);
             let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
             let practitioner = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-            console.log('El practitioner: ', practitioner);
             return practitioner ? new Practitioner(fhir_1.Practitioner.encode(practitioner)) : { notFound: 404 };
         }
         catch (err) {

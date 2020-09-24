@@ -8,11 +8,10 @@ const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuil
 
 
 let getPatient = (base_version) => {
-    return require(resolveSchema(base_version, 'Patient'));
+    return resolveSchema(base_version, 'Patient');
 };
 
 let buildAndesSearchQuery = (args) => {
-
     // Filtros de búsqueda para pacientes
     let id = args['id'];
     let active = args['active'];
@@ -77,5 +76,6 @@ export async function buscarPaciente(version, parameters) {
         return patients.map(pac => new Patient(fhirPac.encode(pac)));
     } catch (err) {
         return err
+
     }
 }

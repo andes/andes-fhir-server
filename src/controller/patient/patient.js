@@ -17,7 +17,7 @@ const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
 let getPatient = (base_version) => {
-    return require(node_fhir_server_core_1.resolveSchema(base_version, 'Patient'));
+    return node_fhir_server_core_1.resolveSchema(base_version, 'Patient');
 };
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para pacientes

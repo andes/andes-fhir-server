@@ -6,7 +6,7 @@ const { stringQueryBuilder, keyQueryBuilder } = require('../../utils/querybuilde
 
 
 let getOrganization = (base_version) => {
-    return require(resolveSchema(base_version, 'organization'));
+    return resolveSchema(base_version, 'organization');
 };
 
 let buildAndesSearchQuery = (args) => {
