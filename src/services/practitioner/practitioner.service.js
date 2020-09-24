@@ -17,7 +17,7 @@ const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const p = permissions_1.Permissions;
 let getPractitioner = (base_version) => {
-    return require(node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner'));
+    return node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner');
 };
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para pacientes

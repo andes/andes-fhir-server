@@ -9,7 +9,7 @@ const globals = require('../../globals');
 const p = Permissions;
 
 let getPractitioner = (base_version) => {
-	return require(resolveSchema(base_version, 'Practitioner'));
+	return resolveSchema(base_version, 'Practitioner');
 };
 
 
