@@ -21,7 +21,8 @@ let buildAndesSearchQuery = (args) => {
 	let family = args['family'];
 	let given = args['given'];
 	let identifier = args['identifier'];
-	let query: any = {};
+	// Con este filtro evitamos las búsquedas de los que no son matriculados y están en la misma colección
+	let query: any = {profesionalMatriculado: {$eq: true}};
 	if (id) {
 		query.id = id;
 	}
@@ -44,17 +45,6 @@ let buildAndesSearchQuery = (args) => {
 export = {
 	search: async (args, context) => {
 		try {
-
-			// No necesito más esta parte, ya que lo soluciono con smart on fhir
-
-			// if (context && context.req.authInfo) {
-			// 	const scope = context.req.authInfo.scope;
-			// 	if (!p.check(scope, 'fhir:practitioner:rad')) {
-			// 		// console.log('res: ', res);
-			// 		return null;
-			// 		// throw new Error(`No está autorizado para este recurso`);
-			// 	}
-			// }
 			let { base_version } = args;
 			let query = buildAndesSearchQuery(args);
 			const db = globals.get(CLIENT_DB);
