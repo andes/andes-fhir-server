@@ -49,12 +49,17 @@ module.exports = {
     search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             let { base_version } = args;
-            let query = buildAndesSearchQuery(args);
-            const db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
-            let Practitioner = getPractitioner(base_version);
-            let practitioners = yield collection.find(query).toArray();
-            return practitioners.map(prac => new Practitioner(fhir_1.Practitioner.encode(prac)));
+            if (Object.keys(args).length > 1) {
+                let query = buildAndesSearchQuery(args);
+                const db = globals.get(CLIENT_DB);
+                let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
+                let Practitioner = getPractitioner(base_version);
+                let practitioners = yield collection.find(query).toArray();
+                return practitioners.map(prac => new Practitioner(fhir_1.Practitioner.encode(prac)));
+            }
+            else {
+                throw { warning: 'You will need to add the search parameters' };
+            }
         }
         catch (err) {
             return err;

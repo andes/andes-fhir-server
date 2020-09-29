@@ -15,7 +15,12 @@ module.exports = {
     search: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             let { base_version } = args;
-            return yield patient_1.buscarPaciente(base_version, args);
+            if (Object.keys(args).length > 1) {
+                return yield patient_1.buscarPaciente(base_version, args);
+            }
+            else {
+                throw { warning: 'You will need to add the search parameters' };
+            }
         }
         catch (err) {
             return err;

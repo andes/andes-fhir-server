@@ -7,7 +7,11 @@ export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
-			return await buscarOrganizacion(base_version, args);
+			if (Object.keys(args).length > 1) {
+				return await buscarOrganizacion(base_version, args);
+			} else {
+				throw {warning: 'You will need to add the search parameters'};
+			}
 		} catch (err) {
 			return err
 		}

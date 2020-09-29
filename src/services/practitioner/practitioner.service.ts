@@ -12,7 +12,6 @@ let getPractitioner = (base_version) => {
 	return resolveSchema(base_version, 'Practitioner');
 };
 
-
 let buildAndesSearchQuery = (args) => {
 	// Filtros de búsqueda para profesionales
 	let id = args['id'];
@@ -45,12 +44,16 @@ export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
-			let query = buildAndesSearchQuery(args);
-			const db = globals.get(CLIENT_DB);
-			let collection = db.collection(`${COLLECTION.PRACTITIONER}`)
-			let Practitioner = getPractitioner(base_version);
-			let practitioners = await collection.find(query).toArray();
-			return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
+			if (Object.keys(args).length > 1) {
+				let query = buildAndesSearchQuery(args);
+				const db = globals.get(CLIENT_DB);
+				let collection = db.collection(`${COLLECTION.PRACTITIONER}`)
+				let Practitioner = getPractitioner(base_version);
+				let practitioners = await collection.find(query).toArray();
+				return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
+			} else {
+				throw {warning: 'You will need to add the search parameters'};
+			}
 		} catch (err) {
 			return err;
 		}
