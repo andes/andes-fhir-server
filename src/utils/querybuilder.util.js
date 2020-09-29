@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.compositeQueryBuilder = exports.dateQueryBuilder = exports.quantityQueryBuilder = exports.numberQueryBuilder = exports.referenceQueryBuilder = exports.keyQueryBuilder = exports.tokenQueryBuilder = exports.nameQueryBuilder = exports.addressQueryBuilder = exports.stringQueryBuilder = void 0;
-let ObjectID = require('mongodb').ObjectID;
 /**
  * @name stringQueryBuilder
  * @description builds mongo default query for string inputs, no modifiers
@@ -76,7 +75,7 @@ exports.nameQueryBuilder = function (target) {
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
 exports.tokenQueryBuilder = function (target, type, field, required) {
-    let queryBuilder = field;
+    let queryBuilder = {};
     let system = '';
     let value = '';
     if (target.includes('|')) {
@@ -86,22 +85,13 @@ exports.tokenQueryBuilder = function (target, type, field, required) {
         }
     }
     else {
-        // Asumo el documento como identifier
-        queryBuilder.documento = target;
+        value = target;
     }
-    // Esto debo generalizarlo para cualquier tipo de tokenQuery
-    if (system) {
-        switch (system) {
-            case 'andes.gob.ar':
-                queryBuilder._id = new ObjectID(value);
-                break;
-            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
-                queryBuilder.cuit = value;
-                break;
-            case 'http://www.renaper.gob.ar/dni':
-                queryBuilder.documento = value;
-                break;
-        }
+    if (system && value) {
+        queryBuilder = { system, value };
+    }
+    else if (value) {
+        queryBuilder = { value };
     }
     return queryBuilder;
 };

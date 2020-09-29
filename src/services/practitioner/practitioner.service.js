@@ -12,10 +12,9 @@ const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
 const fhir_1 = require("@andes/fhir");
 const querybuilder_util_1 = require("./../../utils/querybuilder.util");
 const uid_util_1 = require("./../../utils/uid.util");
-const permissions_1 = require("./../../lib/permissions");
+const ObjectID = require('mongodb').ObjectID;
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
-const p = permissions_1.Permissions;
 let getPractitioner = (base_version) => {
     return node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner');
 };
@@ -40,8 +39,20 @@ let buildAndesSearchQuery = (args) => {
     if (given) {
         query.nombre = querybuilder_util_1.stringQueryBuilder(given);
     }
+    // controles de identifier de profesional
     if (identifier) {
-        query = querybuilder_util_1.tokenQueryBuilder(identifier, String, query, false);
+        let tokenBuilder = querybuilder_util_1.tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        switch (tokenBuilder.system) {
+            case 'andes.gob.ar':
+                query._id = new ObjectID(tokenBuilder.value);
+                break;
+            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
+                query.cuit = tokenBuilder.value;
+                break;
+            case 'http://www.renaper.gob.ar/dni':
+                query.documento = tokenBuilder.value;
+                break;
+        }
     }
     return query;
 };

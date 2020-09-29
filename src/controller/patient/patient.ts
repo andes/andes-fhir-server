@@ -1,6 +1,7 @@
 import { Patient as fhirPac } from '@andes/fhir';
 import { setObjectId as objectId } from './../../utils/uid.util';
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
+const ObjectID = require('mongodb').ObjectID
 
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
@@ -31,11 +32,20 @@ let buildAndesSearchQuery = (args) => {
     if (given) {
         query.nombre = stringQueryBuilder(given);
     }
+    // Filtros especiales para paciente
     if (identifier) {
-        let queryBuilder = tokenQueryBuilder(identifier, '', 'identificadores', '');
-        for (let i in queryBuilder) {
-            query[i] = queryBuilder[i];
-        }
+        let queryBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        switch (queryBuilder.system) {
+			case 'andes.gob.ar': 
+			    query._id = new ObjectID(queryBuilder.value);
+			    break;
+			case 'http://www.renaper.gob.ar/cuil':
+			    query.cuit = queryBuilder.value;
+			    break;
+			case 'http://www.renaper.gob.ar/dni':
+				query.documento = queryBuilder.value;
+			    break;
+        }  
     }
     return query;
 };

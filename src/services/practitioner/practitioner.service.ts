@@ -2,11 +2,10 @@ import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
 import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
-import { Permissions } from './../../lib/permissions';
+const ObjectID = require('mongodb').ObjectID
 
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
-const p = Permissions;
 
 let getPractitioner = (base_version) => {
 	return resolveSchema(base_version, 'Practitioner');
@@ -33,8 +32,20 @@ let buildAndesSearchQuery = (args) => {
 	if (given) {
 		query.nombre = stringQueryBuilder(given);
 	}
+	// controles de identifier de profesional
 	if (identifier) {
-		query = tokenQueryBuilder(identifier, String, query, false);
+		let tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+		switch (tokenBuilder.system) {
+			case 'andes.gob.ar': 
+			    query._id = new ObjectID(tokenBuilder.value);
+			    break;
+			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
+			    query.cuit = tokenBuilder.value;
+			    break;
+			case 'http://www.renaper.gob.ar/dni':
+				query.documento = tokenBuilder.value;
+			    break;
+			    }
 	}
 	return query;
 };

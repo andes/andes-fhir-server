@@ -13,6 +13,7 @@ exports.buscarPaciente = exports.buscarPacienteId = exports.buscarPacienteIdAnde
 const fhir_1 = require("@andes/fhir");
 const uid_util_1 = require("./../../utils/uid.util");
 const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
+const ObjectID = require('mongodb').ObjectID;
 const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
@@ -39,10 +40,19 @@ let buildAndesSearchQuery = (args) => {
     if (given) {
         query.nombre = stringQueryBuilder(given);
     }
+    // Filtros especiales para paciente
     if (identifier) {
-        let queryBuilder = tokenQueryBuilder(identifier, '', 'identificadores', '');
-        for (let i in queryBuilder) {
-            query[i] = queryBuilder[i];
+        let queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        switch (queryBuilder.system) {
+            case 'andes.gob.ar':
+                query._id = new ObjectID(queryBuilder.value);
+                break;
+            case 'http://www.renaper.gob.ar/cuil':
+                query.cuit = queryBuilder.value;
+                break;
+            case 'http://www.renaper.gob.ar/dni':
+                query.documento = queryBuilder.value;
+                break;
         }
     }
     return query;

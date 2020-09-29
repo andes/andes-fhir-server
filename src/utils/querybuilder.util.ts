@@ -1,4 +1,3 @@
-let ObjectID = require('mongodb').ObjectID
 
 /**
  * @name stringQueryBuilder
@@ -78,35 +77,27 @@ export const nameQueryBuilder = function (target) {
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
 export const tokenQueryBuilder = function (target, type, field, required) {
-    let queryBuilder = field;
+    let queryBuilder = {};
     let system = '';
     let value = '';
-
+  
     if (target.includes('|')) {
-        [system, value] = target.split('|');
-        if (required) {
-            system = required;
-        }
+      [system, value] = target.split('|');
+  
+      if (required) {
+        system = required;
+      }
+    } else {
+      value = target;
     }
-    else {
-        // Asumo el documento como identifier
-        queryBuilder.documento = target ;
-    }
-    // Esto debo generalizarlo para cualquier tipo de tokenQuery
-    if (system) {
-        switch (system) {
-            case 'andes.gob.ar': 
-                queryBuilder._id = new ObjectID(value);
-                break
-            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
-                queryBuilder.cuit = value;
-                break
-            case 'http://www.renaper.gob.ar/dni':
-                queryBuilder.documento = value;
-                break
-            }
+  
+    if (system && value) {
+      queryBuilder = {system, value}
+    } else if (value) {
+        queryBuilder = {value}
     }
     return queryBuilder;
+    
 };
 
 /**
