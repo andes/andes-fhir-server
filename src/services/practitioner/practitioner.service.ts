@@ -1,6 +1,6 @@
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
-import { stringQueryBuilder } from './../../utils/querybuilder.util';
+import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
 import { Permissions } from './../../lib/permissions';
 
@@ -14,8 +14,7 @@ let getPractitioner = (base_version) => {
 
 
 let buildAndesSearchQuery = (args) => {
-
-	// Filtros de búsqueda para pacientes
+	// Filtros de búsqueda para profesionales
 	let id = args['id'];
 	let active = args['active'];
 	let family = args['family'];
@@ -36,7 +35,7 @@ let buildAndesSearchQuery = (args) => {
 		query.nombre = stringQueryBuilder(given);
 	}
 	if (identifier) {
-		query.documento = stringQueryBuilder(identifier);
+		query = tokenQueryBuilder(identifier, String, query, false);
 	}
 	return query;
 };

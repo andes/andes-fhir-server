@@ -20,7 +20,7 @@ let getPractitioner = (base_version) => {
     return node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner');
 };
 let buildAndesSearchQuery = (args) => {
-    // Filtros de búsqueda para pacientes
+    // Filtros de búsqueda para profesionales
     let id = args['id'];
     let active = args['active'];
     let family = args['family'];
@@ -41,7 +41,7 @@ let buildAndesSearchQuery = (args) => {
         query.nombre = querybuilder_util_1.stringQueryBuilder(given);
     }
     if (identifier) {
-        query.documento = querybuilder_util_1.stringQueryBuilder(identifier);
+        query = querybuilder_util_1.tokenQueryBuilder(identifier, String, query, false);
     }
     return query;
 };

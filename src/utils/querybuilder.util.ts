@@ -1,3 +1,5 @@
+let ObjectID = require('mongodb').ObjectID
+
 /**
  * @name stringQueryBuilder
  * @description builds mongo default query for string inputs, no modifiers
@@ -76,7 +78,7 @@ export const nameQueryBuilder = function (target) {
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
 export const tokenQueryBuilder = function (target, type, field, required) {
-    let queryBuilder = {};
+    let queryBuilder = field;
     let system = '';
     let value = '';
 
@@ -88,13 +90,22 @@ export const tokenQueryBuilder = function (target, type, field, required) {
     }
     else {
         // Asumo el documento como identifier
-        queryBuilder = { documento: target };
+        queryBuilder.documento = target ;
     }
-
+    // Esto debo generalizarlo para cualquier tipo de tokenQuery
     if (system) {
-        queryBuilder[`${field}`] = { entidad: system, valor: value };
+        switch (system) {
+            case 'andes.gob.ar': 
+                queryBuilder._id = new ObjectID(value);
+                break
+            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
+                queryBuilder.cuit = value;
+                break
+            case 'http://www.renaper.gob.ar/dni':
+                queryBuilder.documento = value;
+                break
+            }
     }
-
     return queryBuilder;
 };
 
