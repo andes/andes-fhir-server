@@ -35,15 +35,14 @@ export const fhirServerConfig = {
 		type: 'smart',
 
 		// This servers URI
-		resourceServer: env.RESOURCE_SERVER,
-		strategy: {
-			name: 'bearer',
-			// Queda para implementar a futuro
-			// service: './src/strategies/bearer.strategy.js'
-
-			// Vamos con estrategia propia :-)
-			service: './src/services/auth/auth.service.js'
-		}
+		resourceServer: env.RESOURCE_SERVER
+		// strategy: {
+		// 	name: 'bearer',
+		// 	// Queda para implementar a futuro
+		// 	// service: './src/strategies/bearer.strategy.js'
+		// 	// Vamos con estrategia propia :-)
+		// 	service: './src/services/auth/auth.service.js'
+		// }
 	},
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT
@@ -68,16 +67,6 @@ export const fhirServerConfig = {
 			valueUri: `${env.AUTH_SERVER_URI}/token`
 		}
 	],
-	//
-	// Add any profiles you want to support.  Each profile can support multiple versions
-	// if supported by core.  To support multiple versions, just add the versions to the array.
-	//
-	// Example:
-	// Account: {
-	//		service: './src/services/account/account.service.js',
-	//		versions: [ VERSIONS['4_0_0'], VERSIONS['3_0_1'], VERSIONS['1_0_2'] ]
-	// },
-	//
 	profiles: {
 		patient: {
 			service: './src/services/patient/patient.service.js',

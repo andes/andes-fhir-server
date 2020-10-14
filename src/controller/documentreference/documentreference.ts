@@ -2,6 +2,7 @@ import { Device, DocumentReference, Bundle } from '@andes/fhir';
 import { buscarPacienteId } from './../../controller/patient/patient';
 import { buscarOrganizacionSisa } from './../../controller/organization/organization';
 import { createResource } from './../../utils/data.util';
+import {ServerError}  from '@asymmetrik/node-fhir-server-core'; 
 const { ObjectID } = require('mongodb').ObjectID;
 const env = require('var');
 
@@ -21,7 +22,17 @@ export async function getDocumentReference(version, pacienteID) {
             ]);
             return FHIRBundle;
         } else {
-            return null;
+            const message = 'patient not found'
+            throw new ServerError(message, {
+                resourceType: "OperationOutcome",
+                issue: [
+                        {
+                            severity: 'error',
+                            code: 404,
+                            diagnostics: message
+                        }
+                    ]
+              });
         }
     } catch (err) {
         return err

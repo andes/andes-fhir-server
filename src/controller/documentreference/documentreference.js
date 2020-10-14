@@ -14,6 +14,7 @@ const fhir_1 = require("@andes/fhir");
 const patient_1 = require("./../../controller/patient/patient");
 const organization_1 = require("./../../controller/organization/organization");
 const data_util_1 = require("./../../utils/data.util");
+const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
 const { ObjectID } = require('mongodb').ObjectID;
 const env = require('var');
 function getDocumentReference(version, pacienteID) {
@@ -34,7 +35,17 @@ function getDocumentReference(version, pacienteID) {
                 return FHIRBundle;
             }
             else {
-                return null;
+                const message = 'patient not found';
+                throw new node_fhir_server_core_1.ServerError(message, {
+                    resourceType: "OperationOutcome",
+                    issue: [
+                        {
+                            severity: 'error',
+                            code: 404,
+                            diagnostics: message
+                        }
+                    ]
+                });
             }
         }
         catch (err) {
