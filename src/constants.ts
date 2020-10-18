@@ -2,9 +2,12 @@
  * @name exports
  * @summary Some constants used throughout the app
  */
-module.exports = {
+export const CONSTANTS = {
     CLIENT: 'client',
     CLIENT_DB: 'andes',
+    LOINC: {
+        DOCUMENT_REFERENCE: '60591-5'
+    },
     COLLECTION: {
         PATIENT: 'paciente',
         ORGANIZATION: 'organizacion',

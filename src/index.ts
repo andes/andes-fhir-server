@@ -1,13 +1,11 @@
 import * as FHIRServer from '@asymmetrik/node-fhir-server-core';
 import { mongoConnect } from './lib/mongo';
 import { fhirServerConfig, mongoConfig } from './config';
+import { CONSTANTS } from './constants';
+
 const asyncHandler = require('./lib/async-handler');
 const globals = require('./globals');
 
-const {
-    CLIENT,
-    CLIENT_DB
-} = require('./constants');
 
 let main = async function () {
 
@@ -19,8 +17,8 @@ let main = async function () {
         process.exit(1);
     }
     // Save the client in another module so I can use it in my services
-    globals.set(CLIENT, client);
-    globals.set(CLIENT_DB, client.db(mongoConfig.db_name));
+    globals.set(CONSTANTS.CLIENT, client);
+    globals.set(CONSTANTS.CLIENT_DB, client.db(mongoConfig.db_name));
     // inicializa el servidor Fhir
     let server = FHIRServer.initialize(fhirServerConfig);
     server.listen(fhirServerConfig.server.port, () => server.logger.verbose('Servidor Fhir online...'));

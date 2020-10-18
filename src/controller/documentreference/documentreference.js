@@ -25,7 +25,7 @@ function getDocumentReference(version, pacienteID) {
                 //Este caso es muy puntual (los doc-ref salen del custodian subsecretaria de salud)... ver de generalizar.
                 const FHIRCustodian = yield organization_1.buscarOrganizacionSisa(version, '0');
                 const FHIRDevice = fhir_1.Device.encode();
-                const binaryURL = `${env.RESOURCE_SERVER}/${version}/Bundle/${pacienteID}`;
+                const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
                 const documentReferenceID = new ObjectID;
                 const docRefFHIR = fhir_1.DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL);
                 const BundleID = new ObjectID;
@@ -49,7 +49,16 @@ function getDocumentReference(version, pacienteID) {
             }
         }
         catch (err) {
-            return err;
+            throw new node_fhir_server_core_1.ServerError(err, {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code: 404,
+                        diagnostics: err
+                    }
+                ]
+            });
         }
     });
 }

@@ -13,7 +13,7 @@ export async function getDocumentReference(version, pacienteID) {
             //Este caso es muy puntual (los doc-ref salen del custodian subsecretaria de salud)... ver de generalizar.
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0')
             const FHIRDevice = Device.encode();
-            const binaryURL = `${env.RESOURCE_SERVER}/${version}/Bundle/${pacienteID}`;
+            const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
             const documentReferenceID = new ObjectID;
             const docRefFHIR = DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL);
             const BundleID = new ObjectID;
@@ -35,6 +35,15 @@ export async function getDocumentReference(version, pacienteID) {
               });
         }
     } catch (err) {
-        return err
+        throw new ServerError(err, {
+            resourceType: "OperationOutcome",
+            issue: [
+                    {
+                        severity: 'error',
+                        code: 404,
+                        diagnostics: err
+                    }
+                ]
+          });
     }
 }

@@ -13,8 +13,8 @@ exports.buscarPaciente = exports.buscarPacienteId = exports.buscarPacienteIdAnde
 const fhir_1 = require("@andes/fhir");
 const uid_util_1 = require("./../../utils/uid.util");
 const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
+const constants_1 = require("./../../constants");
 const ObjectID = require('mongodb').ObjectID;
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
 let getPatient = (base_version) => {
@@ -61,8 +61,8 @@ let buildAndesSearchQuery = (args) => {
 function buscarPacienteIdAndes(id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PATIENT}`);
+            let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+            let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
             let pac = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
             pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose
             return pac;
@@ -77,8 +77,8 @@ function buscarPacienteId(version, id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let Patient = getPatient(version);
-            let db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PATIENT}`);
+            let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+            let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
             let patient = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
             return patient ? new Patient(fhir_1.Patient.encode(patient)) : null;
         }
@@ -92,8 +92,8 @@ function buscarPaciente(version, parameters) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let query = buildAndesSearchQuery(parameters);
-            const db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PATIENT}`);
+            const db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+            let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
             let Patient = getPatient(version);
             let patients = yield collection.find(query).toArray();
             return patients.map(pac => new Patient(fhir_1.Patient.encode(pac)));

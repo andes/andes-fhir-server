@@ -1,10 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CONSTANTS = void 0;
 /**
  * @name exports
  * @summary Some constants used throughout the app
  */
-module.exports = {
+exports.CONSTANTS = {
     CLIENT: 'client',
     CLIENT_DB: 'andes',
+    LOINC: {
+        DOCUMENT_REFERENCE: '60591-5'
+    },
     COLLECTION: {
         PATIENT: 'paciente',
         ORGANIZATION: 'organizacion',

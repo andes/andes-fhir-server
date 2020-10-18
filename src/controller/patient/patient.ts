@@ -1,9 +1,10 @@
 import { Patient as fhirPac } from '@andes/fhir';
 import { setObjectId as objectId } from './../../utils/uid.util';
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { CONSTANTS } from './../../constants';
+
 const ObjectID = require('mongodb').ObjectID
 
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
 
@@ -54,8 +55,8 @@ let buildAndesSearchQuery = (args) => {
 // Esta función la vamos a deprecar....
 export async function buscarPacienteIdAndes(id) {
     try {
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
+        let db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let pac = await collection.findOne({ _id: objectId(id) });
         pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose
         return pac;
@@ -67,8 +68,8 @@ export async function buscarPacienteIdAndes(id) {
 export async function buscarPacienteId(version, id) {
     try {
         let Patient = getPatient(version);
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
+        let db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let patient = await collection.findOne({ _id: objectId(id) });
         return patient ? new Patient(fhirPac.encode(patient)) : null;
     } catch (err) {
@@ -79,8 +80,8 @@ export async function buscarPacienteId(version, id) {
 export async function buscarPaciente(version, parameters) {
     try {
         let query = buildAndesSearchQuery(parameters);
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let Patient = getPatient(version);
         let patients = await collection.find(query).toArray();
         return patients.map(pac => new Patient(fhirPac.encode(pac)));
