@@ -13,7 +13,8 @@ export async function getDocumentReference(version, pacienteID) {
             //Este caso es muy puntual (los doc-ref salen del custodian subsecretaria de salud)... ver de generalizar.
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0')
             const FHIRDevice = Device.encode();
-            const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
+            // const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
+            const binaryURL = `/Bundle/${pacienteID}`;
             const documentReferenceID = new ObjectID;
             const docRefFHIR = DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL);
             const BundleID = new ObjectID;
