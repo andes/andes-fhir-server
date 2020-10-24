@@ -60,7 +60,6 @@ function ips(version, pacienteID) {
                     return fhir_1.Condition.encode(data_util_1.fullurl(FHIRPatient), registro);
                 });
                 const CompositionID = new ObjectID;
-                // TERMINAR CON AMBOS REGISTROS DE MEDICAMENTOS..............
                 const FHIRComposition = fhir_1.Composition.encode(CompositionID, data_util_1.fullurl(FHIRPatient), data_util_1.fullurl(FHIRCustodian), data_util_1.fullurl(FHIRDevice), FHIRMedicationStatement.map(data_util_1.fullurl), FHIRImmunization.map(data_util_1.fullurl), FHIRAllergyIntolerance.map(data_util_1.fullurl), FHIRCondition.map(data_util_1.fullurl));
                 const BundleID = new ObjectID;
                 const FHIRBundle = fhir_1.Bundle.encode(BundleID, [

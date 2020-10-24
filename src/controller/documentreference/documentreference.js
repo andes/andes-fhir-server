@@ -25,8 +25,7 @@ function getDocumentReference(version, pacienteID) {
                 //Este caso es muy puntual (los doc-ref salen del custodian subsecretaria de salud)... ver de generalizar.
                 const FHIRCustodian = yield organization_1.buscarOrganizacionSisa(version, '0');
                 const FHIRDevice = fhir_1.Device.encode();
-                // const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
-                const binaryURL = `/Bundle/${pacienteID}`;
+                const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
                 const documentReferenceID = new ObjectID;
                 const docRefFHIR = fhir_1.DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL);
                 const BundleID = new ObjectID;

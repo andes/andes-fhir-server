@@ -40,7 +40,6 @@ export async function ips(version, pacienteID) {
             const FHIRDevice = Device.encode();
             const FHIRPatient = Patient.encode(patient);
             const {FHIRMedicationStatement, FHIRMedication } = await prestMedicamentos(prestacionMedicamentos, FHIRPatient);
-            
             const FHIRAllergyIntolerance = registrosAlergias.map((registro)=>{
                 return AllergyIntolerance.encode(fullurl(FHIRPatient), registro);
             });
@@ -52,7 +51,6 @@ export async function ips(version, pacienteID) {
                 return Condition.encode(fullurl(FHIRPatient), registro);
             });
             const CompositionID = new ObjectID;
-            // TERMINAR CON AMBOS REGISTROS DE MEDICAMENTOS..............
             const FHIRComposition = Composition.encode(CompositionID, fullurl(FHIRPatient), fullurl(FHIRCustodian), fullurl(FHIRDevice), FHIRMedicationStatement.map(fullurl), FHIRImmunization.map(fullurl),FHIRAllergyIntolerance.map(fullurl) ,FHIRCondition.map(fullurl));
             const BundleID = new ObjectID;
             const FHIRBundle = Bundle.encode(BundleID, [
