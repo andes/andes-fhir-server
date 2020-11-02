@@ -14,6 +14,10 @@ let getBundle = (base_version) => {
     return resolveSchema(base_version, 'bundle')    
 };
 
+let getDevice = (base_version) => {
+    return resolveSchema(base_version, 'device');
+}
+
 function validateResource(resource) {
     let validator = new JSONSchemaValidator();
     let errors = validator.validate(resource);
@@ -30,10 +34,10 @@ export async function getDocumentReference(version, pacienteID) {
         if (FHIRPatient) {
             const DocumentReferenceSchema = getDocReference(version);
             const BundleSchema = getBundle(version);
-            //Este caso es muy puntual (los doc-ref salen del custodian subsecretaria de salud)... ver de generalizar.
+            const DeviceSchema = getDevice(version);
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0');
             // validateResource(FHIRCustodian);
-            const FHIRDevice = Device.encode();
+            const FHIRDevice = new DeviceSchema(Device.encode());
             // validateResource(FHIRDevice);
             const binaryURL = `${env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
             const documentReferenceID = new ObjectID;
