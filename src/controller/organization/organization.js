@@ -64,9 +64,9 @@ function buscarOrganizacionSisa(version, codigoSisa) {
         try {
             const db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
             let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.ORGANIZATION}`);
-            let organization = yield collection.findOne({ 'codigo.sisa': codigoSisa });
-            organization.id = organization._id; // Agrego el id ya que no estoy usando mongoose.
-            return organization;
+            let Organization = getOrganization(version);
+            let org = yield collection.findOne({ 'codigo.sisa': codigoSisa });
+            return new Organization(fhir_1.Organization.encode(org));
         }
         catch (err) {
             return err;

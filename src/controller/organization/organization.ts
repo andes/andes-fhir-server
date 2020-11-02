@@ -55,9 +55,9 @@ export async function buscarOrganizacionSisa(version, codigoSisa) {
     try {
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
-        let organization = await collection.findOne({ 'codigo.sisa': codigoSisa });
-        organization.id = organization._id; // Agrego el id ya que no estoy usando mongoose.
-        return organization;
+        let Organization = getOrganization(version);
+        let org = await collection.findOne({ 'codigo.sisa': codigoSisa });
+        return new Organization(fhirOrganization.encode(org))
     } catch (err) {
         return err
     }
