@@ -64,7 +64,10 @@ function buscarPacienteIdAndes(id) {
             let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
             let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
             let pac = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-            pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose
+            if (!pac) {
+                return null;
+            }
+            pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose   
             return pac;
         }
         catch (err) {
