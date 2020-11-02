@@ -13,9 +13,7 @@ export = {
 			let custodian = args['custodian'];
 			subjIdentifier = subjIdentifier ? subjIdentifier.split('|') : [];
 			type = type ? type.split('|') : [];
-			
 			if (subjIdentifier.length > 0 && type.length > 0 && custodian) {
-				
 				if (type[1] === CONSTANTS.LOINC.DOCUMENT_REFERENCE && custodian===env.RESOURCE_SERVER) {
 					const patientID = subjIdentifier[1];
 					const documentReference = await getDocumentReference(base_version, patientID);
