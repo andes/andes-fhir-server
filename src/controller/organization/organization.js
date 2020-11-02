@@ -66,6 +66,7 @@ function buscarOrganizacionSisa(version, codigoSisa) {
             let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.ORGANIZATION}`);
             let Organization = getOrganization(version);
             let org = yield collection.findOne({ 'codigo.sisa': codigoSisa });
+            org.id = org._id;
             return new Organization(fhir_1.Organization.encode(org));
         }
         catch (err) {
