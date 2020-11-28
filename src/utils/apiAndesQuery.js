@@ -11,14 +11,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ApiAndes = void 0;
 const got = require('got');
+const env = require('var');
 class ApiAndes {
     constructor() {
-        this.base = 'http://localhost:3002/api/core/term/snomed/'; // Por el momento hardcodeamos la api local
+        this.base = 'https://demo.andes.gob.ar/api'; // localhost:3002/api
+        this.baseSnomed = '/core/term/snomed/'; // Por el momento hardcodeamos la api local
+        this.basePatient = '/core/mpi/pacientes'; // Por el momento hardcodeamos la api local
     }
     getSnomedByConceptId(conceptId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const url = `${this.base}concepts/${conceptId}`;
+                const url = `${this.base}${this.baseSnomed}concepts/${conceptId}`;
                 const response = yield got(url).json();
                 return response;
             }
@@ -33,12 +36,55 @@ class ApiAndes {
     getSnomedAllergies(conceptId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const url = `${this.base}concepts/${conceptId}/childs`;
+                const url = `${this.base}${this.baseSnomed}concepts/${conceptId}/childs`;
                 const response = yield got(url).json();
                 return response;
             }
             catch (err) {
                 return err;
+            }
+        });
+    }
+    /**
+     * Patient section: Search by id, match, post, put
+     */
+    getPatient(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const url = `${this.base}${this.basePatient}/${id}`;
+                const gotCustomizado = got.extend({
+                    hooks: {
+                        beforeError: [
+                            // handler del error
+                            error => {
+                                const { response } = error;
+                                if (response && response.body) {
+                                    error.name = 'ANDES API';
+                                    error.message = response.body.message;
+                                    error.statusCode = response.statusCode;
+                                }
+                                return error;
+                            }
+                        ]
+                    },
+                    responseType: 'json',
+                    headers: {
+                        'Authorization': `jwt ${env.JWTDemo}`
+                    }
+                });
+                const data = (() => __awaiter(this, void 0, void 0, function* () {
+                    try {
+                        const response = yield gotCustomizado(url);
+                        return response.body;
+                    }
+                    catch (err) {
+                        throw err = { message: err.message, system: err.name, code: err.statusCode }; // Este objeto debería estar estandarizado en todos los llamados a ANDES
+                    }
+                }))();
+                return data;
+            }
+            catch (err) {
+                throw err;
             }
         });
     }

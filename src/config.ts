@@ -35,14 +35,14 @@ export const fhirServerConfig = {
 		type: 'smart',
 
 		// This servers URI
-		resourceServer: env.RESOURCE_SERVER
-		// strategy: {
-		// 	name: 'bearer',
-		// 	// Queda para implementar a futuro
-		// 	// service: './src/strategies/bearer.strategy.js'
-		// 	// Vamos con estrategia propia :-)
-		// 	service: './src/services/auth/auth.service.js'
-		// }
+		resourceServer: env.RESOURCE_SERVER,
+		strategy: {
+			name: 'bearer',
+		//	Queda para implementar a futuro
+		//	service: './src/strategies/bearer.strategy.js'
+		//	Vamos con estrategia propia :-)
+			service: './src/services/auth/auth.service.js'
+		}
 	},
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT

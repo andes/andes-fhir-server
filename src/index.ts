@@ -2,6 +2,7 @@ import * as FHIRServer from '@asymmetrik/node-fhir-server-core';
 import { mongoConnect } from './lib/mongo';
 import { fhirServerConfig, mongoConfig } from './config';
 import { CONSTANTS } from './constants';
+import './apm';
 
 const asyncHandler = require('./lib/async-handler');
 const globals = require('./globals');

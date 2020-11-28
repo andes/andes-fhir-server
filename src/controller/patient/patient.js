@@ -9,11 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buscarPaciente = exports.buscarPacienteId = exports.buscarPacienteIdAndes = void 0;
+exports.buscarPaciente = exports.buscarPacienteId = void 0;
 const fhir_1 = require("@andes/fhir");
-const uid_util_1 = require("./../../utils/uid.util");
 const node_fhir_server_core_1 = require("@asymmetrik/node-fhir-server-core");
 const constants_1 = require("./../../constants");
+const apiAndesQuery_1 = require("./../../utils/apiAndesQuery");
 const ObjectID = require('mongodb').ObjectID;
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
@@ -53,44 +53,47 @@ let buildAndesSearchQuery = (args) => {
             case 'http://www.renaper.gob.ar/dni':
                 query.documento = queryBuilder.value;
                 break;
+            default:
+                query.documento = queryBuilder.value;
+                break;
         }
     }
     return query;
 };
-// Esta función la vamos a deprecar....
-function buscarPacienteIdAndes(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
-            let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
-            let pac = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
-            if (!pac) {
-                return null;
-            }
-            pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose   
-            return pac;
-        }
-        catch (err) {
-            return err;
-        }
-    });
-}
-exports.buscarPacienteIdAndes = buscarPacienteIdAndes;
 function buscarPacienteId(version, id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            const andes = new apiAndesQuery_1.ApiAndes();
             let Patient = getPatient(version);
-            let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
-            let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PATIENT}`);
-            let patient = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
+            let patient = yield andes.getPatient(id);
+            // patient.fechaNacimiento = new Date(patient.fechaNacimiento);
             return patient ? new Patient(fhir_1.Patient.encode(patient)) : null;
         }
         catch (err) {
-            return err;
+            let message, system, code = '';
+            if (typeof err === 'object') {
+                message = err.message;
+                system = err.system;
+                code = err.code;
+            }
+            else {
+                message = err;
+            }
+            throw new node_fhir_server_core_1.ServerError(message, {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+            });
         }
     });
 }
 exports.buscarPacienteId = buscarPacienteId;
+// Pronto va a deprecar por cambio a llamada a la api
 function buscarPaciente(version, parameters) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -102,9 +105,40 @@ function buscarPaciente(version, parameters) {
             return patients.map(pac => new Patient(fhir_1.Patient.encode(pac)));
         }
         catch (err) {
-            return err;
+            let message, system, code = '';
+            if (typeof err === 'object') {
+                message = err.message;
+                system = err.system;
+                code = err.code;
+            }
+            else {
+                message = err;
+            }
+            throw new node_fhir_server_core_1.ServerError(message, {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+            });
         }
     });
 }
 exports.buscarPaciente = buscarPaciente;
+// export async function buscarPaciente(version, parameters) {
+//     try {
+//         console.log('entra aca...');
+//         let query = buildAndesSearchQuery(parameters);
+//         const andes = new ApiAndes();
+//         let Patient = getPatient(version);
+//         console.log('anes de llamar a la api, ', query);
+//         let patients = await andes.getPatients(query);
+//         return patients.map(pac => new Patient(fhirPac.encode(pac)));
+//     } catch (err) {
+//         return err
+//     }
+// }
 //# sourceMappingURL=patient.js.map

@@ -51,7 +51,7 @@ function ips(version, pacienteID) {
         try {
             const apiAndes = new apiAndesQuery_1.ApiAndes();
             const snomedAlergias = yield apiAndes.getSnomedAllergies(419199007); // código de alergia a sustancias
-            const patient = yield patient_1.buscarPacienteIdAndes(pacienteID);
+            const patient = yield patient_1.buscarPacienteId(version, pacienteID);
             if (patient) {
                 // Recuperar datos de la historia clinica
                 const FHIRCustodian = yield organization_1.buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud

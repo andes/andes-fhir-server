@@ -13,6 +13,7 @@ const FHIRServer = require("@asymmetrik/node-fhir-server-core");
 const mongo_1 = require("./lib/mongo");
 const config_1 = require("./config");
 const constants_1 = require("./constants");
+require("./apm");
 const asyncHandler = require('./lib/async-handler');
 const globals = require('./globals');
 let main = function () {

@@ -1,5 +1,5 @@
 import { Device, Bundle, Immunization, Condition, Composition, Patient, Organization, Medication, MedicationStatement, AllergyIntolerance } from '@andes/fhir';
-import { buscarPacienteIdAndes } from './../../controller/patient/patient';
+import { buscarPacienteId } from './../../controller/patient/patient';
 import { buscarOrganizacionSisa } from './../../controller/organization/organization';
 import { createResource, fullurl } from './../../utils/data.util';
 import { getPrestaciones, filtrarRegistros } from './../../controller/ips/prestaciones';
@@ -41,7 +41,7 @@ export async function ips(version, pacienteID) {
     try {
         const apiAndes = new ApiAndes();
         const snomedAlergias = await apiAndes.getSnomedAllergies(419199007); // código de alergia a sustancias
-        const patient = await buscarPacienteIdAndes(pacienteID);
+        const patient = await buscarPacienteId(version, pacienteID);
         if (patient) {
             // Recuperar datos de la historia clinica
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud
