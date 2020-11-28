@@ -55,7 +55,8 @@ let validateDate = function (dates) {
     return parsedDate;
 };
 function fullurl(resource) {
-    return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;
+    return `${env.RESOURCE_SERVER}/${resource.resourceType}/${resource.id}`;
+    // return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;// Este usaba con lo que tenía en archivo env
 }
 exports.fullurl = fullurl;
 function createResource(resource) {

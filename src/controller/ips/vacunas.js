@@ -10,12 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getVacunas = void 0;
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const constants_1 = require("./../../constants");
 const globals = require('../../globals');
 function getVacunas(paciente) {
     return __awaiter(this, void 0, void 0, function* () {
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.VACCINES}`);
+        const db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.VACCINES}`);
         const conditions = {
             documento: paciente.documento
         };

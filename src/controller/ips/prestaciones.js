@@ -10,13 +10,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.filtrarRegistros = exports.getPrestaciones = void 0;
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const constants_1 = require("./../../constants");
 const globals = require('../../globals');
 var moment = require('moment');
 function getPrestaciones(paciente, { estado = 'validada', desde = null, hasta = null }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PRESTATIONS}`);
+        const db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.PRESTATIONS}`);
         const query = {
             'paciente.id': paciente._id,
             $where: `this.estados[this.estados.length - 1].tipo ==  "${estado}"`
@@ -34,24 +34,30 @@ function getPrestaciones(paciente, { estado = 'validada', desde = null, hasta = 
     });
 }
 exports.getPrestaciones = getPrestaciones;
-function filtrarRegistros(prestaciones, { semanticTags }) {
+function filtrarRegistros(prestaciones, { semanticTags }, snomedAlergias) {
     let registrosMedicos = [];
     let prestacionMedicamentos = [];
+    let registrosAlergias = [];
+    // Busco los descenientes de las alergias a sustancias
     prestaciones.forEach(prestacion => {
         prestacion.ejecucion.registros.forEach(registro => {
             if (registro.concepto.semanticTag === 'producto' || registro.concepto.semanticTag === 'fármaco de uso clínico') {
                 prestacionMedicamentos = [...prestacionMedicamentos, registro];
             }
             else {
+                const alergia = snomedAlergias.find(al => al.conceptId === registro.concepto.conceptId);
                 const semTag = registro.concepto.semanticTag;
                 const exist = semanticTags.find(el => el === semTag);
-                if (exist) {
+                if (alergia) {
+                    registrosAlergias = [...registrosAlergias, registro];
+                }
+                else if (exist) {
                     registrosMedicos = [...registrosMedicos, registro];
                 }
             }
         });
     });
-    return { registrosMedicos, prestacionMedicamentos };
+    return { registrosMedicos, prestacionMedicamentos, registrosAlergias };
 }
 exports.filtrarRegistros = filtrarRegistros;
 //# sourceMappingURL=prestaciones.js.map

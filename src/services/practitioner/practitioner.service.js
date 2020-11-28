@@ -52,6 +52,8 @@ let buildAndesSearchQuery = (args) => {
             case 'http://www.renaper.gob.ar/dni':
                 query.documento = tokenBuilder.value;
                 break;
+            default:
+                query.documento = tokenBuilder.value;
         }
     }
     return query;
@@ -73,7 +75,25 @@ module.exports = {
             }
         }
         catch (err) {
-            return err;
+            let message, system, code = '';
+            if (typeof err === 'object') {
+                message = err.message;
+                system = err.system;
+                code = err.code;
+            }
+            else {
+                message = err;
+            }
+            throw new node_fhir_server_core_1.ServerError(message, {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+            });
         }
     }),
     searchById: (args, context) => __awaiter(void 0, void 0, void 0, function* () {
@@ -86,7 +106,25 @@ module.exports = {
             return practitioner ? new Practitioner(fhir_1.Practitioner.encode(practitioner)) : { notFound: 404 };
         }
         catch (err) {
-            return err;
+            let message, system, code = '';
+            if (typeof err === 'object') {
+                message = err.message;
+                system = err.system;
+                code = err.code;
+            }
+            else {
+                message = err;
+            }
+            throw new node_fhir_server_core_1.ServerError(message, {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+            });
         }
     })
 };

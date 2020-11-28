@@ -1,9 +1,9 @@
 import { Patient as fhirPac } from '@andes/fhir';
-import { setObjectId as objectId } from './../../utils/uid.util';
-import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
-const ObjectID = require('mongodb').ObjectID
+import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { CONSTANTS } from './../../constants';
+import { ApiAndes } from './../../utils/apiAndesQuery';
 
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
 const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
 
@@ -44,48 +44,88 @@ let buildAndesSearchQuery = (args) => {
 			    break;
 			case 'http://www.renaper.gob.ar/dni':
 				query.documento = queryBuilder.value;
-			    break;
+                break;
+            default:
+                query.documento = queryBuilder.value;
+                break;
         }  
     }
     return query;
 };
 
 
-// Esta función la vamos a deprecar....
-export async function buscarPacienteIdAndes(id) {
-    try {
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
-        let pac = await collection.findOne({ _id: objectId(id) });
-        pac.id = pac._id; // Agrego el id ya que no estoy usando mongoose
-        return pac;
-    } catch (err) {
-        return err
-    }
-}
-
 export async function buscarPacienteId(version, id) {
     try {
+        const andes = new ApiAndes();
         let Patient = getPatient(version);
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
-        let patient = await collection.findOne({ _id: objectId(id) });
+        let patient = await andes.getPatient(id);
+        // patient.fechaNacimiento = new Date(patient.fechaNacimiento);
         return patient ? new Patient(fhirPac.encode(patient)) : null;
     } catch (err) {
-        return err
+        let message, system, code = '';
+        if (typeof err === 'object') {
+            message = err.message;
+            system = err.system;
+            code = err.code
+        } else {
+            message = err
+        }
+        throw new ServerError(message, {
+            resourceType: "OperationOutcome",
+            issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+          });
     }
 }
 
+// Pronto va a deprecar por cambio a llamada a la api
 export async function buscarPaciente(version, parameters) {
     try {
         let query = buildAndesSearchQuery(parameters);
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.PATIENT}`);
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let Patient = getPatient(version);
         let patients = await collection.find(query).toArray();
         return patients.map(pac => new Patient(fhirPac.encode(pac)));
     } catch (err) {
-        return err
+        let message, system, code = '';
+        if (typeof err === 'object') {
+            message = err.message;
+            system = err.system;
+            code = err.code
+        } else {
+            message = err
+        }
+        throw new ServerError(message, {
+            resourceType: "OperationOutcome",
+            issue: [
+                    {
+                        severity: 'error',
+                        code,
+                        diagnostics: message
+                    }
+                ]
+          });
 
     }
 }
+
+// export async function buscarPaciente(version, parameters) {
+//     try {
+//         console.log('entra aca...');
+//         let query = buildAndesSearchQuery(parameters);
+//         const andes = new ApiAndes();
+//         let Patient = getPatient(version);
+//         console.log('anes de llamar a la api, ', query);
+//         let patients = await andes.getPatients(query);
+//         return patients.map(pac => new Patient(fhirPac.encode(pac)));
+//     } catch (err) {
+//         return err
+
+//     }
+// }

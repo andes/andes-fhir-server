@@ -1,10 +1,11 @@
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+import {CONSTANTS} from './../../constants';
 const globals = require('../../globals');
 var moment = require('moment');
+import { ApiAndes } from './../../utils/apiAndesQuery';
 
 export async function getPrestaciones(paciente, { estado = 'validada', desde = null, hasta = null }) {
-    const db = globals.get(CLIENT_DB);
-    let collection = db.collection(`${COLLECTION.PRESTATIONS}`);
+    const db = globals.get(CONSTANTS.CLIENT_DB);
+    let collection = db.collection(`${CONSTANTS.COLLECTION.PRESTATIONS}`);
     const query = {
         'paciente.id': paciente._id, // Viene el objectId del paciente
         $where: `this.estados[this.estados.length - 1].tipo ==  "${estado}"`
@@ -21,21 +22,27 @@ export async function getPrestaciones(paciente, { estado = 'validada', desde = n
     return await collection.find(query).toArray();
 }
 
-export function filtrarRegistros(prestaciones: any[], { semanticTags }) {
+export function filtrarRegistros(prestaciones: any[], { semanticTags }, snomedAlergias) {
     let registrosMedicos = [];
     let prestacionMedicamentos = [];
+    let registrosAlergias = [];
+    // Busco los descenientes de las alergias a sustancias
     prestaciones.forEach(prestacion => {
         prestacion.ejecucion.registros.forEach(registro => {
             if (registro.concepto.semanticTag === 'producto' || registro.concepto.semanticTag === 'fármaco de uso clínico') {
                 prestacionMedicamentos = [...prestacionMedicamentos, registro]
             } else {
+                const alergia = snomedAlergias.find(al => al.conceptId === registro.concepto.conceptId);
                 const semTag = registro.concepto.semanticTag;
                 const exist = semanticTags.find(el => el === semTag);
-                if (exist) {
+                if (alergia) {
+                    registrosAlergias = [...registrosAlergias, registro];
+                } else if (exist) {
                     registrosMedicos = [...registrosMedicos, registro];
-                }
+                } 
+                
             }
         });
     });
-    return { registrosMedicos, prestacionMedicamentos }
+    return { registrosMedicos, prestacionMedicamentos, registrosAlergias }
 }

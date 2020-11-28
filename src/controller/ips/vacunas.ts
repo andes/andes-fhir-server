@@ -1,9 +1,9 @@
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+import { CONSTANTS } from './../../constants';
 const globals = require('../../globals');
 
 export async function getVacunas(paciente) {
-    const db = globals.get(CLIENT_DB);
-    let collection = db.collection(`${COLLECTION.VACCINES}`);
+    const db = globals.get(CONSTANTS.CLIENT_DB);
+    let collection = db.collection(`${CONSTANTS.COLLECTION.VACCINES}`);
     const conditions = {
         documento: paciente.documento
     };

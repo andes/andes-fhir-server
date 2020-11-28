@@ -1,4 +1,4 @@
-import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
 import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
@@ -44,7 +44,9 @@ let buildAndesSearchQuery = (args) => {
 			    break;
 			case 'http://www.renaper.gob.ar/dni':
 				query.documento = tokenBuilder.value;
-			    break;
+				break;
+			default:
+				query.documento = tokenBuilder.value;
 			    }
 	}
 	return query;
@@ -66,7 +68,25 @@ export = {
 				throw {warning: 'You will need to add the search parameters'};
 			}
 		} catch (err) {
-			return err;
+			let message, system, code = '';
+			if (typeof err === 'object') {
+				message = err.message;
+				system = err.system;
+				code = err.code
+			} else {
+				message = err
+			}
+			throw new ServerError(message, {
+				resourceType: "OperationOutcome",
+				issue: [
+						{
+							severity: 'error',
+							code,
+							diagnostics: message
+						}
+					]
+			  });
+	
 		}
 	},
 	searchById: async (args, context) => {
@@ -78,7 +98,25 @@ export = {
 			let practitioner = await collection.findOne({ _id: objectId(id) });
 			return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : { notFound: 404 };
 		} catch (err) {
-			return err;
+			let message, system, code = '';
+			if (typeof err === 'object') {
+				message = err.message;
+				system = err.system;
+				code = err.code
+			} else {
+				message = err
+			}
+			throw new ServerError(message, {
+				resourceType: "OperationOutcome",
+				issue: [
+						{
+							severity: 'error',
+							code,
+							diagnostics: message
+						}
+					]
+			  });
+	
 		}
 	}
 

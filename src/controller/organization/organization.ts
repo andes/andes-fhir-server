@@ -1,6 +1,6 @@
 import { Organization as fhirOrganization } from '@andes/fhir';
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+import { CONSTANTS} from './../../constants';
 const globals = require('../../globals');
 const { stringQueryBuilder, keyQueryBuilder } = require('../../utils/querybuilder.util');
 
@@ -40,8 +40,8 @@ let buildAndesSearchQuery = (args) => {
 export async function buscarOrganizacion(version, parameters) {
     try {
         let query = buildAndesSearchQuery(parameters);
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.ORGANIZATION}`);
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
         let Organization = getOrganization(version);
         let organizations = await collection.find(query).toArray();
         return organizations.map(org => new Organization(fhirOrganization.encode(org)));
@@ -53,11 +53,12 @@ export async function buscarOrganizacion(version, parameters) {
 // Vermos como generalizar más adelante
 export async function buscarOrganizacionSisa(version, codigoSisa) {
     try {
-        const db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.ORGANIZATION}`);
-        let organization = await collection.findOne({ 'codigo.sisa': codigoSisa });
-        organization.id = organization._id; // Agrego el id ya que no estoy usando mongoose.
-        return organization;
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
+        let Organization = getOrganization(version);
+        let org = await collection.findOne({ 'codigo.sisa': codigoSisa });
+        org.id = org._id;
+        return new Organization(fhirOrganization.encode(org))
     } catch (err) {
         return err
     }
