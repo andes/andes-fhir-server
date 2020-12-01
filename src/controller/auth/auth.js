@@ -13,7 +13,7 @@ exports.searchToken = exports.verifyToken = void 0;
 const jwt = require("jsonwebtoken");
 const uid_util_1 = require("./../../utils/uid.util");
 const env = require('var');
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const constants_1 = require("./../../constants");
 const globals = require('../../globals');
 function verifyToken(token) {
     try {
@@ -26,8 +26,8 @@ function verifyToken(token) {
 exports.verifyToken = verifyToken;
 function searchToken(id) {
     return __awaiter(this, void 0, void 0, function* () {
-        let db = globals.get(CLIENT_DB);
-        let collection = db.collection(`${COLLECTION.AUTHAPPS}`);
+        let db = globals.get(constants_1.CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${constants_1.CONSTANTS.COLLECTION.AUTHAPPS}`);
         let registroDelToken = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
         return registroDelToken;
     });

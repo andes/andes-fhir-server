@@ -13,7 +13,7 @@ const fhir_1 = require("@andes/fhir");
 const querybuilder_util_1 = require("./../../utils/querybuilder.util");
 const uid_util_1 = require("./../../utils/uid.util");
 const ObjectID = require('mongodb').ObjectID;
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const { CONSTANTS } = require('./../../constants');
 const globals = require('../../globals');
 let getPractitioner = (base_version) => {
     return node_fhir_server_core_1.resolveSchema(base_version, 'Practitioner');
@@ -64,8 +64,8 @@ module.exports = {
             let { base_version } = args;
             if (Object.keys(args).length > 1) {
                 let query = buildAndesSearchQuery(args);
-                const db = globals.get(CLIENT_DB);
-                let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
+                const db = globals.get(CONSTANTS.CLIENT_DB);
+                let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
                 let Practitioner = getPractitioner(base_version);
                 let practitioners = yield collection.find(query).toArray();
                 return practitioners.map(prac => new Practitioner(fhir_1.Practitioner.encode(prac)));
@@ -100,8 +100,8 @@ module.exports = {
         try {
             let { base_version, id } = args;
             let Practitioner = getPractitioner(base_version);
-            let db = globals.get(CLIENT_DB);
-            let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
+            let db = globals.get(CONSTANTS.CLIENT_DB);
+            let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
             let practitioner = yield collection.findOne({ _id: uid_util_1.setObjectId(id) });
             return practitioner ? new Practitioner(fhir_1.Practitioner.encode(practitioner)) : { notFound: 404 };
         }

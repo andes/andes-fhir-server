@@ -4,7 +4,7 @@ import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilde
 import { setObjectId as objectId } from './../../utils/uid.util';
 const ObjectID = require('mongodb').ObjectID
 
-const { COLLECTION, CLIENT_DB } = require('./../../constants');
+const { CONSTANTS } = require('./../../constants');
 const globals = require('../../globals');
 
 let getPractitioner = (base_version) => {
@@ -59,8 +59,8 @@ export = {
 			let { base_version } = args;
 			if (Object.keys(args).length > 1) {
 				let query = buildAndesSearchQuery(args);
-				const db = globals.get(CLIENT_DB);
-				let collection = db.collection(`${COLLECTION.PRACTITIONER}`)
+				const db = globals.get(CONSTANTS.CLIENT_DB);
+				let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`)
 				let Practitioner = getPractitioner(base_version);
 				let practitioners = await collection.find(query).toArray();
 				return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
@@ -93,8 +93,8 @@ export = {
 		try {
 			let { base_version, id } = args;
 			let Practitioner = getPractitioner(base_version);
-			let db = globals.get(CLIENT_DB);
-			let collection = db.collection(`${COLLECTION.PRACTITIONER}`);
+			let db = globals.get(CONSTANTS.CLIENT_DB);
+			let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
 			let practitioner = await collection.findOne({ _id: objectId(id) });
 			return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : { notFound: 404 };
 		} catch (err) {

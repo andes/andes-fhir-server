@@ -66,7 +66,6 @@ function buscarPacienteId(version, id) {
             const andes = new apiAndesQuery_1.ApiAndes();
             let Patient = getPatient(version);
             let patient = yield andes.getPatient(id);
-            // patient.fechaNacimiento = new Date(patient.fechaNacimiento);
             return patient ? new Patient(fhir_1.Patient.encode(patient)) : null;
         }
         catch (err) {

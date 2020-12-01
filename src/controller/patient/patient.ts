@@ -59,7 +59,6 @@ export async function buscarPacienteId(version, id) {
         const andes = new ApiAndes();
         let Patient = getPatient(version);
         let patient = await andes.getPatient(id);
-        // patient.fechaNacimiento = new Date(patient.fechaNacimiento);
         return patient ? new Patient(fhirPac.encode(patient)) : null;
     } catch (err) {
         let message, system, code = '';
