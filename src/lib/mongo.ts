@@ -7,17 +7,14 @@ import { MongoClient } from 'mongodb';
  * @param {Object} options - Any options for Mongo
  * @return {Promise}
  */
-export const mongoConnect = (url) => new Promise((resolve, reject) => {
+export const mongoConnect = (url) => {
 
     const options = {
         useUnifiedTopology: true
     };
     // Connect to mongo
-    MongoClient.connect(url, options, (err, client) => {
-        if (err) { return reject(err); }
-        return resolve(client);
-    });
+    return MongoClient.connect(url, options);
 
-});
+}
 
 
