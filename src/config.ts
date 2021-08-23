@@ -1,14 +1,12 @@
 const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
-const env = require('var');
-
 
 /**
  * @name mongoConfig
  * @summary Configurations for our Mongo instance
  */
 export const mongoConfig = {
-	connection: env.MONGO_HOSTNAME,
-	db_name: env.MONGO_DB_NAME,
+	connection: process.env.MONGO_HOSTNAME,
+	db_name: process.env.MONGO_DB_NAME,
 	options: {
 		auto_reconnect: true,
 		useUnifiedTopology: true
@@ -16,7 +14,7 @@ export const mongoConfig = {
 };
 
 // Set up whitelist
-let whitelist_env = env.WHITELIST && env.WHITELIST.split(',').map(host => host.trim()) || false;
+let whitelist_env = process.env.WHITELIST && process.env.WHITELIST.split(',').map(host => host.trim()) || false;
 
 // If no whitelist is present, disable cors
 // If it's length is 1, set it to a string, so * works
@@ -32,21 +30,16 @@ let whitelist = whitelist_env && whitelist_env.length === 1
 export const fhirServerConfig = {
 	auth: {
 		// En este caso estoy poniendo esto para que me lea el scope automáticamente.
-		type: 'smart',
-
-		// This servers URI
-		resourceServer: env.RESOURCE_SERVER,
+		// type: 'smart',
+		// resourceServer: 'http://localhost:3000',
 		strategy: {
 			name: 'bearer',
-		//	Queda para implementar a futuro
-		//	service: './src/strategies/bearer.strategy.js'
-		//	Vamos con estrategia propia :-)
 			service: './src/services/auth/auth.service.js'
 		}
 	},
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT
-		port: env.PORT || env.SERVER_PORT,
+		port: process.env.PORT || 3000,
 		// allow Access-Control-Allow-Origin
 		corsOptions: {
 			maxAge: 86400,
@@ -54,19 +47,18 @@ export const fhirServerConfig = {
 		}
 	},
 	logging: {
-		level: env.LOGGING_LEVEL
+		level: process.env.LOGGING_LEVEL
 	},
-
-	security: [
-		{
-			url: 'authorize',
-			valueUri: `${env.AUTH_SERVER_URI}/authorize`
-		},
-		{
-			url: 'token',
-			valueUri: `${env.AUTH_SERVER_URI}/token`
-		}
-	],
+	// security: [
+	// 	{
+	// 		url: 'authorize',
+	// 		valueUri: `${env.AUTH_SERVER_URI}/authorize`
+	// 	},
+	// 	{
+	// 		url: 'token',
+	// 		valueUri: `${env.AUTH_SERVER_URI}/token`
+	// 	}
+	// ],
 	profiles: {
 		patient: {
 			service: './src/services/patient/patient.service.js',

@@ -15,6 +15,10 @@ const env = require('var');
 // Per no es nuestro caso y vamos a usar el Auth que implemente.
 module.exports.strategy = new Strategy(
 	function (token, done) {
+
+		console.log('lalo landa')
+
+
 		if (!env.INTROSPECTION_URL) {
 			return done(new Error('Invalid introspection endpoint.'));
 		}
@@ -28,8 +32,8 @@ module.exports.strategy = new Strategy(
 				if (decoded_token.active) {
 					// TODO: context could come in many forms, you need to decide how to handle it.
 					// it could also be decodedToken.patient etc...
-					let { scope, context, sub, user_id } = decoded_token;
-					let user = { user_id, sub };
+					const { scope, context, sub, user_id } = decoded_token;
+					const user = { user_id, sub };
 					// return scopes and context.  Both required
 					return done(null, user, { scope, context });
 				}

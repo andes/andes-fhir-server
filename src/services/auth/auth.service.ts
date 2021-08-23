@@ -1,7 +1,6 @@
 const { Strategy } = require('passport-http-bearer');
-import { verifyToken, searchToken } from './../../controller/auth/auth';
+import { searchToken } from './../../controller/auth/auth';
 import { SaludDigitalClient } from './../../controller/ips/autenticacion';
-const env = require('var');
 
 // TODO GRAL revisar los handling de errores del core de Asymmetrik
 export const strategy = new Strategy(async (token, done) => {
@@ -10,27 +9,33 @@ export const strategy = new Strategy(async (token, done) => {
         // de ANDES con un token app para poder consultar determinados recursos.
         // ***********************************************************************************************//
 
-        // Decodificamos el token con la clave privada, para ver si es un cliente de ANDES
-        const data = verifyToken(token);
-        if (data) {
+        if (process.env.SERVER_AUTH !== 'true') {
+            return done(null, {
+                name: 'TEST',
+                scope: 'patient/*.read'
+            }, {});
+        }
+
+
+        // Decodificamos el token con la clave privada, para ver si es un cliente de ANDES 
+        const app: any = await searchToken(token);
+        if (app) {
             // Lo buscamos a ver si todavía existe y está activo
-            let t: any = await searchToken(data.app.id);
-            if (t && t.activo) {
-                let user: any = {
-                    name: t.nombre,
-                    scope: t.permisos
+            if (app.activo) {
+                const user: any = {
+                    name: app.nombre,
+                    scope: 'patient/*.read'
                 };
-                return done(null, user, { scope: t });
+                return done(null, user, {});
             } else {
                 return done(new Error('Token dado de baja'));
             }
         } else {
             // Validamos que sea un token del FEDERADOR NACIONAL
-            let busClient = new SaludDigitalClient(env.FHIR_DOMAIN, env.IPS_HOST, env.IPS_SECRET);
+            const busClient = new SaludDigitalClient(process.env.FHIR_DOMAIN, process.env.IPS_HOST, process.env.IPS_SECRET);
             const data: any = await busClient.validarToken(token);
             if (data && data.valid) {
-                // Por el momento dejamos el scope hardcodeado: Que la organización (en este caso nación) puede leer todos los recursos fhir
-                let user: any = {
+                const user: any = {
                     name: data.name,
                     scope: 'patient/*.read'
                 }

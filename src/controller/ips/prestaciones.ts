@@ -1,11 +1,10 @@
-import {CONSTANTS} from './../../constants';
+import { CONSTANTS } from './../../constants';
 const globals = require('../../globals');
 var moment = require('moment');
-import { ApiAndes } from './../../utils/apiAndesQuery';
 
 export async function getPrestaciones(paciente, { estado = 'validada', desde = null, hasta = null }) {
     const db = globals.get(CONSTANTS.CLIENT_DB);
-    let collection = db.collection(`${CONSTANTS.COLLECTION.PRESTATIONS}`);
+    let collection = db.collection(CONSTANTS.COLLECTION.PRESTATIONS);
     const query = {
         'paciente.id': paciente._id, // Viene el objectId del paciente
         $where: `this.estados[this.estados.length - 1].tipo ==  "${estado}"`
@@ -30,7 +29,7 @@ export function filtrarRegistros(prestaciones: any[], { semanticTags }, snomedAl
     prestaciones.forEach(prestacion => {
         prestacion.ejecucion.registros.forEach(registro => {
             if (registro.concepto.semanticTag === 'producto' || registro.concepto.semanticTag === 'fármaco de uso clínico') {
-                prestacionMedicamentos = [...prestacionMedicamentos, registro]
+                // prestacionMedicamentos = [...prestacionMedicamentos, registro]
             } else {
                 const alergia = snomedAlergias.find(al => al.conceptId === registro.concepto.conceptId);
                 const semTag = registro.concepto.semanticTag;
@@ -39,8 +38,8 @@ export function filtrarRegistros(prestaciones: any[], { semanticTags }, snomedAl
                     registrosAlergias = [...registrosAlergias, registro];
                 } else if (exist) {
                     registrosMedicos = [...registrosMedicos, registro];
-                } 
-                
+                }
+
             }
         });
     });

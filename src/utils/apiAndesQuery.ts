@@ -1,12 +1,12 @@
 const got = require('got');
-const env = require('var');
 
 export class ApiAndes {
     private base = 'https://demo.andes.gob.ar/api'; // localhost:3002/api
     private baseSnomed = '/core/term/snomed/';  // Por el momento hardcodeamos la api local
-    private basePatient = '/core/mpi/pacientes';  // Por el momento hardcodeamos la api local
-    
-    constructor() {}
+    private basePatient = '/core-v2/mpi/pacientes';  // Por el momento hardcodeamos la api local
+
+    constructor() { }
+
     async getSnomedByConceptId(conceptId) {
         try {
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}`;
@@ -29,7 +29,7 @@ export class ApiAndes {
             return err
         }
     }
-    
+
 
     /**
      * Patient section: Search by id, match, post, put
@@ -41,7 +41,7 @@ export class ApiAndes {
                 hooks: {
                     beforeError: [ // handler del error
                         error => {
-                            const {response} = error;
+                            const { response } = error;
                             if (response && response.body) {
                                 error.name = 'ANDES API';
                                 error.message = response.body.message;
@@ -53,7 +53,7 @@ export class ApiAndes {
                 },
                 responseType: 'json',
                 headers: {
-                    'Authorization' : `jwt ${env.JWTDemo}`
+                    'Authorization': `jwt ${process.env.ANDES_TOKEN}`
                 }
             });
             const data = (async () => {
@@ -61,7 +61,7 @@ export class ApiAndes {
                     const response = await gotCustomizado(url);
                     return response.body
                 } catch (err) {
-                    throw err = {message: err.message, system: err.name, code: err.statusCode};  // Este objeto debería estar estandarizado en todos los llamados a ANDES
+                    throw err = { message: err.message, system: err.name, code: err.statusCode };  // Este objeto debería estar estandarizado en todos los llamados a ANDES
                 }
             })();
             return data;

@@ -1,5 +1,5 @@
 import { Patient as fhirPac } from '@andes/fhir';
-import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
 import { CONSTANTS } from './../../constants';
 import { ApiAndes } from './../../utils/apiAndesQuery';
 
@@ -34,21 +34,22 @@ let buildAndesSearchQuery = (args) => {
     }
     // Filtros especiales para paciente
     if (identifier) {
-        let queryBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        const queryBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        console.log(queryBuilder.system)
         switch (queryBuilder.system) {
-			case 'andes.gob.ar': 
-			    query._id = new ObjectID(queryBuilder.value);
-			    break;
-			case 'http://www.renaper.gob.ar/cuil':
-			    query.cuit = queryBuilder.value;
-			    break;
-			case 'http://www.renaper.gob.ar/dni':
-				query.documento = queryBuilder.value;
+            case 'andes.gob.ar':
+                query._id = new ObjectID(queryBuilder.value);
+                break;
+            case 'http://www.renaper.gob.ar/cuil':
+                query.cuit = queryBuilder.value;
+                break;
+            case 'http://www.renaper.gob.ar/dni':
+                query.documento = queryBuilder.value;
                 break;
             default:
                 query.documento = queryBuilder.value;
                 break;
-        }  
+        }
     }
     return query;
 };
@@ -69,16 +70,19 @@ export async function buscarPacienteId(version, id) {
         } else {
             message = err
         }
-        throw new ServerError(message, {
-            resourceType: "OperationOutcome",
-            issue: [
+        throw new ServerError(
+            message,
+            {
+                resourceType: "OperationOutcome",
+                issue: [
                     {
                         severity: 'error',
                         code,
                         diagnostics: message
                     }
                 ]
-          });
+            }
+        );
     }
 }
 
@@ -103,13 +107,13 @@ export async function buscarPaciente(version, parameters) {
         throw new ServerError(message, {
             resourceType: "OperationOutcome",
             issue: [
-                    {
-                        severity: 'error',
-                        code,
-                        diagnostics: message
-                    }
-                ]
-          });
+                {
+                    severity: 'error',
+                    code,
+                    diagnostics: message
+                }
+            ]
+        });
 
     }
 }

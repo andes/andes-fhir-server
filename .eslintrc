@@ -17,6 +17,7 @@
       "single",
       "avoid-escape"
     ],
+    "prefer-const": "error",
     "no-compare-neg-zero": 0,
     "no-console": 0,
     "no-debugger": 2,

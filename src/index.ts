@@ -1,17 +1,21 @@
+require('dotenv').config();
+
+import { initialize } from '@andes/fhir';
 import * as FHIRServer from '@asymmetrik/node-fhir-server-core';
-import { mongoConnect } from './lib/mongo';
+import './apm';
 import { fhirServerConfig, mongoConfig } from './config';
 import { CONSTANTS } from './constants';
-import './apm';
+import { mongoConnect } from './lib/mongo';
 
 const asyncHandler = require('./lib/async-handler');
 const globals = require('./globals');
 
 
-let main = async function () {
+const main = async function () {
 
+    initialize({ dominio: process.env.IPS_DOMINIO });
     // Inicializa la base de datos mongo.
-    let [mongoErr, client] = await asyncHandler(mongoConnect(mongoConfig.connection));
+    const [mongoErr, client] = await asyncHandler(mongoConnect(mongoConfig.connection));
     if (mongoErr) {
         console.error(mongoErr.message);
         console.error(mongoConfig.connection);
@@ -22,7 +26,10 @@ let main = async function () {
     globals.set(CONSTANTS.CLIENT_DB, client.db(mongoConfig.db_name));
     // inicializa el servidor Fhir
     let server = FHIRServer.initialize(fhirServerConfig);
-    server.listen(fhirServerConfig.server.port, () => server.logger.verbose('Servidor Fhir online...'));
+    server.listen(
+        fhirServerConfig.server.port,
+        () => server.logger.verbose('Servidor Fhir online...')
+    );
 };
 
 main();

@@ -14,8 +14,9 @@
     "node": ">=8.6"
   },
   "scripts": {
-    "start": "concurrently -r \"npm run tsc:w\" \"npm run fhirServer\" ",
+    "start": "concurrently -r \"npm run tsc:w\" \"npm run node\" ",
     "fhirServer": "cross-env NODE_ENV=production; node src/index.js;",
+    "node": "cross-env NODE_ENV=production; nodemon -q ./index.js",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "tsc:next": "tsc --target es2018 --lib es2018",
@@ -39,11 +40,12 @@
     ]
   },
   "dependencies": {
-    "@andes/fhir": "^1.4.3",
+    "@andes/fhir": "^1.9.0",
     "@asymmetrik/fhir-json-schema-validator": "^0.9.8",
     "@asymmetrik/node-fhir-server-core": "^2.1.3",
     "@asymmetrik/sof-scope-checker": "^1.0.2",
     "concurrently": "^5.2.0",
+    "dotenv": "^10.0.0",
     "got": "^11.7.0",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.26.0",

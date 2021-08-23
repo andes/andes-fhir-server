@@ -9,3 +9,5 @@ package-lock.json
 *.js
 *.js.map
 !src/services/**/*.js
+
+.env

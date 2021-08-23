@@ -1,11 +1,11 @@
-import { Device, Bundle, Immunization, Condition, Composition, Patient, Organization, Medication, MedicationStatement, AllergyIntolerance } from '@andes/fhir';
-import { buscarPacienteId } from './../../controller/patient/patient';
-import { buscarOrganizacionSisa } from './../../controller/organization/organization';
-import { createResource, fullurl } from './../../utils/data.util';
-import { getPrestaciones, filtrarRegistros } from './../../controller/ips/prestaciones';
+import { AllergyIntolerance, Bundle, Composition, Condition, Device, Immunization, Medication, MedicationStatement } from '@andes/fhir';
+import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
+import { filtrarRegistros, getPrestaciones } from './../../controller/ips/prestaciones';
 import { getVacunas } from './../../controller/ips/vacunas';
+import { buscarOrganizacionSisa } from './../../controller/organization/organization';
+import { buscarPacienteId } from './../../controller/patient/patient';
 import { ApiAndes } from './../../utils/apiAndesQuery';
-import {ServerError, resolveSchema}  from '@asymmetrik/node-fhir-server-core'; 
+import { createResource, fullurl } from './../../utils/data.util';
 
 const { ObjectID } = require('mongodb').ObjectID;
 
@@ -34,40 +34,49 @@ async function prestMedicamentos(version, prestacionMedicamentos, FHIRPatient) {
         FHIRMedicationStatement.push(new medicationStatementSchema(MedicationStatement.encode(fullurl(FHIRPatient), fullurl(FHIRMedication), pm)));
 
     }
-    return {FHIRMedicationStatement, FHIRMedication};
+    return { FHIRMedicationStatement, FHIRMedication };
 }
 
 export async function ips(version, pacienteID) {
     try {
+        console.log(pacienteID)
         const apiAndes = new ApiAndes();
         const snomedAlergias = await apiAndes.getSnomedAllergies(419199007); // código de alergia a sustancias
         const patient = await buscarPacienteId(version, pacienteID);
         if (patient) {
             // Recuperar datos de la historia clinica
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud
-            const prestaciones = await getPrestaciones(patient, {});
+            const prestaciones = await getPrestaciones(
+                { _id: new ObjectID(pacienteID) },
+                {}
+            );
             const semanticTags = ['trastorno', 'producto', 'fármaco de uso clínico', /*  'hallazgo'  , 'evento', 'situacion' */]; // [TODO] Revisar listado de semtags con el equipo
             const { registrosMedicos, prestacionMedicamentos, registrosAlergias } = filtrarRegistros(prestaciones, { semanticTags }, snomedAlergias);
-            const vacunas: any = await getVacunas(patient);
-            
+
+            const documento = patient.identifier.find(i => i.system === 'http://www.renaper.gob.ar/dni').value;
+            const vacunas: any = await getVacunas(documento);
+
             // Armar documento
             const FHIRDevice = Device.encode();
             const PatientSchema = getPatient(version);
-            const FHIRPatient = new PatientSchema(Patient.encode(patient));
-            const {FHIRMedicationStatement, FHIRMedication } = await prestMedicamentos(version, prestacionMedicamentos, FHIRPatient);
+            const FHIRPatient = patient; // new PatientSchema(Patient.encode(patient));
+            const { FHIRMedicationStatement, FHIRMedication } = await prestMedicamentos(version, prestacionMedicamentos, FHIRPatient);
+
+
             const AllergyIntoleranceSchema = getAllergyIntolerance(version);
-            const FHIRAllergyIntolerance = registrosAlergias.map((registro)=>{
+            const FHIRAllergyIntolerance = registrosAlergias.map((registro) => {
                 return new AllergyIntoleranceSchema(AllergyIntolerance.encode(fullurl(FHIRPatient), registro));
             });
             const FHIRImmunization = vacunas.map((vacuna) => {
                 return Immunization.encode(fullurl(FHIRPatient), vacuna);
             });
-            const FHIRCondition = registrosMedicos.map((registro) => {
+            const FHIRCondition = filtrarDuplicados(registrosMedicos).map((registro) => {
+                console.log(registro.concepto.term)
                 return Condition.encode(fullurl(FHIRPatient), registro);
             });
-            const CompositionID = new ObjectID;
-            const FHIRComposition = Composition.encode(CompositionID, fullurl(FHIRPatient), fullurl(FHIRCustodian), fullurl(FHIRDevice), FHIRMedicationStatement.map(fullurl), FHIRImmunization.map(fullurl),FHIRAllergyIntolerance.map(fullurl) ,FHIRCondition.map(fullurl));
-            const BundleID = new ObjectID;
+            const CompositionID = new ObjectID();
+            const FHIRComposition = Composition.encode(CompositionID, fullurl(FHIRPatient), fullurl(FHIRCustodian), fullurl(FHIRDevice), FHIRMedicationStatement.map(fullurl), FHIRImmunization.map(fullurl), FHIRAllergyIntolerance.map(fullurl), FHIRCondition.map(fullurl));
+            const BundleID = new ObjectID();
             const FHIRBundle = Bundle.encode(BundleID, [
                 createResource(FHIRComposition),
                 createResource(FHIRPatient),
@@ -75,7 +84,7 @@ export async function ips(version, pacienteID) {
                 ...FHIRAllergyIntolerance.map(createResource),
                 ...FHIRCondition.map(createResource),
                 ...FHIRImmunization.map(createResource),
-                createResource(FHIRMedication),
+                // createResource(FHIRMedication),
                 createResource(FHIRDevice),
                 createResource(FHIRCustodian)
             ]);
@@ -86,26 +95,41 @@ export async function ips(version, pacienteID) {
             throw new ServerError(message, {
                 resourceType: "OperationOutcome",
                 issue: [
-                        {
-                            severity: 'error',
-                            code: 404,
-                            diagnostics: message
-                        }
-                    ]
-              });
-            }
+                    {
+                        severity: 'error',
+                        code: 404,
+                        diagnostics: message
+                    }
+                ]
+            });
+        }
     } catch (err) {
+        console.log(err)
         const message = err
         throw new ServerError(message, {
             resourceType: "OperationOutcome",
             issue: [
-                    {
-                        severity: 'error',
-                        code: 500,
-                        diagnostics: message
-                    }
-                ]
-          });
+                {
+                    severity: 'error',
+                    code: 500,
+                    diagnostics: message
+                }
+            ]
+        });
     }
 }
 
+function filtrarDuplicados(registros: any[]): any[] {
+    const mapping = {};
+
+    registros.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }).forEach((registro) => {
+        if (!mapping[registro.concepto.conceptId]) {
+            mapping[registro.concepto.conceptId] = registro;
+        }
+    });
+
+    return Object.values(mapping);
+
+}

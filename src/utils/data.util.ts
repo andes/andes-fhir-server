@@ -1,5 +1,4 @@
 import * as moment from 'moment-timezone';
-const env = require('var');
 
 /**
  * Parses a single date and determine what the comparator is.  The regex
@@ -58,7 +57,7 @@ let validateDate = function (dates) {
 
 
 export function fullurl(resource) {
-    return `${env.RESOURCE_SERVER}/${resource.resourceType}/${resource.id}`;
+    return `${process.env.IPS_DOMINIO}/${resource.resourceType}/${resource.id}`;
     // return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;// Este usaba con lo que tenía en archivo env
 }
 

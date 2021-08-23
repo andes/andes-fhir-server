@@ -180,6 +180,7 @@ export class SaludDigitalClient {
         return [];
 
     }
+
     async getBinary(urlBinary) {
         const url = `${urlBinary}`;
         const options = {
