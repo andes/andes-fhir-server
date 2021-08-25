@@ -16,7 +16,7 @@ export = {
 			subjIdentifier = subjIdentifier ? subjIdentifier.split('|') : [];
 			type = type ? type.split('|') : [];
 			if (subjIdentifier.length > 0 && type.length > 0 && custodian) {
-				if (type[1] === CONSTANTS.LOINC.DOCUMENT_REFERENCE && custodian === process.env.RESOURCE_SERVER) {
+				if (type[1] === CONSTANTS.LOINC.DOCUMENT_REFERENCE && custodian === process.env.IPS_DOMINIO) {
 					const patientID = subjIdentifier[1];
 					const documentReference = await getDocumentReference(base_version, patientID);
 					return documentReference;
@@ -26,7 +26,7 @@ export = {
 						fhirError(message, 'Error', 500, 'El código Loinc enviado no es soportado para este Document Reference.')
 
 					}
-					if (custodian[0] !== process.env.RESOURCE_SERVER) {
+					if (custodian[0] !== process.env.IPS_DOMINIO) {
 						const message = 'This custodian is not valid';
 						fhirError(message, 'Error', 500, 'El custodian enviado no es válido para este servidor.')
 					}
