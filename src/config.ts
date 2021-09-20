@@ -38,7 +38,7 @@ export const fhirServerConfig = {
 			name: 'bearer',
 			service: './src/services/auth/auth.service.js'
 		}
-	} : null,
+	} : undefined,
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT
 		port: process.env.PORT || 3000,
