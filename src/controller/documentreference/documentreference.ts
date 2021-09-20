@@ -38,7 +38,7 @@ export async function getDocumentReference(version, pacienteID) {
             // validateResource(FHIRCustodian);
             const FHIRDevice = new DeviceSchema(Device.encode());
             // validateResource(FHIRDevice);
-            const binaryURL = `${process.env.FHIR_SERVER}/${version}/Bundle/${pacienteID}`;
+            const binaryURL = `Bundle/${pacienteID}`;
             const documentReferenceID = new ObjectID;
             const docRefFHIR = new DocumentReferenceSchema(DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL));
             // validateResource(docRefFHIR);
