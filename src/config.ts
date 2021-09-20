@@ -23,12 +23,14 @@ let whitelist = whitelist_env && whitelist_env.length === 1
 	? whitelist_env[0]
 	: whitelist_env;
 
+const AUTH = process.env.SERVER_AUTH === 'true';
+
 /**
  * @name fhirServerConfig
  * @summary @asymmetrik/node-fhir-server-core configurations.
  */
 export const fhirServerConfig = {
-	auth: {
+	auth: AUTH ? {
 		// En este caso estoy poniendo esto para que me lea el scope automáticamente.
 		// type: 'smart',
 		// resourceServer: 'http://localhost:3000',
@@ -36,7 +38,7 @@ export const fhirServerConfig = {
 			name: 'bearer',
 			service: './src/services/auth/auth.service.js'
 		}
-	},
+	} : null,
 	server: {
 		// support various ENV that uses PORT vs SERVER_PORT
 		port: process.env.PORT || 3000,
