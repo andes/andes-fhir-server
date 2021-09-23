@@ -1,13 +1,11 @@
 # Dependencies
 node_modules
-package-lock.json
 
 # Generated files
 *.log
 .DS_Store
 
 *.js
-*.js.map
-!src/services/**/*.js
+*.js.map 
 
 .env
