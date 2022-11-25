@@ -13,18 +13,21 @@ let getPractitioner = (base_version) => {
 
 let buildAndesSearchQuery = (args) => {
 	// Filtros de búsqueda para profesionales
-	let id = args['id'];
 	let active = args['active'];
 	let family = args['family'];
 	let given = args['given'];
 	let identifier = args['identifier'];
+
 	// Con este filtro evitamos las búsquedas de los que no son matriculados y están en la misma colección
-	let query: any = {profesionalMatriculado: {$eq: true}};
-	if (id) {
-		query.id = id;
-	}
+	let query: any = { profesionalMatriculado: { $eq: true } };
 	if (active) {
-		query.activo = active === true ? true : false;
+		if (active === true || active === 'true') {
+			query['$or'] = [];
+			query['$or'].push({ activo: true });
+			query['$or'].push({ activo: undefined });
+		} else {
+			query.activo = false;
+		}
 	}
 	if (family) {
 		query.apellido = stringQueryBuilder(family);
@@ -32,22 +35,37 @@ let buildAndesSearchQuery = (args) => {
 	if (given) {
 		query.nombre = stringQueryBuilder(given);
 	}
-	// controles de identifier de profesional
+
+	// Controles de identifier de profesional
 	if (identifier) {
 		let tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
 		switch (tokenBuilder.system) {
-			case 'andes.gob.ar': 
-			    query._id = new ObjectID(tokenBuilder.value);
-			    break;
+			case 'andes.gob.ar':
+				query._id = new ObjectID(tokenBuilder.value);
+				break;
+			case 'andes.gob.ar/matriculaciones':
+				if (tokenBuilder.value.includes('@')) {
+					/*  Consulta por profesional. Dado un nro de matricula y codigo de carrera de grado,
+						retorna un profesional siempre que esté activo y con matricula vigente.
+					*/
+					const [nroMatricula, tipoProfesion] = tokenBuilder.value.split('@');
+					query['$or'] = [];
+					query['$or'].push({ activo: true });
+					query['$or'].push({ activo: undefined });
+					query['formacionGrado.matriculacion.matriculaNumero'] = parseInt(nroMatricula || 0, 10);
+					query['formacionGrado.profesion.codigo'] = parseInt(tipoProfesion || 0, 10);
+					query['formacionGrado.matriculacion.fin'] = { $gte: new Date() };
+				}
+				break;
 			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
-			    query.cuit = tokenBuilder.value;
-			    break;
+				query.cuit = tokenBuilder.value;
+				break;
 			case 'http://www.renaper.gob.ar/dni':
 				query.documento = tokenBuilder.value;
 				break;
 			default:
 				query.documento = tokenBuilder.value;
-			    }
+		}
 	}
 	return query;
 };
@@ -65,7 +83,7 @@ export = {
 				let practitioners = await collection.find(query).toArray();
 				return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
 			} else {
-				throw {warning: 'You will need to add the search parameters'};
+				throw { warning: 'You will need to add the search parameters' };
 			}
 		} catch (err) {
 			let message, system, code = '';
@@ -79,14 +97,14 @@ export = {
 			throw new ServerError(message, {
 				resourceType: "OperationOutcome",
 				issue: [
-						{
-							severity: 'error',
-							code,
-							diagnostics: message
-						}
-					]
-			  });
-	
+					{
+						severity: 'error',
+						code,
+						diagnostics: message
+					}
+				]
+			});
+
 		}
 	},
 	searchById: async (args, context) => {
@@ -109,14 +127,14 @@ export = {
 			throw new ServerError(message, {
 				resourceType: "OperationOutcome",
 				issue: [
-						{
-							severity: 'error',
-							code,
-							diagnostics: message
-						}
-					]
-			  });
-	
+					{
+						severity: 'error',
+						code,
+						diagnostics: message
+					}
+				]
+			});
+
 		}
 	}
 
