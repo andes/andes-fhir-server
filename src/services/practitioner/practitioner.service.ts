@@ -23,8 +23,8 @@ let buildAndesSearchQuery = (args) => {
 	if (active) {
 		if (active === true || active === 'true') {
 			query['$or'] = [];
-			query['$or'].push({ activo: true });
-			query['$or'].push({ activo: undefined });
+			query['$or'].push({ habilitado: true });
+			query['$or'].push({ habilitado: { '$exists': false } });
 		} else {
 			query.activo = false;
 		}
@@ -50,8 +50,8 @@ let buildAndesSearchQuery = (args) => {
 					*/
 					const [nroMatricula, tipoProfesion] = tokenBuilder.value.split('@');
 					query['$or'] = [];
-					query['$or'].push({ activo: true });
-					query['$or'].push({ activo: undefined });
+					query['$or'].push({ habilitado: true });
+					query['$or'].push({ habilitado: { '$exists': false } });
 					query['formacionGrado.matriculacion.matriculaNumero'] = parseInt(nroMatricula || 0, 10);
 					query['formacionGrado.profesion.codigo'] = parseInt(tipoProfesion || 0, 10);
 					query['formacionGrado.matriculacion.fin'] = { $gte: new Date() };
