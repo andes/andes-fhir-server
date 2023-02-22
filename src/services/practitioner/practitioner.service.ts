@@ -2,6 +2,7 @@ import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
 import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
+var moment = require('moment');
 const ObjectID = require('mongodb').ObjectID
 
 const { CONSTANTS } = require('./../../constants');
@@ -54,7 +55,6 @@ let buildAndesSearchQuery = (args) => {
 					query['$or'].push({ habilitado: { '$exists': false } });
 					query['formacionGrado.matriculacion.matriculaNumero'] = parseInt(nroMatricula || 0, 10);
 					query['formacionGrado.profesion.codigo'] = parseInt(tipoProfesion || 0, 10);
-					query['formacionGrado.matriculacion.fin'] = { $gte: new Date() };
 				}
 				break;
 			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
@@ -75,13 +75,25 @@ export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
+			let matriculaVigente = true;
 			if (Object.keys(args).length > 1) {
 				let query = buildAndesSearchQuery(args);
 				const db = globals.get(CONSTANTS.CLIENT_DB);
 				let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`)
 				let Practitioner = getPractitioner(base_version);
 				let practitioners = await collection.find(query).toArray();
-				return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
+				// verificamos si la matricula ingresada no esta vencida para devolver el profesional o un arreglo vacío
+				practitioners.forEach(practition => practition.formacionGrado.forEach(formacion => {
+					if (formacion.profesion.codigo === query['formacionGrado.profesion.codigo'] && formacion.matriculacion[formacion.matriculacion.length - 1].matriculaNumero === query['formacionGrado.matriculacion.matriculaNumero'])
+						if (formacion.matriculacion[formacion.matriculacion.length - 1].fin < moment().toDate()) {
+							matriculaVigente = false;
+						}
+				}));
+				if (matriculaVigente) {
+					return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
+				} else {
+					return [];
+				}
 			} else {
 				throw { warning: 'You will need to add the search parameters' };
 			}
