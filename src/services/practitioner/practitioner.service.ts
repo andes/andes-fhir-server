@@ -46,15 +46,14 @@ let buildAndesSearchQuery = (args) => {
 				break;
 			case 'andes.gob.ar/matriculaciones':
 				if (tokenBuilder.value.includes('@')) {
-					/*  Consulta por profesional. Dado un nro de matricula y codigo de carrera de grado,
-						retorna un profesional siempre que esté activo y con matricula vigente.
+					/*  Consulta por profesional. Dado un nro de matricula y codigo de carrera de grado o posgrado,
+						retorna un profesional siempre que esté activo.
 					*/
 					const [nroMatricula, tipoProfesion] = tokenBuilder.value.split('@');
+					query['habilitado'] = true;
 					query['$or'] = [];
-					query['$or'].push({ habilitado: true });
-					query['$or'].push({ habilitado: { '$exists': false } });
-					query['formacionGrado.matriculacion.matriculaNumero'] = parseInt(nroMatricula || 0, 10);
-					query['formacionGrado.profesion.codigo'] = parseInt(tipoProfesion || 0, 10);
+					query['$or'].push({ 'formacionGrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionGrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
+					query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
 				}
 				break;
 			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
@@ -70,29 +69,52 @@ let buildAndesSearchQuery = (args) => {
 	return query;
 };
 
+let verificarVigencia = (formacion, codigoProfesion, nroMatricula) => {
+	if (formacion.profesion.codigo.toString() === codigoProfesion && formacion.matriculacion[formacion.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula) {
+		if (formacion.matriculacion[formacion.matriculacion.length - 1].fin >= moment().toDate()) {
+			return true;
+		}
+	}
+	return false
+}
 
 export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
-			let matriculaVigente = true;
 			if (Object.keys(args).length > 1) {
-				let query = buildAndesSearchQuery(args);
+				const query = buildAndesSearchQuery(args);
 				const db = globals.get(CONSTANTS.CLIENT_DB);
-				let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`)
-				let Practitioner = getPractitioner(base_version);
-				let practitioners = await collection.find(query).toArray();
-				// verificamos si la matricula ingresada no esta vencida para devolver el profesional o un arreglo vacío
-				practitioners.forEach(practition => practition.formacionGrado.forEach(formacion => {
-					if (formacion.profesion.codigo === query['formacionGrado.profesion.codigo'] && formacion.matriculacion[formacion.matriculacion.length - 1].matriculaNumero === query['formacionGrado.matriculacion.matriculaNumero'])
-						if (formacion.matriculacion[formacion.matriculacion.length - 1].fin < moment().toDate()) {
-							matriculaVigente = false;
+				const collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
+				const Practitioner = getPractitioner(base_version);
+				const practitioners = await collection.find(query).toArray();
+				if (practitioners.length) {
+					if (args.identifier) {
+						const tokenBuilder: any = tokenQueryBuilder(args.identifier, 'value', 'identifier', false);
+						// Verificamos si lo que ingresamos por parametro es un numero de matricula y profesion
+						if (tokenBuilder.system === 'andes.gob.ar/matriculaciones') {
+							let matriculaVigente;
+							const [nroMatricula, codigoProfesion] = tokenBuilder.value.split('@');
+							const formacionGrado = practitioners.map(p => p.formacionGrado?.filter(f => f.matriculacion && f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
+							const formacionPosgrado = practitioners.map(p => p.formacionPosgrado?.filter(f => f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
+							// Verificamos si es una matricual de grado o de posgrado, luego comparamos si esta o no vigente.
+							if (formacionGrado?.flat().length) {
+								practitioners.forEach(pract => pract.formacionGrado.forEach(form => {
+									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
+								}));
+							} else if (formacionPosgrado?.flat().length) {
+								practitioners.forEach(pract => pract.formacionPosgrado.forEach(form => {
+									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
+								}));
+							}
+							if (!matriculaVigente) {
+								return [];
+							}
 						}
-				}));
-				if (matriculaVigente) {
+					}
 					return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
 				} else {
-					return [];
+					return []
 				}
 			} else {
 				throw { warning: 'You will need to add the search parameters' };
