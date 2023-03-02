@@ -53,7 +53,7 @@ let buildAndesSearchQuery = (args) => {
 					query['habilitado'] = true;
 					query['$or'] = [];
 					query['$or'].push({ 'formacionGrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionGrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
-					query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
+					query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.especialidad.codigo': parseInt(tipoProfesion || 0, 10) });
 				}
 				break;
 			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
@@ -93,7 +93,7 @@ export = {
 						const tokenBuilder: any = tokenQueryBuilder(args.identifier, 'value', 'identifier', false);
 						// Verificamos si lo que ingresamos por parametro es un numero de matricula y profesion
 						if (tokenBuilder.system === 'andes.gob.ar/matriculaciones') {
-							let matriculaVigente;
+							let matriculaVigente = false;
 							const [nroMatricula, codigoProfesion] = tokenBuilder.value.split('@');
 							const formacionGrado = practitioners.map(p => p.formacionGrado?.filter(f => f.matriculacion && f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
 							const formacionPosgrado = practitioners.map(p => p.formacionPosgrado?.filter(f => f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
@@ -102,8 +102,10 @@ export = {
 								practitioners.forEach(pract => pract.formacionGrado.forEach(form => {
 									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
 								}));
-							} else if (formacionPosgrado?.flat().length) {
+							}
+							if (!matriculaVigente && formacionPosgrado?.flat().length) {
 								practitioners.forEach(pract => pract.formacionPosgrado.forEach(form => {
+									form.profesion = form.especialidad;
 									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
 								}));
 							}
