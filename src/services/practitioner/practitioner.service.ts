@@ -26,8 +26,6 @@ let buildAndesSearchQuery = (args) => {
 			query['$or'] = [];
 			query['$or'].push({ habilitado: true });
 			query['$or'].push({ habilitado: { '$exists': false } });
-		} else {
-			query.activo = false;
 		}
 	}
 	if (family) {
@@ -50,10 +48,9 @@ let buildAndesSearchQuery = (args) => {
 						retorna un profesional siempre que esté activo.
 					*/
 					const [nroMatricula, tipoProfesion] = tokenBuilder.value.split('@');
-					query['habilitado'] = true;
 					query['$or'] = [];
 					query['$or'].push({ 'formacionGrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionGrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
-					query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.especialidad.codigo': parseInt(tipoProfesion || 0, 10) });
+					query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.especialidad.codigo.sisa': parseInt(tipoProfesion || 0, 10) });
 				}
 				break;
 			case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
@@ -87,31 +84,35 @@ export = {
 				const db = globals.get(CONSTANTS.CLIENT_DB);
 				const collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
 				const Practitioner = getPractitioner(base_version);
-				const practitioners = await collection.find(query).toArray();
+				let practitioners = await collection.find(query).toArray();
 				if (practitioners.length) {
+					const active = args['active'];
 					if (args.identifier) {
 						const tokenBuilder: any = tokenQueryBuilder(args.identifier, 'value', 'identifier', false);
 						// Verificamos si lo que ingresamos por parametro es un numero de matricula y profesion
 						if (tokenBuilder.system === 'andes.gob.ar/matriculaciones') {
 							let matriculaVigente = false;
 							const [nroMatricula, codigoProfesion] = tokenBuilder.value.split('@');
-							const formacionGrado = practitioners.map(p => p.formacionGrado?.filter(f => f.matriculacion && f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
-							const formacionPosgrado = practitioners.map(p => p.formacionPosgrado?.filter(f => f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula));
-							// Verificamos si es una matricual de grado o de posgrado, luego comparamos si esta o no vigente.
-							if (formacionGrado?.flat().length) {
-								practitioners.forEach(pract => pract.formacionGrado.forEach(form => {
-									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
-								}));
-							}
-							if (!matriculaVigente && formacionPosgrado?.flat().length) {
-								practitioners.forEach(pract => pract.formacionPosgrado.forEach(form => {
-									form.profesion = form.especialidad;
-									matriculaVigente = verificarVigencia(form, codigoProfesion, nroMatricula);
-								}));
-							}
-							if (!matriculaVigente) {
-								return [];
-							}
+							practitioners = practitioners.filter(prof => {
+								let mat = prof.formacionGrado?.find(f => f.matriculacion && f.profesion.codigo == codigoProfesion && f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula);
+								if (!mat) {
+									mat = prof.formacionPosgrado?.find(f => f.matriculacion && f.especialidad.codigo && f.especialidad.codigo.sisa == codigoProfesion && f.matriculacion[f.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula)
+									mat.especialidad.codigo = mat.especialidad.codigo ? mat.especialidad.codigo.sisa : 0;
+									mat.profesion = mat.especialidad;
+								}
+
+								if (mat && !active) {
+									return true;
+								}
+								else if (mat && active && active === 'true') {
+									let salida = verificarVigencia(mat, codigoProfesion, nroMatricula);
+									return salida;
+								} else if (mat && (active && active === 'false')) {
+									return (!prof.habilitado || !verificarVigencia(mat, codigoProfesion, nroMatricula));
+								} else {
+									return prof;
+								}
+							});
 						}
 					}
 					return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
