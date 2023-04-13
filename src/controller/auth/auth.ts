@@ -6,6 +6,6 @@ const globals = require('../../globals');
 export async function searchToken(id) {
     const db = globals.get(CONSTANTS.CLIENT_DB);
     const collection = db.collection(CONSTANTS.COLLECTION.AUTHAPPS);
-    const registroDelToken = await collection.findOne({ token: objectId(id) });
+    const registroDelToken = await collection.findOne({ token: id });
     return registroDelToken;
 }
