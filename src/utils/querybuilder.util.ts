@@ -70,9 +70,9 @@ export const nameQueryBuilder = function (target) {
  * @return {JSON} queryBuilder
  * Using to assign a single variable:
  *      let queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier');
-		 for (let i in queryBuilder) {
-			 query[i] = queryBuilder[i];
-		}
+         for (let i in queryBuilder) {
+             query[i] = queryBuilder[i];
+        }
 * Use in an or query
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
@@ -80,24 +80,24 @@ export const tokenQueryBuilder = function (target, type, field, required) {
     let queryBuilder = {};
     let system = '';
     let value = '';
-  
-    if (target.includes('|')) {
-      [system, value] = target.split('|');
-  
-      if (required) {
-        system = required;
-      }
+
+    if (target.includes(';')) {
+        [system, value] = target.split(';');
+
+        if (required) {
+            system = required;
+        }
     } else {
-      value = target;
+        value = target;
     }
-  
+
     if (system && value) {
-      queryBuilder = {system, value}
+        queryBuilder = { system, value }
     } else if (value) {
-        queryBuilder = {value}
+        queryBuilder = { value }
     }
     return queryBuilder;
-    
+
 };
 
 /**
