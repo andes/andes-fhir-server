@@ -14,7 +14,8 @@ export const CONSTANTS = {
         PRACTITIONER: 'profesional',
         PRESTATIONS: 'prestaciones',
         VACCINES: 'nomivac',
-        AUTHAPPS: 'authApps'
+        AUTHAPPS: 'authApps',
+        SPECILITY: 'especialidad'
         // Agregar todas las colecciones que hagan falta
     }
 };

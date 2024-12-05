@@ -5,7 +5,7 @@ import { ApiAndes } from './../../utils/apiAndesQuery';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
-const { stringQueryBuilder, tokenQueryBuilder } = require('../../utils/querybuilder.util');
+const { stringQueryBuilder, tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
 
 
 let getPatient = (base_version) => {
@@ -15,27 +15,16 @@ let getPatient = (base_version) => {
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para pacientes
     let id = args['id'];
-    let active = args['active'];
-    let family = args['family'];
-    let given = args['given'];
+    let family = args['family'] ? args['family'] : '';
+    let given = args['given'] ? args['given'] : '';
     let identifier = args['identifier'];
-    let query: any = {};
+    let query: any = { activo: true };
     if (id) {
         query.id = id;
-    }
-    if (active) {
-        query.activo = active === true ? true : false;
-    }
-    if (family) {
-        query.apellido = stringQueryBuilder(family);
-    }
-    if (given) {
-        query.nombre = stringQueryBuilder(given);
     }
     // Filtros especiales para paciente
     if (identifier) {
         const queryBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
-        console.log(queryBuilder.system)
         switch (queryBuilder.system) {
             case 'andes.gob.ar':
                 query._id = new ObjectID(queryBuilder.value);
@@ -49,6 +38,14 @@ let buildAndesSearchQuery = (args) => {
             default:
                 query.documento = queryBuilder.value;
                 break;
+        }
+    }
+
+    if (family || given) {
+        query = {
+            ...query,
+            $and: familyQueryBuilder(family + ' ' + given)
+
         }
     }
     return query;
