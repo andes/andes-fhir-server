@@ -5,9 +5,8 @@ const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
  * @summary Configurations for our Mongo instance
  */
 export const mongoConfig = {
-    //connection: 'mongodb://localhost:27017/',
-    connection: 'mongodb://developer:DiCiphChem9@172.16.1.67:27017/andes?authSource=andes',//'mongodb://localhost:27017/',// process.env.MONGO_HOSTNAME,
-    db_name: 'andes',// process.env.MONGO_DB_NAME,
+    connection: process.env.MONGO_HOSTNAME,
+    db_name: process.env.MONGO_DB_NAME,
     options: {
         auto_reconnect: true,
         useUnifiedTopology: true

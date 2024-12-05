@@ -1,3 +1,30 @@
+export function replaceChars(text: string) {
+    text = text.replace(/á/gi, 'a');
+    text = text.replace(/é/gi, 'e');
+    text = text.replace(/í/gi, 'i');
+    text = text.replace(/ó/gi, 'o');
+    text = text.replace(/ú/gi, 'u');
+    text = text.replace(/ü/gi, 'u');
+    text = text.replace(/ñ/gi, 'n');
+    return text;
+}
+
+/**
+ * @name tokensQueryBuilder
+ * @param {string} target what we are querying for
+ * @return a mongo regex query
+ */
+export const familyQueryBuilder = function (target) {
+    const ExpRegFilter = /([-_()\[\]{}+?*.$\^|¨`´~,:#<>¡!\\])/g;
+    let words: any = target.replace(ExpRegFilter, '');
+    words = replaceChars(words);
+    words = words.trim().toLowerCase().split(' ');
+    const andQuery = [];
+    words.forEach(w => {
+        andQuery.push({ tokens: RegExp(`^${w}`) });
+    });
+    return andQuery;
+};
 
 /**
  * @name stringQueryBuilder

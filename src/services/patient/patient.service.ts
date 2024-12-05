@@ -18,7 +18,7 @@ export = {
 			if (Object.keys(args).length > 1) {
 				return await buscarPaciente(base_version, args);
 			} else {
-				throw {warning: 'You will need to add the search parameters'};
+				throw { warning: 'Se requiere enviar al menos un parametro de búsqueda' };
 			}
 		} catch (err) {
 			return err;
