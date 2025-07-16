@@ -42,7 +42,6 @@ export = {
 			const resultado = await crearPaciente(base_version, req.body);
 
 			if (resultado.existingPatient) {
-				console.log('Paciente ya existente:', resultado);
 				throw new ServerError(
 					`El paciente ya existe. ID: ${resultado.patientId}`,
 					{

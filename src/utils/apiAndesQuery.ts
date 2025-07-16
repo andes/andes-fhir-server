@@ -1,8 +1,12 @@
 const got = require('got');
 
 export class ApiAndes {
+<<<<<<< HEAD
     // private base = 'https://demo.andes.gob.ar/api'; // localhost:3002/api
     private base = process.env.ANDES_HOST;
+=======
+    private base = process.env.ANDES_HOST; // localhost:3002/api
+>>>>>>> 16e8bf0 (post paciente)
     private baseSnomed = '/core/term/snomed/';  // Por el momento hardcodeamos la api local
     private basePatient = '/core-v2/mpi/pacientes';  // Por el momento hardcodeamos la api local
 
