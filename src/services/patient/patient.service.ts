@@ -1,9 +1,7 @@
-
 import { ServerError } from '@asymmetrik/node-fhir-server-core';
-
-const { buscarPacienteId, buscarPaciente, crearPaciente } = require('./../../controller/patient/patient');
 import { Permissions } from './../../lib/permissions';
 
+const { buscarPacienteId, buscarPaciente, crearPaciente } = require('./../../controller/patient/patient');
 const p = Permissions;
 
 /**
