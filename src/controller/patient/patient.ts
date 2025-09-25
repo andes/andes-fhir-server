@@ -5,8 +5,7 @@ import { ApiAndes } from './../../utils/apiAndesQuery';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
-const { stringQueryBuilder, tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
-
+const { tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
 
 let getPatient = (base_version) => {
     return resolveSchema(base_version, 'Patient');
@@ -93,7 +92,7 @@ export async function crearPaciente(base_version: string, resource: any) {
         let gender = resource.gender;
         if (identifier) {
             try {
-                const pacientesAndes = await buscarPaciente(base_version, { base_version, active: 'false', identifier, gender });
+                const pacientesAndes = await buscarPaciente(base_version, { base_version, identifier, gender });
                 const pacienteExistente = pacientesAndes[0];
                 const plainPatient = pacienteExistente ? JSON.parse(JSON.stringify(pacienteExistente)) : null;
                 if (plainPatient) {
@@ -160,6 +159,10 @@ export async function buscarPaciente(version, parameters) {
                 query.genero = 'masculino';
             } else if (gender === 'female' || gender === 'femenino') {
                 query.genero = 'femenino';
+            } else if (gender === 'other' || gender === 'otro') {
+                query.genero = 'otro';
+            } else {
+                throw new ServerError('Género incorrecto');
             }
         }
         const db = globals.get(CONSTANTS.CLIENT_DB);
@@ -186,6 +189,5 @@ export async function buscarPaciente(version, parameters) {
                 }
             ]
         });
-
     }
 }

@@ -15,7 +15,7 @@ export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
-			if (Object.keys(args).length > 1) {
+			if (Object.keys(args).length > 0) {
 				return await buscarPaciente(base_version, args);
 			} else {
 				throw { warning: 'Se requiere enviar al menos un parametro de búsqueda' };
