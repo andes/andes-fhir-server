@@ -25,10 +25,10 @@ let buildAndesSearchQuery = (args) => {
         query.activo = active === true ? true : false;
     }
     if (name) {
-        query.nombre = stringQueryBuilder(name);
+        query.nombre = stringQueryBuilder(name, true);
     }
     if (identifier) {
-        let queryBuilder = keyQueryBuilder(identifier, 'codigo');
+        let queryBuilder = keyQueryBuilder(identifier, 'codigo.sisa');
         for (let i in queryBuilder) {
             query[i] = queryBuilder[i];
         }
