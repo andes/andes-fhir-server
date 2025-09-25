@@ -5,7 +5,12 @@ node_modules
 *.log
 .DS_Store
 
+# Javascript
+**/*.js
+**/*.map
 *.js
-*.js.map 
+**.js
+*.map
+**.map
 
 .env
