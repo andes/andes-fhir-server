@@ -1,4 +1,15 @@
+import { resolveService } from './utils/path.helper';
+import { createLogger, transports, format } from 'winston';
 const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
+
+const logger = createLogger({
+  level: process.env.LOGGING_LEVEL || 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.simple()
+  ),
+  transports: [new transports.Console()]
+});
 
 /**
  * @name mongoConfig
@@ -36,7 +47,7 @@ export const fhirServerConfig = {
         // resourceServer: 'http://localhost:3000',
         strategy: {
             name: 'bearer',
-            service: './src/services/auth/auth.service.js'
+            service: resolveService('auth/auth.service.js')
         }
     } : undefined,
     server: {
@@ -48,9 +59,7 @@ export const fhirServerConfig = {
             origin: whitelist
         }
     },
-    logging: {
-        level: process.env.LOGGING_LEVEL
-    },
+    logger,
     // security: [
     // 	{
     // 		url: 'authorize',
@@ -63,27 +72,27 @@ export const fhirServerConfig = {
     // ],
     profiles: {
         patient: {
-            service: './src/services/patient/patient.service.js',
+            service: resolveService('patient/patient.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
         practitioner: {
-            service: './src/services/practitioner/practitioner.service.js',
+            service: resolveService('practitioner/practitioner.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
         organization: {
-            service: './src/services/organization/organization.service.js',
+            service: resolveService('organization/organization.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
         documentReference: {
-            service: './src/services/documentreference/documentreference.service.js',
+            service: resolveService('documentreference/documentreference.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
         bundle: {
-            service: './src/services/bundle/bundle.service.js',
+            service: resolveService('bundle/bundle.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
         basic: {
-            service: './src/services/basic/speciality.service.js',
+            service: resolveService('basic/speciality.service.js'),
             versions: [VERSIONS['4_0_0']]
         },
     }
