@@ -1,16 +1,14 @@
 # Dependencies
-node_modules
+node_modules/
+
+# Build output
+dist/
 
 # Generated files
 *.log
+
+# System files
 .DS_Store
 
-# Javascript
-**/*.js
-**/*.map
-*.js
-**.js
-*.map
-**.map
-
+# Environment variables
 .env
