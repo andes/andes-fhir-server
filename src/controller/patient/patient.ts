@@ -83,10 +83,85 @@ export async function buscarPacienteId(version, id) {
     }
 }
 
+export async function crearPaciente(base_version: string, resource: any) {
+    try {
+        const andes = new ApiAndes();
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
+        const Patient = getPatient(base_version);
+        let identifier = resource.identifier && resource.identifier.length ? resource.identifier[0].value : null;
+        let gender = resource.gender;
+        if (identifier) {
+            try {
+                const pacientesAndes = await buscarPaciente(base_version, { base_version, active: 'false', identifier , gender });
+                const pacienteExistente = pacientesAndes[0];
+                const plainPatient = pacienteExistente? JSON.parse(JSON.stringify(pacienteExistente)):null;
+                if (plainPatient) {
+                    return {
+                        existingPatient: true,
+                        patientId: plainPatient.identifier?.find(id => id.system == 'andes.gob.ar' && id.value)?.value,
+                        patientData: plainPatient,
+                        operationOutcome: {
+                            resourceType: "OperationOutcome",
+                            issue: [
+                                {
+                                    severity: "information",
+                                    code: "informational",
+                                    diagnostics: `El paciente ya existe. ID: ${plainPatient._id ? plainPatient._id.toString() : plainPatient.id}`
+                                }
+                            ],
+                        data:plainPatient.identifier?.find(id => id.system == 'andes.gob.ar')
+                        }
+                };
+                }
+            } catch (err) {
+                console.log('Error buscando paciente existente:', err);
+            }
+        }
+
+        const paciente = fhirPac.decode(resource);
+        const result = await collection.insertOne(paciente);
+
+        const newPatient = new Patient({
+            ...resource,
+            id: result.insertedId.toString()
+        });
+
+        return {
+            existingPatient: false,
+            patientId: result.insertedId.toString(),
+            patientData: newPatient
+        };
+
+    } catch (error) {
+        throw new ServerError(
+            'No se pudo crear el paciente',
+            {
+                resourceType: "OperationOutcome",
+                issue: [
+                    {
+                        severity: 'error',
+                        code: 'exception',
+                        diagnostics: error.message || error
+                    }
+                ]
+            }
+        );
+    }
+}
+
 // Pronto va a deprecar por cambio a llamada a la api
 export async function buscarPaciente(version, parameters) {
     try {
         let query = buildAndesSearchQuery(parameters);
+        if (parameters.gender) {
+            const gender = parameters.gender.toLowerCase();
+            if (gender === 'male'|| gender === 'masculino') {
+                query.genero = 'masculino';
+            } else if (gender === 'female'|| gender === 'femenino') {
+                query.genero = 'femenino';
+            } 
+        }
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let Patient = getPatient(version);
@@ -114,18 +189,3 @@ export async function buscarPaciente(version, parameters) {
 
     }
 }
-
-// export async function buscarPaciente(version, parameters) {
-//     try {
-//         console.log('entra aca...');
-//         let query = buildAndesSearchQuery(parameters);
-//         const andes = new ApiAndes();
-//         let Patient = getPatient(version);
-//         console.log('anes de llamar a la api, ', query);
-//         let patients = await andes.getPatients(query);
-//         return patients.map(pac => new Patient(fhirPac.encode(pac)));
-//     } catch (err) {
-//         return err
-
-//     }
-// }

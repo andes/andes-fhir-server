@@ -1,5 +1,7 @@
 
-import { buscarPacienteId, buscarPaciente } from './../../controller/patient/patient';
+import {  ServerError } from '@asymmetrik/node-fhir-server-core';
+
+const { buscarPacienteId, buscarPaciente, crearPaciente } = require('./../../controller/patient/patient');
 import { Permissions } from './../../lib/permissions';
 
 const p = Permissions;
@@ -32,9 +34,27 @@ export = {
 		} catch (err) {
 			return err;
 		}
-	}
+	},
+	create: async (args, context) => {
+    try {
+        let { base_version, resource } = args;
+		const req = context.req;
+                const resultado = await crearPaciente(base_version, req.body);
+
+        if (resultado.existingPatient) {
+			throw new ServerError(
+				`El paciente ya existe. ID: ${resultado.patientId}`,
+				{
+					resourceType: 'OperationOutcome',
+					issue: [{ severity: 'information', code: 'informational', diagnostics: `El paciente ya existe. ID: ${resultado.patientId}` }],
+					data: resultado.operationOutcome?.data
+				}	
+			);
+        }
+		return resultado.patientData;	
+   } catch (err) {
+			throw err;
+		}
+}
+
 };
-
-
-
-
