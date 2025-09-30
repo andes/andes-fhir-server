@@ -32,9 +32,9 @@ export const familyQueryBuilder = function (target) {
  * @param {string} target what we are querying for
  * @return a mongo regex query
  */
-export const stringQueryBuilder = function (target, contains = false ) {
+export const stringQueryBuilder = function (target, contains = false) {
     let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
-    const ini = contains ? '': "^";
+    const ini = contains ? '' : "^";
     return { $regex: new RegExp(ini + t2, 'i') };
 };
 
@@ -145,7 +145,7 @@ export const keyQueryBuilder = function (target, field) {
 
     if (system) {
         queryBuilder[`${field}.${system}`] = value;
-    }else{
+    } else {
         queryBuilder[`${field}`] = target;
     }
 
