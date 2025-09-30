@@ -1,15 +1,6 @@
 import { resolveService } from './utils/path.helper';
-import { createLogger, transports, format } from 'winston';
+import { logger } from './utils/logger';
 const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
-
-const logger = createLogger({
-  level: process.env.LOGGING_LEVEL || 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.simple()
-  ),
-  transports: [new transports.Console()]
-});
 
 /**
  * @name mongoConfig
