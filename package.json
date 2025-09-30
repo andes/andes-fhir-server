@@ -65,7 +65,7 @@
     "eslint": "^4.14.0",
     "jest": "^25.0.0",
     "nodemon": "^1.17.2",
-    "typescript": "^3.9.3"
+    "typescript": "^5.9.2"
   },
   "private": false
 }
