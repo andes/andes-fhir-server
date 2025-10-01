@@ -110,8 +110,12 @@ export const tokenQueryBuilder = function (target, type, field, required) {
     let value = '';
 
     if (target.includes(';')) {
-        [system, value] = target.split(';');
-
+        [system, value] = target.split(';')
+        if (required) {
+            system = required;
+        }
+    } else if (target.includes('|')) {
+        [system, value] = target.split('|');
         if (required) {
             system = required;
         }
@@ -148,7 +152,6 @@ export const keyQueryBuilder = function (target, field) {
     } else {
         queryBuilder[`${field}`] = target;
     }
-
     return queryBuilder;
 };
 

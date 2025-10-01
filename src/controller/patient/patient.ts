@@ -5,8 +5,7 @@ import { ApiAndes } from './../../utils/apiAndesQuery';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
-const { stringQueryBuilder, tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
-
+const { tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
 
 let getPatient = (base_version) => {
     return resolveSchema(base_version, 'Patient');
@@ -93,9 +92,9 @@ export async function crearPaciente(base_version: string, resource: any) {
         let gender = resource.gender;
         if (identifier) {
             try {
-                const pacientesAndes = await buscarPaciente(base_version, { base_version, active: 'false', identifier , gender });
+                const pacientesAndes = await buscarPaciente(base_version, { base_version, identifier, gender });
                 const pacienteExistente = pacientesAndes[0];
-                const plainPatient = pacienteExistente? JSON.parse(JSON.stringify(pacienteExistente)):null;
+                const plainPatient = pacienteExistente ? JSON.parse(JSON.stringify(pacienteExistente)) : null;
                 if (plainPatient) {
                     return {
                         existingPatient: true,
@@ -110,9 +109,9 @@ export async function crearPaciente(base_version: string, resource: any) {
                                     diagnostics: `El paciente ya existe. ID: ${plainPatient._id ? plainPatient._id.toString() : plainPatient.id}`
                                 }
                             ],
-                        data:plainPatient.identifier?.find(id => id.system == 'andes.gob.ar')
+                            data: plainPatient.identifier?.find(id => id.system == 'andes.gob.ar')
                         }
-                };
+                    };
                 }
             } catch (err) {
                 console.log('Error buscando paciente existente:', err);
@@ -156,11 +155,15 @@ export async function buscarPaciente(version, parameters) {
         let query = buildAndesSearchQuery(parameters);
         if (parameters.gender) {
             const gender = parameters.gender.toLowerCase();
-            if (gender === 'male'|| gender === 'masculino') {
+            if (gender === 'male' || gender === 'masculino') {
                 query.genero = 'masculino';
-            } else if (gender === 'female'|| gender === 'femenino') {
+            } else if (gender === 'female' || gender === 'femenino') {
                 query.genero = 'femenino';
-            } 
+            } else if (gender === 'other' || gender === 'otro') {
+                query.genero = 'otro';
+            } else {
+                throw new ServerError('Género incorrecto');
+            }
         }
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
@@ -186,6 +189,5 @@ export async function buscarPaciente(version, parameters) {
                 }
             ]
         });
-
     }
 }

@@ -1,9 +1,7 @@
-
-import {  ServerError } from '@asymmetrik/node-fhir-server-core';
-
-const { buscarPacienteId, buscarPaciente, crearPaciente } = require('./../../controller/patient/patient');
+import { ServerError } from '@asymmetrik/node-fhir-server-core';
 import { Permissions } from './../../lib/permissions';
 
+const { buscarPacienteId, buscarPaciente, crearPaciente } = require('./../../controller/patient/patient');
 const p = Permissions;
 
 /**
@@ -17,7 +15,7 @@ export = {
 	search: async (args, context) => {
 		try {
 			let { base_version } = args;
-			if (Object.keys(args).length > 1) {
+			if (Object.keys(args).length > 0) {
 				return await buscarPaciente(base_version, args);
 			} else {
 				throw { warning: 'Se requiere enviar al menos un parametro de búsqueda' };
@@ -36,25 +34,25 @@ export = {
 		}
 	},
 	create: async (args, context) => {
-    try {
-        let { base_version, resource } = args;
-		const req = context.req;
-                const resultado = await crearPaciente(base_version, req.body);
+		try {
+			let { base_version, resource } = args;
+			const req = context.req;
+			const resultado = await crearPaciente(base_version, req.body);
 
-        if (resultado.existingPatient) {
-			throw new ServerError(
-				`El paciente ya existe. ID: ${resultado.patientId}`,
-				{
-					resourceType: 'OperationOutcome',
-					issue: [{ severity: 'information', code: 'informational', diagnostics: `El paciente ya existe. ID: ${resultado.patientId}` }],
-					data: resultado.operationOutcome?.data
-				}	
-			);
-        }
-		return resultado.patientData;	
-   } catch (err) {
+			if (resultado.existingPatient) {
+				throw new ServerError(
+					`El paciente ya existe. ID: ${resultado.patientId}`,
+					{
+						resourceType: 'OperationOutcome',
+						issue: [{ severity: 'information', code: 'informational', diagnostics: `El paciente ya existe. ID: ${resultado.patientId}` }],
+						data: resultado.operationOutcome?.data
+					}
+				);
+			}
+			return resultado.patientData;
+		} catch (err) {
 			throw err;
 		}
-}
+	}
 
 };
