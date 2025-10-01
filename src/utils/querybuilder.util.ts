@@ -34,7 +34,7 @@ export const familyQueryBuilder = function (target) {
  */
 export const stringQueryBuilder = function (target, contains = false) {
     let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
-    const ini = contains ? '' : "^";
+    const ini = contains ? '' : '^';
     return { $regex: new RegExp(ini + t2, 'i') };
 };
 
