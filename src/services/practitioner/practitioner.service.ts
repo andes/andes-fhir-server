@@ -1,6 +1,6 @@
 import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
-import { familyQueryBuilder, stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
+import { familyQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
 var moment = require('moment');
 const ObjectID = require('mongodb').ObjectID
@@ -14,27 +14,28 @@ let getPractitioner = (base_version) => {
 
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para profesionales
-    let active = args['active'];
+    let active = args['active'] ? args['active'] : true;
     let family = args['family'] ? args['family'] : '';
     let given = args['given'] ? args['given'] : '';
     let identifier = args['identifier'];
+    let query: any = {};
 
-    // Con este filtro evitamos las búsquedas de los que no son matriculados y están en la misma colección
-    let query: any = { profesionalMatriculado: { $eq: true } };
-    if (active) {
-        if (active === true || active === 'true') {
-            query['$or'] = [];
-            query['$or'].push({ habilitado: true });
-            query['$or'].push({ habilitado: { '$exists': false } });
-        }
+    query.$and = [];
+    query.$and.push({ profesionalMatriculado: true });
+    if (active === true || active === 'true') {
+        query.$and.push({
+            $or: [
+                { habilitado: true },
+                { habilitado: { $exists: false } }
+            ]
+        });
+    } else {
+        query.$and.push({ habilitado: false });
     }
 
+    // Si hay filtros de nombre
     if (family || given) {
-        query = {
-            ...query,
-            $and: familyQueryBuilder(family + ' ' + given)
-
-        }
+        query.$and.push(...familyQueryBuilder(family + ' ' + given));
     }
 
     // Controles de identifier de profesional
@@ -150,7 +151,6 @@ export = {
                     }
                 ]
             });
-
         }
     }
 
