@@ -44,12 +44,10 @@ let buildAndesSearchQuery = (args) => {
         query = {
             ...query,
             $and: familyQueryBuilder(family + ' ' + given)
-
         }
     }
     return query;
 };
-
 
 export async function buscarPacienteId(version, id) {
     try {
