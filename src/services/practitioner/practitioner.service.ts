@@ -1,6 +1,6 @@
 import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
-import { stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
+import { familyQueryBuilder, stringQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
 var moment = require('moment');
 const ObjectID = require('mongodb').ObjectID
@@ -15,8 +15,8 @@ let getPractitioner = (base_version) => {
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para profesionales
     let active = args['active'];
-    let family = args['family'];
-    let given = args['given'];
+    let family = args['family'] ? args['family'] : '';
+    let given = args['given'] ? args['given'] : '';
     let identifier = args['identifier'];
 
     // Con este filtro evitamos las búsquedas de los que no son matriculados y están en la misma colección
@@ -28,11 +28,13 @@ let buildAndesSearchQuery = (args) => {
             query['$or'].push({ habilitado: { '$exists': false } });
         }
     }
-    if (family) {
-        query.apellido = stringQueryBuilder(family);
-    }
-    if (given) {
-        query.nombre = stringQueryBuilder(given);
+
+    if (family || given) {
+        query = {
+            ...query,
+            $and: familyQueryBuilder(family + ' ' + given)
+
+        }
     }
 
     // Controles de identifier de profesional
