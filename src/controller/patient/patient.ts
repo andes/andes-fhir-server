@@ -34,6 +34,14 @@ let buildAndesSearchQuery = (args) => {
             case 'http://www.renaper.gob.ar/dni':
                 query.documento = queryBuilder.value;
                 break;
+            case 'andes.gob.ar/sid/foreign-id':
+                query.numeroIdentificacion = queryBuilder.value;
+                query.tipoIdentificacion = 'dni extranjero';
+                break;
+            case 'andes.gob.ar/sid/passport':
+                query.numeroIdentificacion = queryBuilder.value;
+                query.tipoIdentificacion = 'pasaporte';
+                break;
             default:
                 query.documento = queryBuilder.value;
                 break;
