@@ -23,7 +23,6 @@ export = {
 		} catch (err) {
 			return err;
 		}
-
 	},
 	searchById: async (args, context) => {
 		try {
@@ -38,21 +37,41 @@ export = {
 			let { base_version, resource } = args;
 			const req = context.req;
 			const resultado = await crearPaciente(base_version, req.body);
-
+			let resp: any;
+			let statusCode: number;
+			let issue = [];
+			let data: any;
 			if (resultado.existingPatient) {
-				throw new ServerError(
-					`El paciente ya existe. ID: ${resultado.patientId}`,
+				resp = `El paciente ya existe. ID: ${resultado.patientId}`;
+				statusCode = 200;
+				issue = [
 					{
-						resourceType: 'OperationOutcome',
-						issue: [{ severity: 'information', code: 'informational', diagnostics: `El paciente ya existe. ID: ${resultado.patientId}` }],
-						data: resultado.operationOutcome?.data
+						severity: 'information',
+						code: 'informational',
+						diagnostics: `El paciente ya existe. ID: ${resultado.patientId}`,
 					}
-				);
+				]
+				data = resultado.operationOutcome?.data;
+			} else {
+				resp = `El paciente fue creado. ID: ${resultado.patientId}`;
+				statusCode = 201;
+				data = {
+					system: process.env.IPS_DOMINIO,
+					value: resultado.patientId
+				}
 			}
-			return resultado.patientData;
-		} catch (err) {
+			throw new ServerError(
+				resp,
+				{
+					statusCode,
+					resourceType: 'OperationOutcome',
+					issue,
+					data
+				}
+			);
+		}
+		catch (err) {
 			throw err;
 		}
 	}
-
 };
