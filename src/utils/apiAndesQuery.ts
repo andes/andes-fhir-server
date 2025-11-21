@@ -1,45 +1,54 @@
-const got = require('got');
+export { };  // <-- importante para que ESLint trate el archivo como TS
+// GOT es ESM only, no se puede usar require directamente.
+// Hacemos import dinámico compatible con CJS.
+
+let gotInstance = null;
+
+async function getGot() {
+    if (!gotInstance) {
+        const mod = await import('got');
+        gotInstance = mod.default;
+    }
+    return gotInstance;
+}
 
 export class ApiAndes {
-    private base = process.env.ANDES_HOST;
-    private baseSnomed = '/core/term/snomed/';  // Por el momento hardcodeamos la api local
-    private basePatient = '/core-v2/mpi/pacientes';  // Por el momento hardcodeamos la api local
+    base = process.env.ANDES_HOST;
+    baseSnomed = '/core/term/snomed/';
+    basePatient = '/core-v2/mpi/pacientes';
 
     constructor() { }
 
     async getSnomedByConceptId(conceptId) {
         try {
+            const got = await getGot();
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}`;
             const response = await got(url).json();
             return response;
         } catch (err) {
-            return err
+            return err;
         }
     }
 
-    /**
-     * Obtengo todos los hijos de algún concepto
-     */
     async getSnomedAllergies(conceptId) {
         try {
+            const got = await getGot();
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}/childs`;
             const response = await got(url).json();
             return response;
         } catch (err) {
-            return err
+            return err;
         }
     }
 
-
-    /**
-     * Patient section: Search by id, match, post, put
-     */
     async getPatient(id) {
         try {
+            const got = await getGot();
             const url = `${this.base}${this.basePatient}/${id}`;
+
             const gotCustomizado = got.extend({
                 hooks: {
-                    beforeError: [ // handler del error
+                    beforeError: [
                         error => {
                             const { response } = error;
                             if (response && response.body) {
@@ -56,63 +65,20 @@ export class ApiAndes {
                     'Authorization': `jwt ${process.env.ANDES_TOKEN}`
                 }
             });
-            const data = (async () => {
-                try {
-                    const response = await gotCustomizado(url);
-                    return response.body
-                } catch (err) {
-                    throw err = { message: err.message, system: err.name, code: err.statusCode };  // Este objeto debería estar estandarizado en todos los llamados a ANDES
-                }
-            })();
-            return data;
+
+            try {
+                const response = await gotCustomizado(url);
+                return response.body;
+            } catch (err) {
+                throw {
+                    message: err.message,
+                    system: err.name,
+                    code: err.statusCode
+                };
+            }
+
         } catch (err) {
             throw err;
         }
     }
-
-    // ver como interactuar con la api para este caso.
-    // async getPatients(query) {  
-    //     try {
-    //         // Vamos a usar suggest
-    //         query['type'] = 'suggest';
-    //         const url = this.base + this.basePatient;
-    //         console.log('la url: ', url);
-    //         const searchParams = new URLSearchParams(query);
-    //         const gotCustomizado = got.extend({
-    //             hooks: {
-    //                 beforeError: [ // handler del error
-    //                     error => {
-    //                         const {response} = error;
-    //                         if (response && response.body) {
-    //                             error.name = 'ANDES API';
-    //                             error.message = response.body.message;
-    //                             error.statusCode = response.statusCode;
-    //                         }
-    //                         return error;
-    //                     }
-    //                 ]
-    //             },
-    //             searchParams,
-    //             responseType: 'json',
-    //             headers: {
-    //                 'Authorization' : `jwt ${env.JWTDemo}`
-    //             }
-    //         });
-    //         console.log('customizado: ', gotCustomizado);
-    //         const data = (async () => {
-    //             try {
-    //                 const response = await gotCustomizado(url);
-    //                 return response.body
-    //             } catch (err) {
-    //                 console.log('palo 1: ', err);
-    //                 throw err = {message: err.message, system: err.name, code: err.statusCode};  // Este objeto debería estar estandarizado en todos los llamados a ANDES
-    //             }
-    //         })();
-    //         return data;
-    //     } catch (err) {
-    //         console.log('palo 2: ', err);
-    //         throw err;
-    //     }
-    // }
-
 }

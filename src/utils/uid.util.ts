@@ -20,7 +20,7 @@ function getRandomInt(min, max) {
  *
  * @param {*} dates
  */
-export let getUid = function (length) {
+export const getUid = function (length) {
     let uid = '';
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charsLength = chars.length;

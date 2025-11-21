@@ -1,4 +1,4 @@
-import { CONSTANTS } from './../../constants';
+import { CONSTANTS } from '../../constants';
 const globals = require('../../globals');
 var moment = require('moment');
 

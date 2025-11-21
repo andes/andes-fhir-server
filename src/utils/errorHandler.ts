@@ -4,7 +4,7 @@ export const fhirError = function (message, severity, code, diagnostics) {
     throw new ServerError(
         message,
         {
-            resourceType: "OperationOutcome",
+            resourceType: 'OperationOutcome',
             issue: [
                 {
                     severity,
@@ -14,4 +14,4 @@ export const fhirError = function (message, severity, code, diagnostics) {
             ]
         }
     );
-}
+};
