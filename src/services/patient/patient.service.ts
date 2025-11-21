@@ -11,8 +11,8 @@ const p = Permissions;
  * @param {*} logger
  */
 
-export = {
-	search: async (args, context) => {
+export default class PatientService {
+	async search(args, context) {
 		try {
 			let { base_version } = args;
 			if (Object.keys(args).length > 0) {
@@ -23,16 +23,16 @@ export = {
 		} catch (err) {
 			return err;
 		}
-	},
-	searchById: async (args, context) => {
+	}
+	async searchById(args, context) {
 		try {
 			let { base_version, id } = args;
 			return await buscarPacienteId(base_version, id);
 		} catch (err) {
 			return err;
 		}
-	},
-	create: async (args, context) => {
+	}
+	async create(args, context) {
 		try {
 			let { base_version, resource } = args;
 			const req = context.req;

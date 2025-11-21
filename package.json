@@ -16,20 +16,8 @@
     "tsc:w": "tsc -w",
     "test": "npm run test:lint && npm run test:jest",
     "test:lint": "eslint \"src/**/*.ts\"",
-    "test:jest": "jest --forceExit"
-  },
-  "jest": {
-    "verbose": true,
-    "testEnvironment": "node",
-    "collectCoverage": false,
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "json"
-    ],
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/src/testutils/"
-    ]
+    "test:jest": "jest --forceExit",
+    "test2": "jest"
   },
   "dependencies": {
     "@andes/fhir": "^1.12.1-beta.4",
@@ -49,13 +37,16 @@
     "var": "^0.3.2"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/mongodb": "3.6.20",
     "@types/node": "^18.19.50",
     "cross-env": "^7.0.3",
     "elastic-apm-node": "^4.5.0",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
+    "node-fetch": "^2.7.0",
     "nodemon": "^3.1.0",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.4.5"
   },
   "private": false
