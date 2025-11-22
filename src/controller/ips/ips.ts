@@ -1,11 +1,11 @@
 import { AllergyIntolerance, Bundle, Composition, Condition, Device, Immunization, Medication, MedicationStatement } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
-import { filtrarRegistros, getPrestaciones } from './../../controller/ips/prestaciones';
-import { getVacunas } from './../../controller/ips/vacunas';
-import { buscarOrganizacionSisa } from './../../controller/organization/organization';
-import { buscarPacienteId } from './../../controller/patient/patient';
-import { ApiAndes } from './../../utils/apiAndesQuery';
-import { createResource, fullurl } from './../../utils/data.util';
+import { filtrarRegistros, getPrestaciones } from '../../controller/ips/prestaciones';
+import { getVacunas } from '../../controller/ips/vacunas';
+import { buscarOrganizacionSisa } from '../../controller/organization/organization';
+import { buscarPacienteId } from '../../controller/patient/patient';
+import { ApiAndes } from '../../utils/apiAndesQuery';
+import { createResource, fullurl } from '../../utils/data.util';
 
 const { ObjectID } = require('mongodb').ObjectID;
 

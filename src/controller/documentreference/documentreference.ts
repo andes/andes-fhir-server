@@ -1,29 +1,29 @@
 import { Bundle, Device, DocumentReference } from '@andes/fhir';
 import * as JSONSchemaValidator from '@asymmetrik/fhir-json-schema-validator';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
-import { buscarOrganizacionSisa } from './../../controller/organization/organization';
-import { buscarPacienteId } from './../../controller/patient/patient';
-import { createResource } from './../../utils/data.util';
+import { buscarOrganizacionSisa } from '../../controller/organization/organization';
+import { buscarPacienteId } from '../../controller/patient/patient';
+import { createResource } from '../../utils/data.util';
 const { ObjectID } = require('mongodb').ObjectID;
 
-let getDocReference = (base_version) => {
+const getDocReference = (base_version) => {
     return resolveSchema(base_version, 'documentreference');
 };
-let getBundle = (base_version) => {
-    return resolveSchema(base_version, 'bundle')
+const getBundle = (base_version) => {
+    return resolveSchema(base_version, 'bundle');
 };
 
-let getDevice = (base_version) => {
+const getDevice = (base_version) => {
     return resolveSchema(base_version, 'device');
-}
+};
 
 function validateResource(resource) {
-    let validator = new JSONSchemaValidator();
-    let errors = validator.validate(resource);
+    const validator = new JSONSchemaValidator();
+    const errors = validator.validate(resource);
     if (errors && errors.length > 0) {
         throw errors;
     } else {
-        return true
+        return true;
     }
 }
 
@@ -39,10 +39,10 @@ export async function getDocumentReference(version, pacienteID) {
             const FHIRDevice = new DeviceSchema(Device.encode());
             // validateResource(FHIRDevice);
             const binaryURL = `Bundle/${pacienteID}`;
-            const documentReferenceID = new ObjectID;
+            const documentReferenceID = new ObjectID();
             const docRefFHIR = new DocumentReferenceSchema(DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL));
             // validateResource(docRefFHIR);
-            const BundleID = new ObjectID;
+            const BundleID = new ObjectID();
             const FHIRBundle = new BundleSchema(
                 Bundle.encode(BundleID, [
                     createResource(docRefFHIR)
@@ -51,11 +51,11 @@ export async function getDocumentReference(version, pacienteID) {
             // validateResource(FHIRBundle);
             return FHIRBundle;
         } else {
-            const message = 'patient not found'
+            const message = 'patient not found';
             throw new ServerError(
                 message,
                 {
-                    resourceType: "OperationOutcome",
+                    resourceType: 'OperationOutcome',
                     issue: [
                         {
                             severity: 'error',
@@ -70,7 +70,7 @@ export async function getDocumentReference(version, pacienteID) {
         throw new ServerError(
             err,
             {
-                resourceType: "OperationOutcome",
+                resourceType: 'OperationOutcome',
                 issue: [
                     {
                         severity: 'error',

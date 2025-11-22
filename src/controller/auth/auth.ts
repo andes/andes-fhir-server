@@ -1,5 +1,5 @@
-import { CONSTANTS } from './../../constants';
-import { setObjectId as objectId } from './../../utils/uid.util';
+import { CONSTANTS } from '../../constants';
+import { setObjectId as objectId } from '../../utils/uid.util';
 const globals = require('../../globals');
 
 

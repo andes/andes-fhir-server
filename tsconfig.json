@@ -1,15 +1,31 @@
 {
     "compilerOptions": {
-        "target": "es2015",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "sourceMap": true,
-        "emitDecoratorMetadata": true,
+        "target": "es2022",
+        "module": "Node16",
+        "lib": [
+            "es2022"
+        ],
+        "outDir": "dist",
+        "rootDir": "src",
+        "moduleResolution": "node16",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
         "experimentalDecorators": true,
-        "removeComments": false,
-        "noImplicitAny": false,
-        "noImplicitReturns": true,
-        "allowUnusedLabels": false,
-        "baseUrl": "."
-    }
+        "emitDecoratorMetadata": true,
+        "skipLibCheck": true,
+        "strict": false,
+        "isolatedModules": true,
+        "types": [
+            "node",
+            "jest"
+        ]
+    },
+    "include": [
+        "src/**/*.ts",
+    ],
+    "exclude": [
+        "node_modules",
+        "tests",
+        "dist"
+    ]
 }

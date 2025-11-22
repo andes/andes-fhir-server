@@ -25,7 +25,7 @@ const main = async function () {
     globals.set(CONSTANTS.CLIENT, client);
     globals.set(CONSTANTS.CLIENT_DB, client.db(mongoConfig.db_name));
     // inicializa el servidor Fhir
-    let server = FHIRServer.initialize(fhirServerConfig);
+    const server = FHIRServer.initialize(fhirServerConfig);
     server.listen(
         fhirServerConfig.server.port,
         () => server.logger.verbose('Servidor Fhir online...')

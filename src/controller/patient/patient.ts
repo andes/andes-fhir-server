@@ -1,7 +1,7 @@
 import { Patient as fhirPac } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
-import { CONSTANTS } from './../../constants';
-import { ApiAndes } from './../../utils/apiAndesQuery';
+import { CONSTANTS } from '../../constants';
+import { ApiAndes } from '../../utils/apiAndesQuery';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');

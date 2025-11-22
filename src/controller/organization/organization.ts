@@ -1,6 +1,6 @@
 import { Organization as fhirOrganization } from '@andes/fhir';
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
-import { CONSTANTS} from './../../constants';
+import { CONSTANTS } from '../../constants';
 const globals = require('../../globals');
 const { stringQueryBuilder, keyQueryBuilder } = require('../../utils/querybuilder.util');
 
