@@ -11,67 +11,78 @@ const p = Permissions;
  * @param {*} logger
  */
 
-export default class PatientService {
-	async search(args, context) {
-		try {
-			let { base_version } = args;
-			if (Object.keys(args).length > 0) {
-				return await buscarPaciente(base_version, args);
-			} else {
-				throw { warning: 'Se requiere enviar al menos un parametro de búsqueda' };
-			}
-		} catch (err) {
-			return err;
+/**
+ * Implementación del servicio Patient en formato CommonJS,
+ * compatible con node-fhir-server-core.
+ */
+
+async function search(args, context) {
+	try {
+		let { base_version } = args;
+		if (Object.keys(args).length > 0) {
+			return await buscarPaciente(base_version, args);
+		} else {
+			throw { warning: 'Se requiere enviar al menos un parametro de búsqueda' };
 		}
+	} catch (err) {
+		return err;
 	}
-	async searchById(args, context) {
-		try {
-			let { base_version, id } = args;
-			return await buscarPacienteId(base_version, id);
-		} catch (err) {
-			return err;
-		}
+}
+async function searchById(args, context) {
+	try {
+		let { base_version, id } = args;
+		return await buscarPacienteId(base_version, id);
+	} catch (err) {
+		return err;
 	}
-	async create(args, context) {
-		try {
-			let { base_version, resource } = args;
-			const req = context.req;
-			const resultado = await crearPaciente(base_version, req.body);
-			let resp: any;
-			let statusCode: number;
-			let issue = [];
-			let data: any;
-			if (resultado.existingPatient) {
-				resp = `El paciente ya existe. ID: ${resultado.patientId}`;
-				statusCode = 200;
-				issue = [
-					{
-						severity: 'information',
-						code: 'informational',
-						diagnostics: `El paciente ya existe. ID: ${resultado.patientId}`,
-					}
-				]
-				data = resultado.operationOutcome?.data;
-			} else {
-				resp = `El paciente fue creado. ID: ${resultado.patientId}`;
-				statusCode = 201;
-				data = {
-					system: process.env.IPS_DOMINIO,
-					value: resultado.patientId
-				}
-			}
-			throw new ServerError(
-				resp,
+}
+async function create(args, context) {
+	try {
+		let { base_version, resource } = args;
+		const req = context.req;
+		const resultado = await crearPaciente(base_version, req.body);
+		let resp: any;
+		let statusCode: number;
+		let issue = [];
+		let data: any;
+		if (resultado.existingPatient) {
+			resp = `El paciente ya existe. ID: ${resultado.patientId}`;
+			statusCode = 200;
+			issue = [
 				{
-					statusCode,
-					resourceType: 'OperationOutcome',
-					issue,
-					data
+					severity: 'information',
+					code: 'informational',
+					diagnostics: `El paciente ya existe. ID: ${resultado.patientId}`,
 				}
-			);
+			]
+			data = resultado.operationOutcome?.data;
+		} else {
+			resp = `El paciente fue creado. ID: ${resultado.patientId}`;
+			statusCode = 201;
+			data = {
+				system: process.env.IPS_DOMINIO,
+				value: resultado.patientId
+			}
 		}
-		catch (err) {
-			throw err;
-		}
+		throw new ServerError(
+			resp,
+			{
+				statusCode,
+				resourceType: 'OperationOutcome',
+				issue,
+				data
+			}
+		);
 	}
+	catch (err) {
+		throw err;
+	}
+}
+
+const PatientService = {
+	search,
+	searchById,
+	create
 };
+
+export = PatientService;
