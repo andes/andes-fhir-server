@@ -43,7 +43,11 @@ let buildAndesSearchQuery = (args) => {
                 query.tipoIdentificacion = 'pasaporte';
                 break;
             default:
-                query.documento = queryBuilder.value;
+                query.$or = [
+                    { documento: queryBuilder.value, estado: 'validado' },
+                    { cuit: queryBuilder.value, estado: 'validado' },
+                    { numeroIdentificacion: queryBuilder.value }
+                ];
                 break;
         }
     }
