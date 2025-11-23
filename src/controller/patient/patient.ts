@@ -98,7 +98,7 @@ export async function crearPaciente(base_version: string, resource: any) {
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         const Patient = getPatient(base_version);
-        let identifier = resource.identifier && resource.identifier.length ? resource.identifier[0].value : null;
+        let identifier = resource.identifier && resource.identifier.length ? resource.identifier : null;
         let gender = resource.gender;
         if (identifier) {
             try {

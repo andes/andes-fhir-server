@@ -106,9 +106,12 @@ export const nameQueryBuilder = function (target) {
 */
 export const tokenQueryBuilder = function (target, type, field, required) {
     let queryBuilder = {};
-    let system = '';
-    let value = '';
-
+    let system = target.system ? target.system : '';
+    let value = target.value ? target.value : '';
+    if (target.length > 0) {
+        system = target[0].system ? target[0].system : '';
+        value = target[0].value ? target[0].value : '';
+    }
     if (target.includes(';')) {
         [system, value] = target.split(';')
         if (required) {
@@ -119,17 +122,15 @@ export const tokenQueryBuilder = function (target, type, field, required) {
         if (required) {
             system = required;
         }
-    } else {
-        value = target;
     }
-
     if (system && value) {
         queryBuilder = { system, value }
     } else if (value) {
         queryBuilder = { value }
+    } else {
+        queryBuilder = { value: target };
     }
     return queryBuilder;
-
 };
 
 /**
@@ -142,11 +143,9 @@ export const keyQueryBuilder = function (target, field) {
     let queryBuilder = {};
     let system = '';
     let value = '';
-
     if (target.includes('|')) {
         [system, value] = target.split('|');
     }
-
     if (system) {
         queryBuilder[`${field}.${system}`] = value;
     } else {
@@ -154,7 +153,6 @@ export const keyQueryBuilder = function (target, field) {
     }
     return queryBuilder;
 };
-
 
 /**
  * @name referenceQueryBuilder
@@ -538,5 +536,3 @@ export const compositeQueryBuilder = function (target, field1, field2) {
     }
 
 };
-
-

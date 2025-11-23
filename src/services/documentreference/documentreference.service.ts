@@ -7,8 +7,6 @@ export = {
 	search: async (args) => {
 
 		try {
-
-			console.log(args)
 			let { base_version } = args;
 			let subjIdentifier = args['subject:identifier'] || args['subject'];
 			let type = args['type'];

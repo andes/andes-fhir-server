@@ -16,9 +16,6 @@ const env = require('var');
 module.exports.strategy = new Strategy(
 	function (token, done) {
 
-		console.log('lalo landa')
-
-
 		if (!env.INTROSPECTION_URL) {
 			return done(new Error('Invalid introspection endpoint.'));
 		}

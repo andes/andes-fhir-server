@@ -9,7 +9,7 @@
     "node": ">=18.20.8"
   },
   "scripts": {
-    "start": "npm run node",
+    "start": "npm run tsc && npm run node",
     "node": "cross-env NODE_ENV=development nodemon dist/index.js",
     "prod": "cross-env NODE_ENV=production node dist/index.js",
     "tsc": "tsc",
