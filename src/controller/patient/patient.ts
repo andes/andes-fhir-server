@@ -2,6 +2,7 @@ import { Patient as fhirPac } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
 import { ApiAndes } from '../../utils/apiAndesQuery';
+import { fullurl } from '../../utils/data.util';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
@@ -179,7 +180,25 @@ export async function buscarPaciente(version, parameters) {
         let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         let Patient = getPatient(version);
         let patients = await collection.find(query).toArray();
-        return patients.map(pac => new Patient(fhirPac.encode(pac)));
+        const patientsFhir = patients.map(pac => new Patient(fhirPac.encode(pac)));
+
+        const ret = {
+            resourceType: "Bundle",
+            type: "searchset",
+            total: patientsFhir.length,
+            entry: []
+        };
+        if (patientsFhir.length === 0) {
+            delete ret.entry;
+        }
+        if (patientsFhir.length > 0) {
+            ret.entry = patientsFhir.map(p => ({
+                fullUrl: `https://fhir.andes.gob.ar/4_0_0/Patient/${p.id}`,
+                resource: p
+            }));
+        }
+
+        return ret;
     } catch (err) {
         let message, system, code = '';
         if (typeof err === 'object') {
