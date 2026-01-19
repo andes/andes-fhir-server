@@ -3,6 +3,7 @@ import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
 import { ApiAndes } from '../../utils/apiAndesQuery';
 import { fullurl } from '../../utils/data.util';
+import { pruneEmpty } from '../../utils/pruneFhir';
 
 const ObjectID = require('mongodb').ObjectID
 const globals = require('../../globals');
@@ -193,12 +194,12 @@ export async function buscarPaciente(version, parameters) {
         }
         if (patientsFhir.length > 0) {
             ret.entry = patientsFhir.map(p => ({
-                fullUrl: `https://fhir.andes.gob.ar/4_0_0/Patient/${p.id}`,
+                fullUrl: `https://fhir.andes.gob.ar/${version}/Patient/${p.id}`,
                 resource: p
             }));
         }
-
-        return ret;
+        const cleaned = pruneEmpty(ret);
+        return cleaned;
     } catch (err) {
         let message, system, code = '';
         if (typeof err === 'object') {
