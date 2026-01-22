@@ -4,31 +4,31 @@ import { CONSTANTS } from '../../constants';
 import { ApiAndes } from '../../utils/apiAndesQuery';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
+import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
+import { ObjectId } from 'mongodb';
+import globals from '../../globals';
+import { tokenQueryBuilder, familyQueryBuilder } from '../../utils/querybuilder.util';
 
-const ObjectID = require('mongodb').ObjectID
-const globals = require('../../globals');
-const { tokenQueryBuilder, familyQueryBuilder } = require('../../utils/querybuilder.util');
-
-let getPatient = (base_version) => {
+const getPatient = (base_version: string) => {
     return resolveSchema(base_version, 'Patient');
 };
 
-let buildAndesSearchQuery = (args) => {
+const buildAndesSearchQuery = (args: any) => {
     // Filtros de búsqueda para pacientes
-    let id = args['id'];
-    let family = args['family'] ? args['family'] : '';
-    let given = args['given'] ? args['given'] : '';
-    let identifier = args['identifier'];
-    let query: any = { activo: true };
+    const id = args['id'];
+    const family = args['family'] ? args['family'] : '';
+    const given = args['given'] ? args['given'] : '';
+    const identifier = args['identifier'];
+    let query: Record<string, any> = { activo: true };
     if (id) {
         query.id = id;
     }
     // Filtros especiales para paciente
     if (identifier) {
-        const queryBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        const queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false) as any;
         switch (queryBuilder.system) {
             case 'andes.gob.ar':
-                query._id = new ObjectID(queryBuilder.value);
+                query._id = new ObjectId(queryBuilder.value);
                 break;
             case 'http://www.renaper.gob.ar/cuil':
                 query.cuit = queryBuilder.value;
@@ -58,30 +58,103 @@ let buildAndesSearchQuery = (args) => {
         query = {
             ...query,
             $and: familyQueryBuilder(family + ' ' + given)
-        }
+        };
     }
     return query;
 };
 
-export async function buscarPacienteId(version, id) {
+export async function buscarPaciente(version: string, parameters: any, req: any) {
+    try {
+        const query = buildAndesSearchQuery(parameters);
+        if (parameters.gender) {
+            const gender = parameters.gender.toLowerCase();
+            if (gender === 'male' || gender === 'masculino') {
+                query.genero = 'masculino';
+            } else if (gender === 'female' || gender === 'femenino') {
+                query.genero = 'femenino';
+            } else if (gender === 'other' || gender === 'otro') {
+                query.genero = 'otro';
+            } else {
+                throw new ServerError('Género incorrecto');
+            }
+        }
+
+        const paging = parsePaging(parameters, {
+            defaultCount: 50,
+            maxCount: 200
+        });
+
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        const collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
+
+        const total = await collection.countDocuments(query);
+
+        const pacientes = await collection
+            .find(query)
+            .skip(paging.offset)
+            .limit(paging.count)
+            .toArray();
+
+        const Patient = getPatient(version);
+        const pacientesFhir = pacientes.map(pac => new Patient(fhirPac.encode(pac)));
+
+        const bundle = {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            total,
+            link: req ? buildPagingLinks(req, total, paging) : undefined,
+            entry: pacientesFhir.length
+                ? pacientesFhir.map(p => ({
+                    fullUrl: req
+                        ? buildEntryFullUrl(req, version, 'Patient', p.id)
+                        : fullurl(p),
+                    resource: p
+                }))
+                : undefined
+        };
+
+        return pruneEmpty(bundle);
+    } catch (err) {
+        let message;
+        let code = '';
+        if (typeof err === 'object') {
+            message = (err as any).message;
+            code = (err as any).code;
+        } else {
+            message = err;
+        }
+        throw new ServerError(message, {
+            resourceType: 'OperationOutcome',
+            issue: [
+                {
+                    severity: 'error',
+                    code,
+                    diagnostics: message
+                }
+            ]
+        });
+    }
+}
+
+export async function buscarPacienteId(version: string, id: string) {
     try {
         const andes = new ApiAndes();
-        let Patient = getPatient(version);
-        let patient = await andes.getPatient(id);
+        const Patient = getPatient(version);
+        const patient = await andes.getPatient(id);
         return patient ? new Patient(fhirPac.encode(patient)) : null;
     } catch (err) {
-        let message, system, code = '';
+        let message;
+        let code = '';
         if (typeof err === 'object') {
-            message = err.message;
-            system = err.system;
-            code = err.code
+            message = (err as any).message;
+            code = (err as any).code;
         } else {
-            message = err
+            message = err;
         }
         throw new ServerError(
             message,
             {
-                resourceType: "OperationOutcome",
+                resourceType: 'OperationOutcome',
                 issue: [
                     {
                         severity: 'error',
@@ -94,34 +167,33 @@ export async function buscarPacienteId(version, id) {
     }
 }
 
-export async function crearPaciente(base_version: string, resource: any) {
+export async function crearPaciente(base_version: string, resource: Record<string, any>) {
     try {
-        const andes = new ApiAndes();
         const db = globals.get(CONSTANTS.CLIENT_DB);
-        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
+        const collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         const Patient = getPatient(base_version);
-        let identifier = resource.identifier && resource.identifier.length ? resource.identifier : null;
-        let gender = resource.gender;
+        const identifier = resource.identifier && resource.identifier.length ? resource.identifier : null;
+        const gender = resource.gender;
         if (identifier) {
             try {
-                const pacientesAndes = await buscarPaciente(base_version, { base_version, identifier, gender });
-                const pacienteExistente = pacientesAndes[0];
+                const bundleResult = await buscarPaciente(base_version, { base_version, identifier, gender }, undefined);
+                const pacienteExistente = bundleResult.entry && bundleResult.entry.length > 0 ? bundleResult.entry[0].resource : null;
                 const plainPatient = pacienteExistente ? JSON.parse(JSON.stringify(pacienteExistente)) : null;
                 if (plainPatient) {
                     return {
                         existingPatient: true,
-                        patientId: plainPatient.identifier?.find(id => id.system == 'andes.gob.ar' && id.value)?.value,
+                        patientId: plainPatient.id,
                         patientData: plainPatient,
                         operationOutcome: {
-                            resourceType: "OperationOutcome",
+                            resourceType: 'OperationOutcome',
                             issue: [
                                 {
-                                    severity: "information",
-                                    code: "informational",
-                                    diagnostics: `El paciente ya existe. ID: ${plainPatient._id ? plainPatient._id.toString() : plainPatient.id}`
+                                    severity: 'information',
+                                    code: 'informational',
+                                    diagnostics: `El paciente ya existe. ID: ${plainPatient.id ? plainPatient.id.toString() : plainPatient.id}`
                                 }
                             ],
-                            data: plainPatient.identifier?.find(id => id.system == 'andes.gob.ar')
+                            data: plainPatient.identifier?.find((id: any) => id.system === 'andes.gob.ar')
                         }
                     };
                 }
@@ -130,7 +202,7 @@ export async function crearPaciente(base_version: string, resource: any) {
             }
         }
 
-        const paciente = fhirPac.decode(resource);
+        const paciente = fhirPac.decode(resource as any);
         const result = await collection.insertOne(paciente);
 
         const newPatient = new Patient({
@@ -148,76 +220,15 @@ export async function crearPaciente(base_version: string, resource: any) {
         throw new ServerError(
             'No se pudo crear el paciente',
             {
-                resourceType: "OperationOutcome",
+                resourceType: 'OperationOutcome',
                 issue: [
                     {
                         severity: 'error',
                         code: 'exception',
-                        diagnostics: error.message || error
+                        diagnostics: (error as any).message || error
                     }
                 ]
             }
         );
-    }
-}
-
-// Pronto va a deprecar por cambio a llamada a la api
-export async function buscarPaciente(version, parameters) {
-    try {
-        let query = buildAndesSearchQuery(parameters);
-        if (parameters.gender) {
-            const gender = parameters.gender.toLowerCase();
-            if (gender === 'male' || gender === 'masculino') {
-                query.genero = 'masculino';
-            } else if (gender === 'female' || gender === 'femenino') {
-                query.genero = 'femenino';
-            } else if (gender === 'other' || gender === 'otro') {
-                query.genero = 'otro';
-            } else {
-                throw new ServerError('Género incorrecto');
-            }
-        }
-        const db = globals.get(CONSTANTS.CLIENT_DB);
-        let collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
-        let Patient = getPatient(version);
-        let patients = await collection.find(query).toArray();
-        const patientsFhir = patients.map(pac => new Patient(fhirPac.encode(pac)));
-
-        const ret = {
-            resourceType: "Bundle",
-            type: "searchset",
-            total: patientsFhir.length,
-            entry: []
-        };
-        if (patientsFhir.length === 0) {
-            delete ret.entry;
-        }
-        if (patientsFhir.length > 0) {
-            ret.entry = patientsFhir.map(p => ({
-                fullUrl: `https://fhir.andes.gob.ar/${version}/Patient/${p.id}`,
-                resource: p
-            }));
-        }
-        const cleaned = pruneEmpty(ret);
-        return cleaned;
-    } catch (err) {
-        let message, system, code = '';
-        if (typeof err === 'object') {
-            message = err.message;
-            system = err.system;
-            code = err.code
-        } else {
-            message = err
-        }
-        throw new ServerError(message, {
-            resourceType: "OperationOutcome",
-            issue: [
-                {
-                    severity: 'error',
-                    code,
-                    diagnostics: message
-                }
-            ]
-        });
     }
 }
