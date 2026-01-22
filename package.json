@@ -40,6 +40,8 @@
     "@types/jest": "^30.0.0",
     "@types/mongodb": "3.6.20",
     "@types/node": "^18.19.50",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
     "cross-env": "^7.0.3",
     "elastic-apm-node": "^4.5.0",
     "eslint": "^8.57.0",

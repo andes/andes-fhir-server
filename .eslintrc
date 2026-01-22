@@ -1,4 +1,5 @@
 {
+  "parser": "@typescript-eslint/parser",
   "env": {
     "browser": true,
     "mocha": true,
@@ -7,16 +8,21 @@
     "es6": true
   },
   "parserOptions": {
-    "ecmaVersion": 8,
-    "sourceType": "module"
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
-  "extends": "eslint:recommended",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
   "rules": {
     "quotes": [
       2,
       "single",
       "avoid-escape"
     ],
+    "@typescript-eslint/no-explicit-any": "warn",
     "prefer-const": "error",
     "no-compare-neg-zero": 0,
     "no-console": 0,
