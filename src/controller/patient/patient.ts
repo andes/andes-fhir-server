@@ -79,7 +79,7 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
             }
         }
 
-        const paging = parsePaging(parameters, {
+        const paging = parsePaging(req.query, {
             defaultCount: 50,
             maxCount: 200
         });
@@ -98,7 +98,7 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
         const Patient = getPatient(version);
         const pacientesFhir = pacientes.map(pac => new Patient(fhirPac.encode(pac)));
 
-        const bundle = {
+        const bundle: any = {
             resourceType: 'Bundle',
             type: 'searchset',
             total,
