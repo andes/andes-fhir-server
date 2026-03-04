@@ -40,7 +40,7 @@ export const fhirServerConfig = {
     profiles: {
         patient: {
             service: path.join(servicesBase, 'patient', 'patient.service.js'),
-            versions: [VERSIONS['4_0_0']]
+            versions: [VERSIONS['4_0_0'], VERSIONS['4_0_1']]
         },
         practitioner: {
             service: path.join(servicesBase, 'practitioner', 'practitioner.service.js'),
