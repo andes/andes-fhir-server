@@ -1,7 +1,6 @@
 import { Patient as fhirPac } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
-import { ApiAndes } from '../../utils/apiAndesQuery';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
@@ -138,9 +137,10 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
 
 export async function buscarPacienteId(version: string, id: string) {
     try {
-        const andes = new ApiAndes();
+        const db = globals.get(CONSTANTS.CLIENT_DB);
+        const collection = db.collection(`${CONSTANTS.COLLECTION.PATIENT}`);
         const Patient = getPatient(version);
-        const patient = await andes.getPatient(id);
+        const patient = await collection.findOne({ _id: new ObjectId(id) });
         return patient ? new Patient(fhirPac.encode(patient)) : null;
     } catch (err) {
         let message;
