@@ -1,12 +1,12 @@
-import { Organization as fhirOrganization } from '@andes/fhir';
+import { Organization as fhirOrganization, Patient } from '@andes/fhir';
 import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
-
 import globals from '../../globals';
 import { stringQueryBuilder, keyQueryBuilder } from '../../utils/querybuilder.util';
+import { ObjectId } from 'mongodb';
 
 
 let getOrganization = (base_version: string) => {
@@ -83,20 +83,20 @@ export async function buscarOrganizacion(version: string, parameters: any, req: 
     }
 }
 
-export async function buscarOrganizacionId(version, id) {
+export async function buscarOrganizacionId(version: string, id: string) {
     try {
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
         let Organization = getOrganization(version);
-        let org = await collection.findOne({ _id: id });
-        return new Organization(fhirOrganization.encode(org))
+        let org = await collection.findOne({ _id: new ObjectId(id) });
+        return org ? new Organization(fhirOrganization.encode(org)) : null;
     } catch (err) {
         return err
     }
 }
 
 // Vermos como generalizar más adelante
-export async function buscarOrganizacionSisa(version, codigoSisa) {
+export async function buscarOrganizacionSisa(version: string, codigoSisa: string) {
     try {
         const db = globals.get(CONSTANTS.CLIENT_DB);
         let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);

@@ -1,4 +1,4 @@
-import { buscarOrganizacion } from './../../controller/organization/organization';
+import { buscarOrganizacion, buscarOrganizacionId } from './../../controller/organization/organization';
 
 async function search(args: any, context: any) {
 	try {
@@ -15,8 +15,8 @@ async function search(args: any, context: any) {
 
 async function searchById(args: any, context: any) {
 	try {
-		let { base_version } = args;
-		return await buscarOrganizacion(base_version, args, context.req);
+		let { base_version, id } = args;
+		return await buscarOrganizacionId(base_version, id);
 	} catch (err) {
 		return err
 	}
