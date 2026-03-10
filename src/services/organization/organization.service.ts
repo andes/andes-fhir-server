@@ -1,43 +1,30 @@
-import { buscarOrganizacion } from './../../controller/organization/organization';
-import { Permissions } from './../../lib/permissions';
+import { buscarOrganizacion, buscarOrganizacionId } from './../../controller/organization/organization';
 
-const p = Permissions;
-
-export = {
-	search: async (args, context) => {
-		try {
-			let { base_version } = args;
-			if (Object.keys(args).length > 1) {
-				return await buscarOrganizacion(base_version, args);
-			} else {
-				throw {warning: 'You will need to add the search parameters'};
-			}
-		} catch (err) {
-			return err
+async function search(args: any, context: any) {
+	try {
+		let { base_version } = args;
+		if (Object.keys(args).length > 1) {
+			return await buscarOrganizacion(base_version, args, context.req);
+		} else {
+			throw { warning: 'Se requiere enviar al menos un parámetro de búsqueda' };
 		}
+	} catch (err) {
+		return err
 	}
 }
 
+async function searchById(args: any, context: any) {
+	try {
+		let { base_version, id } = args;
+		return await buscarOrganizacionId(base_version, id);
+	} catch (err) {
+		return err
+	}
+}
 
-// TODO: Implementar más adelante el byID pero por ahora no lo necesitamos
+const OrganizationService = {
+	search,
+	searchById
+};
 
-// module.exports.searchById = (args, context, logger) => new Promise((resolve, reject) => {
-// 		logger.info('Organization >>> searchById');
-
-// 		let { base_version, id } = args;
-
-// 		let Organization = getOrganization(base_version);
-
-// 		// TODO: Build query from Parameters
-
-// 		// TODO: Query database
-
-// 		// Cast result to Organization Class
-// 		let organization_resource = new Organization();
-// 		// TODO: Set data with constructor or setter methods
-// 		organization_resource.id = 'test id';
-
-// 		// Return resource class
-// 		// resolve(organization_resource);
-// 		resolve();
-// 	});
+export = OrganizationService;
