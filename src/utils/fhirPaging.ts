@@ -97,7 +97,7 @@ export function buildPagingLinks(
 
 /**
  * Arma fullUrl estándar para Bundle.entry en modo absoluto.
- * Si preferís relativo, podés devolver `Patient/${id}` o `/${version}/Patient/${id}`.
+ * Opcional devolver `Patient/${id}` o `/${version}/Patient/${id}` en modo relativo.
  */
 export function buildEntryFullUrl(
   req: any,
