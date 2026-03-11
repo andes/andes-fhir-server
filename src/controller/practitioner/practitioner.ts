@@ -75,6 +75,27 @@ const buildAndesSearchQuery = (args: any) => {
     return query;
 };
 
+function escapeHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildPractitionerNarrative(practitioner) {
+    const family = practitioner?.name?.[0]?.family ?? '';
+    const given = practitioner?.name?.[0]?.given?.join(' ') ?? '';
+    const dni = practitioner?.identifier?.find(x => x.system === 'http://www.renaper.gob.ar/dni')?.value ?? '';
+
+    const summary = `Practitioner: ${family}, ${given}. DNI: ${dni}.`;
+
+    return {
+        status: 'generated',
+        div: `<div xmlns="http://www.w3.org/1999/xhtml">${escapeHtml(summary)}</div>`
+    };
+}
 export async function buscarPractitioner(version: string, parameters: any, req: any) {
     try {
         const query = buildAndesSearchQuery(parameters);
@@ -106,7 +127,13 @@ export async function buscarPractitioner(version: string, parameters: any, req: 
                     fullUrl: req
                         ? buildEntryFullUrl(req, version, 'Practitioner', p.id)
                         : fullurl(p),
-                    resource: p
+                    resource: {
+                        ...p,
+                        text: buildPractitionerNarrative(p)
+                    },
+                    search: {
+                        mode: "match"
+                    }
                 }))
                 : undefined
         };
@@ -139,17 +166,31 @@ export async function buscarPractitionerId(version: string, id: string) {
         const db = globals.get(CONSTANTS.CLIENT_DB);
         const collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
         const Practitioner = getPractitioner(version);
+
         const practitioner = await collection.findOne({ _id: new ObjectId(id) });
-        return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : null;
+
+        if (!practitioner) return null;
+
+        const encoded = fhirPractitioner.encode(practitioner);
+
+        const resource = {
+            ...encoded,
+            text: buildPractitionerNarrative(encoded)
+        };
+
+        return new Practitioner(resource);
+
     } catch (err) {
         let message;
         let code = '';
+
         if (typeof err === 'object') {
             message = (err as any).message;
             code = (err as any).code;
         } else {
             message = err;
         }
+
         throw new ServerError(
             message,
             {
