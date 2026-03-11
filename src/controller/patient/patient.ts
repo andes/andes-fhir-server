@@ -107,7 +107,10 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
                     fullUrl: req
                         ? buildEntryFullUrl(req, version, 'Patient', p.id)
                         : fullurl(p),
-                    resource: p
+                    resource: p,
+                    search: {
+                        mode: "match"
+                    }
                 }))
                 : undefined
         };

@@ -72,7 +72,10 @@ export async function buscarOrganizacion(version: string, parameters: any, req: 
                     fullUrl: req
                         ? buildEntryFullUrl(req, version, 'Organization', p.id)
                         : fullurl(p),
-                    resource: p
+                    resource: p,
+                    search: {
+                        mode: "match"
+                    }
                 }))
                 : undefined
         };
