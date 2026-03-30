@@ -7,19 +7,18 @@ const { CONSTANTS } = require('./../../constants');
 const globals = require('../../globals');
 
 
-let getSpecialityEncode = (specility) => {
+let getSpecialityEncode = (speciality) => {
     return {
-        identifier: specility._id,
+        identifier: speciality._id,
         code: {
             "system": "https://sisa.msal.gov.ar/sisa/#sisa",
-            "code": specility.codigo.sisa,
-            "display": specility.codigo.sisa
+            "code": speciality.codigo.sisa,
+            "display": speciality.codigo.sisa
         },
-        text: specility.nombre,
+        text: speciality.nombre,
         author: "https://sisa.msal.gov.ar/sisa/#sisa"
     }
 };
-
 
 
 let buildAndesSearchQuery = (args) => {
@@ -28,26 +27,27 @@ let buildAndesSearchQuery = (args) => {
     let codigo = args['codigo'];
 
     let query: any = {};
-
     if (nombre) {
         query.nombre = stringQueryBuilder(nombre);
     }
     if (codigo) {
-        query.sisa.codigo = parseInt(codigo);
+        query.codigo = {};
+        query.codigo.sisa = parseInt(codigo);
     }
-
     return query;
 };
 
 export = {
     search: async (args, context) => {
         try {
+            const { base_version } = args;
+            const params = context.req.query;
             let query = {};
-            if (Object.keys(args).length > 1) {
-                query = buildAndesSearchQuery(args);
+            if (Object.keys(params).length > 0) {
+                query = buildAndesSearchQuery(params);
             }
             const db = globals.get(CONSTANTS.CLIENT_DB);
-            const collection = db.collection(`${CONSTANTS.COLLECTION.SPECILITY}`);
+            const collection = db.collection(`${CONSTANTS.COLLECTION.SPECIALITY}`);
             let specialities = await collection.find(query).toArray();
             if (specialities.length) {
                 return specialities.map(speciality => getSpecialityEncode(speciality));
@@ -80,7 +80,7 @@ export = {
         try {
             let { base_version, id } = args;
             let db = globals.get(CONSTANTS.CLIENT_DB);
-            let collection = db.collection(`${CONSTANTS.COLLECTION.SPECILITY}`);
+            let collection = db.collection(`${CONSTANTS.COLLECTION.SPECIALITY}`);
             let speciality = await collection.findOne({ _id: objectId(id) });
             return speciality ? speciality : { notFound: 404 };
         } catch (err) {
