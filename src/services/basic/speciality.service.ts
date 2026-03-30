@@ -20,7 +20,6 @@ let getSpecialityEncode = (speciality) => {
     }
 };
 
-
 let buildAndesSearchQuery = (args) => {
     // Filtros de búsqueda para especialidades
     let nombre = args['nombre'];
