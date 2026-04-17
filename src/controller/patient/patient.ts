@@ -26,31 +26,34 @@ const buildAndesSearchQuery = (args: any) => {
     // Filtros especiales para paciente
     if (identifier) {
         const queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false) as any;
-        switch (queryBuilder.system) {
-            case 'andes.gob.ar':
-                query._id = new ObjectId(queryBuilder.value);
-                break;
-            case FhirIdentifierSystems.CUIL:
-                query.cuit = queryBuilder.value;
-                break;
-            case FhirIdentifierSystems.DNI:
-                query.documento = queryBuilder.value;
-                break;
-            case FhirIdentifierSystems.FOREIGN_ID:
-                query.numeroIdentificacion = queryBuilder.value;
-                query.tipoIdentificacion = 'dni extranjero';
-                break;
-            case FhirIdentifierSystems.PASSPORT:
-                query.numeroIdentificacion = queryBuilder.value;
-                query.tipoIdentificacion = 'pasaporte';
-                break;
-            default:
-                query.$or = [
-                    { documento: queryBuilder.value, estado: 'validado' },
-                    { cuit: queryBuilder.value, estado: 'validado' },
-                    { numeroIdentificacion: queryBuilder.value }
-                ];
-                break;
+        if (!queryBuilder.system) {
+            query.$or = [
+                { documento: queryBuilder.value, estado: 'validado' },
+                { cuit: queryBuilder.value, estado: 'validado' },
+                { numeroIdentificacion: queryBuilder.value }
+            ];
+        } else {
+            switch (queryBuilder.system) {
+                case FhirIdentifierSystems.ANDES_ID:
+                    query._id = new ObjectId(queryBuilder.value);
+                    break;
+                case FhirIdentifierSystems.CUIL:
+                    query.cuit = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.DNI:
+                    query.documento = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.FOREIGN_ID:
+                    query.numeroIdentificacion = queryBuilder.value;
+                    query.tipoIdentificacion = 'dni extranjero';
+                    break;
+                case FhirIdentifierSystems.PASSPORT:
+                    query.numeroIdentificacion = queryBuilder.value;
+                    query.tipoIdentificacion = 'pasaporte';
+                    break;
+                default:
+                    throw new ServerError('System incorrecto');
+            }
         }
     }
 
@@ -79,7 +82,7 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
             }
         }
 
-        const paging = parsePaging(req.query, {
+        const paging = parsePaging(req?.query || {}, {
             defaultCount: 50,
             maxCount: 200
         });
@@ -197,7 +200,7 @@ export async function crearPaciente(base_version: string, resource: Record<strin
                                     diagnostics: `El paciente ya existe. ID: ${plainPatient.id ? plainPatient.id.toString() : plainPatient.id}`
                                 }
                             ],
-                            data: plainPatient.identifier?.find((id: any) => id.system === 'andes.gob.ar')
+                            data: plainPatient.identifier?.find((id: any) => id.system === FhirIdentifierSystems.ANDES_ID)
                         }
                     };
                 }

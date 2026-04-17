@@ -43,10 +43,10 @@ const buildAndesSearchQuery = (args: any) => {
     if (identifier) {
         const tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
         switch (tokenBuilder.system) {
-            case 'andes.gob.ar':
+            case FhirIdentifierSystems.ANDES_ID:
                 query._id = new ObjectId(tokenBuilder.value);
                 break;
-            case 'andes.gob.ar/matriculaciones':
+            case FhirIdentifierSystems.MATRICULACIONES:
                 if (tokenBuilder.value.includes('@')) {
                     /*  Consulta por profesional. Dado un nro de matricula y codigo de carrera de grado o posgrado,
                         retorna un profesional siempre que esté activo.
