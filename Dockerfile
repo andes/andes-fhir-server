@@ -1,18 +1,55 @@
-FROM node:8.9.4
+FROM node:18.20.8-bookworm-slim AS base
+WORKDIR /app
 
-# Update everything on the box
-RUN apt-get -y update
-RUN apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    dumb-init \
+ && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
-WORKDIR /srv/src
+##############################
+# deps
+##############################
+FROM base AS deps
+COPY package*.json ./
 
-# Copy our package.json & install our dependencies
-COPY package.json /srv/src/package.json
-RUN yarn install
+# 👉 FORZAMOS la versión de @andes/fhir
+RUN npm pkg set dependencies.@andes/fhir="^1.13.0-beta"
 
-# Copy the remaining application code
-COPY . /srv/src
+RUN npm install
 
-# Start the app
-CMD yarn start
+##############################
+# build
+##############################
+FROM deps AS build
+COPY tsconfig.json ./
+COPY src ./src
+
+RUN npm run tsc
+
+##############################
+# production
+##############################
+FROM node:18.20.8-bookworm-slim AS production
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    dumb-init \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY package*.json ./
+
+# 👉 mismo fix en runtime
+RUN npm pkg set dependencies.@andes/fhir="^1.13.0-beta"
+
+RUN npm install --omit=dev && npm cache clean --force
+
+COPY --from=build /app/dist ./dist
+
+EXPOSE 3000
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/index.js"]
