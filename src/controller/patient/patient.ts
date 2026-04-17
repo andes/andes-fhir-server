@@ -7,6 +7,7 @@ import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fh
 import { ObjectId } from 'mongodb';
 import globals from '../../globals';
 import { tokenQueryBuilder, familyQueryBuilder } from '../../utils/querybuilder.util';
+import { FhirIdentifierSystems } from '../../constants/identifier-systems';
 
 const getPatient = (base_version: string) => {
     return resolveSchema(base_version, 'Patient');
@@ -29,17 +30,17 @@ const buildAndesSearchQuery = (args: any) => {
             case 'andes.gob.ar':
                 query._id = new ObjectId(queryBuilder.value);
                 break;
-            case 'http://www.renaper.gob.ar/cuil':
+            case FhirIdentifierSystems.CUIL:
                 query.cuit = queryBuilder.value;
                 break;
-            case 'http://www.renaper.gob.ar/dni':
+            case FhirIdentifierSystems.DNI:
                 query.documento = queryBuilder.value;
                 break;
-            case 'andes.gob.ar/sid/foreign-id':
+            case FhirIdentifierSystems.FOREIGN_ID:
                 query.numeroIdentificacion = queryBuilder.value;
                 query.tipoIdentificacion = 'dni extranjero';
                 break;
-            case 'andes.gob.ar/sid/passport':
+            case FhirIdentifierSystems.PASSPORT:
                 query.numeroIdentificacion = queryBuilder.value;
                 query.tipoIdentificacion = 'pasaporte';
                 break;
@@ -109,7 +110,7 @@ export async function buscarPaciente(version: string, parameters: any, req: any)
                         : fullurl(p),
                     resource: p,
                     search: {
-                        mode: "match"
+                        mode: 'match'
                     }
                 }))
                 : undefined

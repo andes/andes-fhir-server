@@ -6,26 +6,27 @@ import { buscarOrganizacionSisa } from '../../controller/organization/organizati
 import { buscarPacienteId } from '../../controller/patient/patient';
 import { ApiAndes } from '../../utils/apiAndesQuery';
 import { createResource, fullurl } from '../../utils/data.util';
+import { FhirIdentifierSystems } from '../../constants/identifier-systems';
 
 const { ObjectID } = require('mongodb').ObjectID;
 
-let getPatient = (base_version) => {
+const getPatient = (base_version) => {
     return resolveSchema(base_version, 'patient');
-}
-let getMedication = (base_version) => {
+};
+const getMedication = (base_version) => {
     return resolveSchema(base_version, 'medication');
-}
-let getMedicationStatement = (base_version) => {
+};
+const getMedicationStatement = (base_version) => {
     return resolveSchema(base_version, 'medicationstatement');
-}
-let getAllergyIntolerance = (base_version) => {
+};
+const getAllergyIntolerance = (base_version) => {
     return resolveSchema(base_version, 'allergyintolerance');
-}
+};
 
 async function prestMedicamentos(version, prestacionMedicamentos, FHIRPatient): Promise<any> {
     const apiAndes = new ApiAndes();
     let FHIRMedication;
-    let FHIRMedicationStatement = [];
+    const FHIRMedicationStatement = [];
     const medicationSchema = getMedication(version);
     const medicationStatementSchema = getMedicationStatement(version);
     if (prestacionMedicamentos.length) {
@@ -34,9 +35,9 @@ async function prestMedicamentos(version, prestacionMedicamentos, FHIRPatient): 
             FHIRMedication = new medicationSchema(Medication.encode(medicamento));
             FHIRMedicationStatement.push(new medicationStatementSchema(MedicationStatement.encode(fullurl(FHIRPatient), fullurl(FHIRMedication), pm)));
         }
-        return FHIRMedicationStatement
+        return FHIRMedicationStatement;
     } else {
-        return [EmptyMedicationStatement(fullurl(FHIRPatient))]
+        return [EmptyMedicationStatement(fullurl(FHIRPatient))];
 
     }
 }
@@ -56,7 +57,7 @@ export async function ips(version, pacienteID) {
             const semanticTags = ['trastorno', 'producto', 'fármaco de uso clínico', /*  'hallazgo'  , 'evento', 'situacion' */]; // [TODO] Revisar listado de semtags con el equipo
             const { registrosMedicos, prestacionMedicamentos, registrosAlergias } = filtrarRegistros(prestaciones, { semanticTags }, snomedAlergias);
 
-            const documento = patient.identifier.find(i => i.system === 'http://www.renaper.gob.ar/dni').value;
+            const documento = patient.identifier.find(i => i.system === FhirIdentifierSystems.DNI).value;
             const vacunas: any = await getVacunas(documento);
 
             // Armar documento
@@ -110,9 +111,9 @@ export async function ips(version, pacienteID) {
             return FHIRBundle;
 
         } else {
-            const message = 'patient not found'
+            const message = 'patient not found';
             throw new ServerError(message, {
-                resourceType: "OperationOutcome",
+                resourceType: 'OperationOutcome',
                 issue: [
                     {
                         severity: 'error',
@@ -123,10 +124,10 @@ export async function ips(version, pacienteID) {
             });
         }
     } catch (err) {
-        console.log(err)
-        const message = err
+        console.log(err);
+        const message = err;
         throw new ServerError(message, {
-            resourceType: "OperationOutcome",
+            resourceType: 'OperationOutcome',
             issue: [
                 {
                     severity: 'error',
@@ -169,8 +170,8 @@ function EmptyAllergyIntolerance(patientReference) {
             coding: [
                 {
                     system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
-                    display: "No hay registro de alergías",
-                    code: "no-allergy-info",
+                    display: 'No hay registro de alergías',
+                    code: 'no-allergy-info',
                 }
             ]
         },
@@ -179,11 +180,11 @@ function EmptyAllergyIntolerance(patientReference) {
         },
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml">No hay registro de alergías</div>`
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">No hay registro de alergías</div>'
         },
         resourceType: 'AllergyIntolerance',
         type: 'allergy'
-    }
+    };
 }
 
 
@@ -210,7 +211,7 @@ function EmptyImmunization(patientReference) {
             url: 'http://build.fhir.org/extension-data-absent-reason.html',
             valueCode: 'unknown'
         }
-    }
+    };
 }
 
 
@@ -233,8 +234,8 @@ function EmptyMedicationStatement(patientReference) {
             coding: [
                 {
                     system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
-                    display: "No information about current medications",
-                    code: "no-medication-info",
+                    display: 'No information about current medications',
+                    code: 'no-medication-info',
                 }
             ]
         },
@@ -244,7 +245,7 @@ function EmptyMedicationStatement(patientReference) {
             ]
         },
         resourceType: 'MedicationStatement'
-    }
+    };
 }
 
 function EmptyCondition(patientReference) {
@@ -295,5 +296,5 @@ function EmptyCondition(patientReference) {
                 },
             ]
         }
-    }
+    };
 }

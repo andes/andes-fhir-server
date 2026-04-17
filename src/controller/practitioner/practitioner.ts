@@ -7,6 +7,7 @@ import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fh
 import { ObjectId } from 'mongodb';
 import globals from '../../globals';
 import { tokenQueryBuilder, familyQueryBuilder } from '../../utils/querybuilder.util';
+import { FhirIdentifierSystems } from '../../constants/identifier-systems';
 
 const getPractitioner = (base_version: string) => {
     return resolveSchema(base_version, 'Practitioner');
@@ -14,11 +15,11 @@ const getPractitioner = (base_version: string) => {
 
 const buildAndesSearchQuery = (args: any) => {
     // Filtros de búsqueda para profesionales
-    let active = args['active'] ? args['active'] : true;
-    let family = args['family'] ? args['family'] : '';
-    let given = args['given'] ? args['given'] : '';
-    let identifier = args['identifier'];
-    let query: any = {};
+    const active = args['active'] ? args['active'] : true;
+    const family = args['family'] ? args['family'] : '';
+    const given = args['given'] ? args['given'] : '';
+    const identifier = args['identifier'];
+    const query: any = {};
 
     query.$and = [];
     query.$and.push({ profesionalMatriculado: true });
@@ -40,7 +41,7 @@ const buildAndesSearchQuery = (args: any) => {
 
     // Controles de identifier de profesional
     if (identifier) {
-        let tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
+        const tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
         switch (tokenBuilder.system) {
             case 'andes.gob.ar':
                 query._id = new ObjectId(tokenBuilder.value);
@@ -65,7 +66,7 @@ const buildAndesSearchQuery = (args: any) => {
             case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
                 query.cuit = tokenBuilder.value;
                 break;
-            case 'http://www.renaper.gob.ar/dni':
+            case FhirIdentifierSystems.DNI:
                 query.documento = tokenBuilder.value;
                 break;
             default:
@@ -87,7 +88,7 @@ function escapeHtml(value = '') {
 function buildPractitionerNarrative(practitioner) {
     const family = practitioner?.name?.[0]?.family ?? '';
     const given = practitioner?.name?.[0]?.given?.join(' ') ?? '';
-    const dni = practitioner?.identifier?.find(x => x.system === 'http://www.renaper.gob.ar/dni')?.value ?? '';
+    const dni = practitioner?.identifier?.find(x => x.system === FhirIdentifierSystems.DNI)?.value ?? '';
 
     const summary = `Practitioner: ${family}, ${given}. DNI: ${dni}.`;
 
@@ -132,7 +133,7 @@ export async function buscarPractitioner(version: string, parameters: any, req: 
                         text: buildPractitionerNarrative(p)
                     },
                     search: {
-                        mode: "match"
+                        mode: 'match'
                     }
                 }))
                 : undefined
@@ -169,7 +170,7 @@ export async function buscarPractitionerId(version: string, id: string) {
 
         const practitioner = await collection.findOne({ _id: new ObjectId(id) });
 
-        if (!practitioner) return null;
+        if (!practitioner) { return null; }
 
         const encoded = fhirPractitioner.encode(practitioner);
 
