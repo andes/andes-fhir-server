@@ -1,13 +1,12 @@
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
-import { CONSTANTS } from '../../constants';
+import { CONSTANTS, FhirIdentifierSystems } from '../../constants';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
 import { ObjectId } from 'mongodb';
 import globals from '../../globals';
 import { tokenQueryBuilder, familyQueryBuilder } from '../../utils/querybuilder.util';
-import { FhirIdentifierSystems } from '../../constants/identifier-systems';
 
 const getPractitioner = (base_version: string) => {
     return resolveSchema(base_version, 'Practitioner');

@@ -6,7 +6,7 @@ import { buscarOrganizacionSisa } from '../../controller/organization/organizati
 import { buscarPacienteId } from '../../controller/patient/patient';
 import { ApiAndes } from '../../utils/apiAndesQuery';
 import { createResource, fullurl } from '../../utils/data.util';
-import { FhirIdentifierSystems } from '../../constants/identifier-systems';
+import { FhirIdentifierSystems } from '../../constants';
 
 const { ObjectID } = require('mongodb').ObjectID;
 
