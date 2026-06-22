@@ -9,19 +9,32 @@ export function replaceChars(text: string) {
     return text;
 }
 
+export function coerceToString(target: any): string {
+    if (typeof target === 'string') {
+        return target;
+    }
+    if (target && typeof target.toString === 'function') {
+        return target.toString();
+    }
+    return '';
+}
+
 /**
  * @name tokensQueryBuilder
  * @param {string} target what we are querying for
  * @return a mongo regex query
  */
 export const familyQueryBuilder = function (target) {
+    const text = coerceToString(target);
     const ExpRegFilter = /([-_()\[\]{}+?*.$\^|¨`´~,:#<>¡!\\])/g;
-    let words: any = target.replace(ExpRegFilter, '');
+    let words: any = text.replace(ExpRegFilter, '');
     words = replaceChars(words);
     words = words.trim().toLowerCase().split(' ');
     const andQuery = [];
     words.forEach(w => {
-        andQuery.push({ tokens: RegExp(`^${w}`) });
+        if (w) {
+            andQuery.push({ tokens: RegExp(`^${w}`) });
+        }
     });
     return andQuery;
 };
@@ -33,9 +46,10 @@ export const familyQueryBuilder = function (target) {
  * @return a mongo regex query
  */
 export const stringQueryBuilder = function (target, contains = false) {
-    let t2 = target.replace(/[\\(\\)\\-\\_\\+\\=\\/\\.]/g, '\\$&');
+    const text = coerceToString(target);
+    const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const ini = contains ? '' : '^';
-    return { $regex: new RegExp(ini + t2, 'i') };
+    return { $regex: new RegExp(ini + escaped, 'i') };
 };
 
 /**
@@ -105,30 +119,45 @@ export const nameQueryBuilder = function (target) {
 *      query.$or = [tokenQueryBuilder(identifier, 'value', 'identifier'), tokenQueryBuilder(type, 'code', 'type.coding')];
 */
 export const tokenQueryBuilder = function (target, type, field, required) {
-    let queryBuilder = {};
-    let system = target.system ? target.system : '';
-    let value = target.value ? target.value : '';
-    if (target.length > 0) {
-        system = target[0].system ? target[0].system : '';
-        value = target[0].value ? target[0].value : '';
-    }
-    if (target.includes(';')) {
-        [system, value] = target.split(';')
-        if (required) {
-            system = required;
+    let queryBuilder: any = {};
+    let system = '';
+    let value = '';
+
+    if (target && typeof target === 'object') {
+        if (Array.isArray(target) && target.length > 0) {
+            const first = target[0];
+            if (first && typeof first === 'object') {
+                system = first.system !== undefined && first.system !== null ? String(first.system) : '';
+                value = first.value !== undefined && first.value !== null ? String(first.value) : '';
+            } else if (typeof first === 'string') {
+                return tokenQueryBuilder(first, type, field, required);
+            }
+        } else {
+            system = target.system !== undefined && target.system !== null ? String(target.system) : '';
+            value = target.value !== undefined && target.value !== null ? String(target.value) : '';
         }
-    } else if (target.includes('|')) {
-        [system, value] = target.split('|');
-        if (required) {
-            system = required;
+    } else if (typeof target === 'string') {
+        if (target.includes(';')) {
+            [system, value] = target.split(';');
+            if (required) {
+                system = required;
+            }
+        } else if (target.includes('|')) {
+            [system, value] = target.split('|');
+            if (required) {
+                system = required;
+            }
+        } else {
+            value = target;
         }
     }
+
     if (system && value) {
-        queryBuilder = { system, value }
+        queryBuilder = { system, value };
     } else if (value) {
-        queryBuilder = { value }
+        queryBuilder = { value };
     } else {
-        queryBuilder = { value: target };
+        queryBuilder = { value: '' };
     }
     return queryBuilder;
 };
