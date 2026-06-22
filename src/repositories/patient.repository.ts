@@ -2,7 +2,7 @@ import { ObjectId, Collection } from 'mongodb';
 import { ServerError } from '@asymmetrik/node-fhir-server-core';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
-import { tokenQueryBuilder, familyQueryBuilder } from '../utils/querybuilder.util';
+import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder } from '../utils/querybuilder.util';
 
 /**
  * Obtiene la colección de pacientes de la base de datos.
@@ -23,33 +23,37 @@ function buildAndesSearchQuery(args: any) {
     let query: Record<string, any> = { activo: true };
 
     if (id) {
-        query.id = id;
+        query.id = stringQueryBuilder(id);
     }
     if (identifier) {
         const queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false) as any;
         if (!queryBuilder.system) {
             query.$or = [
-                { documento: queryBuilder.value, estado: 'validado' },
-                { cuit: queryBuilder.value, estado: 'validado' },
-                { numeroIdentificacion: queryBuilder.value }
+                { documento: stringQueryBuilder(queryBuilder.value), estado: 'validado' },
+                { cuit: stringQueryBuilder(queryBuilder.value), estado: 'validado' },
+                { numeroIdentificacion: stringQueryBuilder(queryBuilder.value) }
             ];
         } else {
             switch (queryBuilder.system) {
                 case FhirIdentifierSystems.ANDES_ID:
-                    query._id = new ObjectId(queryBuilder.value);
+                    if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
+                        query._id = new ObjectId(queryBuilder.value);
+                    } else {
+                        throw new ServerError('ID de Andes incorrecto o inválido');
+                    }
                     break;
                 case FhirIdentifierSystems.CUIL:
-                    query.cuit = queryBuilder.value;
+                    query.cuil = stringQueryBuilder(queryBuilder.value);
                     break;
                 case FhirIdentifierSystems.DNI:
-                    query.documento = queryBuilder.value;
+                    query.documento = stringQueryBuilder(queryBuilder.value);
                     break;
                 case FhirIdentifierSystems.FOREIGN_ID:
-                    query.numeroIdentificacion = queryBuilder.value;
+                    query.numeroIdentificacion = stringQueryBuilder(queryBuilder.value);
                     query.tipoIdentificacion = 'dni extranjero';
                     break;
                 case FhirIdentifierSystems.PASSPORT:
-                    query.numeroIdentificacion = queryBuilder.value;
+                    query.numeroIdentificacion = stringQueryBuilder(queryBuilder.value);
                     query.tipoIdentificacion = 'pasaporte';
                     break;
                 default:
