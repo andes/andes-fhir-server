@@ -98,7 +98,9 @@ const PatientRepository = {
 
     async findById(id: string): Promise<any> {
         const collection = getCollection() as any;
-        return collection.findOne({ _id: new ObjectId(id) });
+        // Consistente con buildAndesSearchQuery: no exponer pacientes dados de
+        // baja lógicamente (activo: false) a través del acceso directo por ID.
+        return collection.findOne({ _id: new ObjectId(id), activo: true });
     },
 
     async insert(doc: any): Promise<any> {
