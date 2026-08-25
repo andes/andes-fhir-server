@@ -1,6 +1,47 @@
+import { ObjectId } from 'mongodb';
 import PatientRepository from '../../src/repositories/patient.repository';
 import { FhirIdentifierSystems } from '../../src/constants';
 import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import globals from '../../src/globals';
+import { CONSTANTS } from '../../src/constants';
+
+describe('Patient Repository - findById', () => {
+    afterEach(() => {
+        globals.delete(CONSTANTS.CLIENT_DB);
+    });
+
+    it('should filter by activo:true, consistent with buildAndesSearchQuery', async () => {
+        const findOne = jest.fn().mockResolvedValue(null);
+        const fakeDb = { collection: jest.fn().mockReturnValue({ findOne }) };
+        globals.set(CONSTANTS.CLIENT_DB, fakeDb);
+
+        const id = new ObjectId().toString();
+        await PatientRepository.findById(id);
+
+        expect(findOne).toHaveBeenCalledTimes(1);
+        const calledQuery = findOne.mock.calls[0][0];
+        expect(calledQuery.activo).toBe(true);
+        expect(calledQuery._id).toBeInstanceOf(ObjectId);
+        expect(calledQuery._id.toString()).toBe(id);
+    });
+
+    it('should NOT return an inactive (logically deleted) patient by id', async () => {
+        // Simula el comportamiento real de Mongo: el filtro activo:true
+        // hace que findOne no devuelva un documento con activo:false.
+        const findOne = jest.fn().mockImplementation((query: any) => {
+            const doc = { _id: new ObjectId(id), activo: false, apellido: 'Baja logica' };
+            const matches = (!('activo' in query) || query.activo === doc.activo);
+            return Promise.resolve(matches ? doc : null);
+        });
+        const fakeDb = { collection: jest.fn().mockReturnValue({ findOne }) };
+        globals.set(CONSTANTS.CLIENT_DB, fakeDb);
+
+        const id = new ObjectId().toString();
+        const result = await PatientRepository.findById(id);
+
+        expect(result).toBeNull();
+    });
+});
 
 describe('Patient Repository - buildQuery', () => {
     it('should query id case-insensitively and escape regex characters', () => {
