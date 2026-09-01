@@ -29,7 +29,6 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.46",
     "mongodb": "^6.10.0",
-    "object-hash": "^3.0.0",
     "passport-http-bearer": "^1.0.1",
     "shiro-trie": "^0.4.9"
   },
