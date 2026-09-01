@@ -1,4 +1,4 @@
-FROM node:18.20.8-bookworm-slim AS base
+FROM node:22-bookworm-slim AS base
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,7 +29,7 @@ RUN npm run tsc
 ##############################
 # production
 ##############################
-FROM node:18.20.8-bookworm-slim AS production
+FROM node:22-bookworm-slim AS production
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -1,5 +1,5 @@
-const hash = require('object-hash');
-const { ObjectID } = require('mongodb').ObjectID;
+import hash from 'object-hash';
+import { ObjectId } from 'mongodb';
 
 /**
  * Return a random int, used by `utils.getUid()`.
@@ -44,11 +44,11 @@ export const getUuid = (obj) => {
 };
 
 export const getObjectId = () => {
-    return new ObjectID();
+    return new ObjectId();
 };
 
 export const setObjectId = (id) => {
-    return new ObjectID(id);
+    return new ObjectId(id);
 };
 
 

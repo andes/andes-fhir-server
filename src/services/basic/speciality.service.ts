@@ -1,10 +1,8 @@
 import { ServerError } from '@asymmetrik/node-fhir-server-core';
 import { stringQueryBuilder } from './../../utils/querybuilder.util';
 import { setObjectId as objectId } from './../../utils/uid.util';
-
-const ObjectID = require('mongodb').ObjectID
-const { CONSTANTS } = require('./../../constants');
-const globals = require('../../globals');
+import { CONSTANTS } from './../../constants';
+import globals from '../../globals';
 
 
 let getSpecialityEncode = (speciality) => {

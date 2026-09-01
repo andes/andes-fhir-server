@@ -1,6 +1,6 @@
 const Strategy = require('passport-http-bearer').Strategy;
 const request = require('superagent');
-const env = require('var');
+const env = process.env;
 
 /**
  * Bearer Strategy

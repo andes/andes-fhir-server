@@ -4,7 +4,7 @@ import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
 import { buscarPacienteId } from '../../controller/patient/patient';
 import { createResource } from '../../utils/data.util';
-const { ObjectID } = require('mongodb').ObjectID;
+import { ObjectId } from 'mongodb';
 
 const getDocReference = (base_version) => {
     return resolveSchema(base_version, 'documentreference');
@@ -39,10 +39,10 @@ export async function getDocumentReference(version, pacienteID) {
             const FHIRDevice = new DeviceSchema(Device.encode());
             // validateResource(FHIRDevice);
             const binaryURL = `Bundle/${pacienteID}`;
-            const documentReferenceID = new ObjectID();
+            const documentReferenceID = new ObjectId();
             const docRefFHIR = new DocumentReferenceSchema(DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL));
             // validateResource(docRefFHIR);
-            const BundleID = new ObjectID();
+            const BundleID = new ObjectId();
             const FHIRBundle = new BundleSchema(
                 Bundle.encode(BundleID, [
                     createResource(docRefFHIR)
