@@ -18,7 +18,13 @@
         "types": [
             "node",
             "jest"
-        ]
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "@andes/fhir": [
+                "../fhir/dist/index"
+            ]
+        }
     },
     "include": [
         "src/**/*.ts",
