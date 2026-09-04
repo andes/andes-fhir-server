@@ -1,4 +1,11 @@
-require('dotenv').config();
+try {
+    process.loadEnvFile();
+} catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+        throw e;
+    }
+}
+
 
 import { initialize } from '@andes/fhir';
 import * as FHIRServer from '@asymmetrik/node-fhir-server-core';
@@ -9,7 +16,6 @@ import { mongoConnect } from './lib/mongo';
 
 const asyncHandler = require('./lib/async-handler');
 const globals = require('./globals');
-
 
 const main = async function () {
 
