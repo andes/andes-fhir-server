@@ -28,8 +28,11 @@ const main = async function () {
     const server = FHIRServer.initialize(fhirServerConfig);
     server.listen(
         fhirServerConfig.server.port,
-        () => server.logger.verbose('Servidor Fhir online...')
+        () => server.logger.verbose('Servidor FHIR online...')
     );
+    console.log(`FHIR Server: http://localhost:${fhirServerConfig.server.port}/`);
+    console.log('FHIR Resources');
+    console.log(fhirServerConfig.profiles);
 };
 
 main();
