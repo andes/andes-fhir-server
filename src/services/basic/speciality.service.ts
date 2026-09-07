@@ -1,4 +1,4 @@
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import { stringQueryBuilder } from './../../utils/querybuilder.util';
 import { ObjectId } from 'mongodb';
 import { CONSTANTS } from './../../constants';

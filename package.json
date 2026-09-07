@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@andes/fhir": "^1.13.0-beta",
-    "@asymmetrik/fhir-json-schema-validator": "^0.9.8",
-    "@asymmetrik/node-fhir-server-core": "^2.1.3",
-    "@asymmetrik/sof-scope-checker": "^1.0.2",
+    "@bluehalo/fhir-json-schema-validator": "^0.11.0",
+    "@bluehalo/node-fhir-server-core": "^2.3.0",
+    "@bluehalo/sof-scope-checker": "^1.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.10.0",
     "passport-http-bearer": "^1.0.1",

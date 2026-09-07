@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import PatientRepository from '../../src/repositories/patient.repository';
 import { FhirIdentifierSystems } from '../../src/constants';
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../../src/globals';
 import { CONSTANTS } from '../../src/constants';
 

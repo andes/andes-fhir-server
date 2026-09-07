@@ -1,6 +1,6 @@
 import { Bundle, Device, DocumentReference } from '@andes/fhir';
-import * as JSONSchemaValidator from '@asymmetrik/fhir-json-schema-validator';
-import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
+import * as JSONSchemaValidator from '@bluehalo/fhir-json-schema-validator';
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
 import { buscarPacienteId } from '../../controller/patient/patient';
 import { createResource } from '../../utils/data.util';

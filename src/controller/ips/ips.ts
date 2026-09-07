@@ -1,5 +1,5 @@
 import { AllergyIntolerance, Bundle, Composition, Condition, Device, Immunization, Medication, MedicationStatement } from '@andes/fhir';
-import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { filtrarRegistros, getPrestaciones } from '../../controller/ips/prestaciones';
 import { getVacunas } from '../../controller/ips/vacunas';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';

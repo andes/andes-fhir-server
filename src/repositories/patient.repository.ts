@@ -1,5 +1,5 @@
 import { ObjectId, Collection } from 'mongodb';
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
 import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder } from '../utils/querybuilder.util';

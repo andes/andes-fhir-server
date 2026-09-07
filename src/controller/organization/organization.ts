@@ -1,5 +1,5 @@
 import { Organization as fhirOrganization } from '@andes/fhir';
-import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema } from '@bluehalo/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';

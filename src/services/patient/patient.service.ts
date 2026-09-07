@@ -1,5 +1,5 @@
 import { Patient as fhirPac } from '@andes/fhir';
-import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';

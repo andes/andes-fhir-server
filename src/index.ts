@@ -8,7 +8,7 @@ try {
 
 
 import { initialize } from '@andes/fhir';
-import * as FHIRServer from '@asymmetrik/node-fhir-server-core';
+import * as FHIRServer from '@bluehalo/node-fhir-server-core';
 import './apm';
 import { fhirServerConfig, mongoConfig } from './config';
 import { CONSTANTS } from './constants';
@@ -32,9 +32,10 @@ const main = async function () {
     globals.set(CONSTANTS.CLIENT_DB, client.db(mongoConfig.db_name));
     // inicializa el servidor Fhir
     const server = FHIRServer.initialize(fhirServerConfig);
+    const logger = FHIRServer.loggers.get('default');
     server.listen(
         fhirServerConfig.server.port,
-        () => server.logger.verbose('Servidor FHIR online...')
+        () => logger.verbose('Servidor FHIR online...')
     );
     console.log(`FHIR Server: http://localhost:${fhirServerConfig.server.port}/`);
     console.log('FHIR Resources');

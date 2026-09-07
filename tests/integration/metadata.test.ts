@@ -1,4 +1,4 @@
-import { initialize } from '@asymmetrik/node-fhir-server-core';
+import { initialize } from '@bluehalo/node-fhir-server-core';
 import path from 'path';
 
 describe('FHIR Server - /metadata', () => {
