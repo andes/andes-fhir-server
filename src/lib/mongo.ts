@@ -2,7 +2,7 @@ import { MongoClient } from 'mongodb';
 
 /**
  * @name mongoConnect
- * @summary Connect to MongoDB using MongoDB Driver 3.7.3
+ * @summary Connect to MongoDB using MongoDB Driver 6.x
  * @param {string} url - MongoDB connection string
  * @return {Promise<MongoClient>} - Connected client
  */

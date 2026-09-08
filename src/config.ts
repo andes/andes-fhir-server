@@ -1,13 +1,16 @@
 import path from 'path';
-const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
+import { constants } from '@bluehalo/node-fhir-server-core';
+
+const { VERSIONS } = constants;
 
 export const mongoConfig = {
     connection: process.env.MONGO_HOSTNAME,
-    db_name: process.env.MONGO_DB_NAME,
-    options: {
-        auto_reconnect: true,
-        useUnifiedTopology: true
-    }
+    db_name: process.env.MONGO_DB_NAME
+};
+
+export const snomedConfig = {
+    snowstormHost: process.env.SNOWSTORM_HOST || 'http://127.0.0.1:8080',
+    snowstormBranch: process.env.SNOWSTORM_BRANCH || 'MAIN'
 };
 
 const whitelist_env = process.env.WHITELIST && process.env.WHITELIST.split(',').map(host => host.trim()) || false;
@@ -40,7 +43,21 @@ export const fhirServerConfig = {
     profiles: {
         patient: {
             service: path.join(servicesBase, 'patient', 'patient.service.js'),
-            versions: [VERSIONS['4_0_1']]
+            versions: [VERSIONS['4_0_1']],
+            operation: [
+                {
+                    name: 'summary',              // → busca "summary"
+                    route: '/:id/$summary',
+                    method: 'GET',
+                    reference: 'https://hl7.org/fhir/uv/ips/OperationDefinition-summary.html',
+                },
+                {
+                    name: 'summary-by-identifier', // → busca "summaryByIdentifier"
+                    route: '/$summary',
+                    method: 'GET',
+                    reference: 'https://hl7.org/fhir/uv/ips/OperationDefinition-summary.html',
+                },
+            ],
         },
         practitioner: {
             service: path.join(servicesBase, 'practitioner', 'practitioner.service.js'),

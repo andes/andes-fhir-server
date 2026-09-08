@@ -1,5 +1,5 @@
 import { ObjectId, Collection } from 'mongodb';
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
 import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder } from '../utils/querybuilder.util';
@@ -25,6 +25,7 @@ function buildAndesSearchQuery(args: any) {
     if (id) {
         query.id = stringQueryBuilder(id);
     }
+
     if (identifier) {
         const queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false) as any;
         if (!queryBuilder.system) {
@@ -65,7 +66,7 @@ function buildAndesSearchQuery(args: any) {
     if (family || given) {
         query = {
             ...query,
-            $and: familyQueryBuilder(family + ' ' + given)
+            $and: familyQueryBuilder(family, given)
         };
     }
     return query;
@@ -73,7 +74,6 @@ function buildAndesSearchQuery(args: any) {
 
 const PatientRepository = {
     buildQuery: buildAndesSearchQuery,
-
     async find(query: any, options: { skip?: number; limit?: number } = {}): Promise<any[]> {
         const collection = getCollection() as any;
         let cursor = collection.find(query);

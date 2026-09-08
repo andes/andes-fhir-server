@@ -1,4 +1,4 @@
-const shiroTrie = require('shiro-trie');
+import { newTrie } from 'shiro-trie';
 
 export class Permissions {
 
@@ -14,7 +14,7 @@ export class Permissions {
     private static getShiro(obj: Object): any {
         let shiro = (obj as any).shiro;
         if (!shiro) {
-            shiro = shiroTrie.new();
+            shiro = newTrie();
             shiro.add((obj as any).permisos);
             (obj as any).shiro = shiro;
         }
