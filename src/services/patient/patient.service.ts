@@ -140,7 +140,7 @@ async function create(args: any, context: any) {
         });
 
         // En FHIR Create exitoso usualmente devuelve el recurso.
-        // Pero el servidor asymmetrik a veces espera OperationOutcome vía ServerError para casos especiales.
+        // Pero el servidor a veces espera OperationOutcome vía ServerError para casos especiales.
         // Si queremos devolver 201 Created estándar, simplemente retornamos el recurso.
         // El código original tiraba un ServerError con status 201.
         throw new ServerError(`El paciente fue creado. ID: ${result.insertedId}`, {

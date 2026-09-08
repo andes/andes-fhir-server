@@ -2,7 +2,7 @@ const { Strategy } = require('passport-http-bearer');
 import { searchToken } from './../../controller/auth/auth';
 import { SaludDigitalClient } from './../../controller/ips/autenticacion';
 
-// TODO GRAL revisar los handling de errores del core de Asymmetrik
+// TODO GRAL revisar los handling de errores del core de fhir server
 export const strategy = new Strategy(async (token, done) => {
     try {
         // En esta sección se analiza el token para saber si la consulta viene del federador o de un cliente
