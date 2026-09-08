@@ -1,6 +1,17 @@
 import { CONSTANTS } from '../../constants';
-const globals = require('../../globals');
-var moment = require('moment');
+import globals from '../../globals';
+
+function startOfDay(date: string | Date): Date {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function endOfDay(date: string | Date): Date {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
 
 export async function getPrestaciones(paciente, { estado = 'validada', desde = null, hasta = null }) {
     const db = globals.get(CONSTANTS.CLIENT_DB);
@@ -12,10 +23,10 @@ export async function getPrestaciones(paciente, { estado = 'validada', desde = n
     if (desde || hasta) {
         query['ejecucion.fecha'] = {};
         if (desde) {
-            query['ejecucion.fecha']['$gte'] = moment(desde).startOf('day').toDate();
+            query['ejecucion.fecha']['$gte'] = startOfDay(desde);
         }
         if (hasta) {
-            query['ejecucion.fecha']['$lte'] = moment(hasta).endOf('day').toDate();
+            query['ejecucion.fecha']['$lte'] = endOfDay(hasta);
         }
     }
     return await collection.find(query).toArray();

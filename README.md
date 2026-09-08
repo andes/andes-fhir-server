@@ -1,5 +1,5 @@
 ## Intro
-This project is a FHIR facade server built on `@asymmetrik/node-fhir-server-core`.  The facade server is meant to be used with your existing (or new) patient database.  All you need to do is set up the database connection and fill in the queries and you will have a FHIR server!
+This project is a FHIR facade server built on `@bluehalo/node-fhir-server-core`.  The facade server is meant to be used with your existing (or new) patient database.  All you need to do is set up the database connection and fill in the queries and you will have a FHIR server!
 
 ## Getting Started with Docker
 1. Install the latest [Docker Community Edition](https://www.docker.com/community-edition) for your OS if you do not already have it installed.
@@ -14,7 +14,7 @@ This project is a FHIR facade server built on `@asymmetrik/node-fhir-server-core
 5. Visit `localhost:3000/4_0_0/metadata` to view the conformance statement.
 
 ## Next steps
-At this point you can now start testing the endpoints. Depending what profiles you opt into, certain routes will be available. You can view the routes enabled based on which service methods you provide over at [`@asymmetrik/node-fhir-server-core`](https://github.com/Asymmetrik/node-fhir-server-core#profiles).
+At this point you can now start testing the endpoints. Depending what profiles you opt into, certain routes will be available. You can view the routes enabled based on which service methods you provide over at [`@bluehalo/node-fhir-server-core`](https://github.com/BlueHalo/node-fhir-server-core#profiles).
 
 1. Setup the database connection (Mongo/Sequelize) in `./src/index.ts`.
 2. Look through `./src/config.ts` to set up the server and decide which profile you want to support.  Comment out ones you don't want to support.

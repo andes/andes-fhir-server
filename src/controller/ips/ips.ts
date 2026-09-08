@@ -1,5 +1,5 @@
 import { AllergyIntolerance, Bundle, Composition, Condition, Device, Immunization, Medication, MedicationStatement } from '@andes/fhir';
-import { resolveSchema, ServerError } from '@asymmetrik/node-fhir-server-core';
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { filtrarRegistros, getPrestaciones } from '../../controller/ips/prestaciones';
 import { getVacunas } from '../../controller/ips/vacunas';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
@@ -7,8 +7,7 @@ import { buscarPacienteId } from '../../controller/patient/patient';
 import { ApiAndes } from '../../utils/apiAndesQuery';
 import { createResource, fullurl } from '../../utils/data.util';
 import { FhirIdentifierSystems } from '../../constants';
-
-const { ObjectID } = require('mongodb').ObjectID;
+import { ObjectId } from 'mongodb';
 
 const getPatient = (base_version) => {
     return resolveSchema(base_version, 'patient');
@@ -51,7 +50,7 @@ export async function ips(version, pacienteID) {
             // Recuperar datos de la historia clinica
             const FHIRCustodian = await buscarOrganizacionSisa(version, '0'); //Siempre enviaremos los recursos como de la Subsecretaría de salud
             const prestaciones = await getPrestaciones(
-                { _id: new ObjectID(pacienteID) },
+                { _id: new ObjectId(pacienteID) },
                 {}
             );
             const semanticTags = ['trastorno', 'producto', 'fármaco de uso clínico', /*  'hallazgo'  , 'evento', 'situacion' */]; // [TODO] Revisar listado de semtags con el equipo
@@ -83,7 +82,7 @@ export async function ips(version, pacienteID) {
                 return Condition.encode(fullurl(FHIRPatient), registro);
             }) : [EmptyCondition(fullurl(FHIRPatient))];
 
-            const CompositionID = new ObjectID();
+            const CompositionID = new ObjectId();
 
             const FHIRComposition = Composition.encode(
                 CompositionID,
@@ -96,7 +95,7 @@ export async function ips(version, pacienteID) {
                 FHIRCondition.map(fullurl)
             );
 
-            const BundleID = new ObjectID();
+            const BundleID = new ObjectId();
             const FHIRBundle = Bundle.encode(BundleID, [
                 createResource(FHIRComposition),
                 createResource(FHIRPatient),

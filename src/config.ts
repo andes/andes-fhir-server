@@ -1,13 +1,9 @@
 import path from 'path';
-const { VERSIONS } = require('@asymmetrik/node-fhir-server-core').constants;
+const { VERSIONS } = require('@bluehalo/node-fhir-server-core').constants;
 
 export const mongoConfig = {
     connection: process.env.MONGO_HOSTNAME,
-    db_name: process.env.MONGO_DB_NAME,
-    options: {
-        auto_reconnect: true,
-        useUnifiedTopology: true
-    }
+    db_name: process.env.MONGO_DB_NAME
 };
 
 const whitelist_env = process.env.WHITELIST && process.env.WHITELIST.split(',').map(host => host.trim()) || false;

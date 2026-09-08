@@ -1,10 +1,8 @@
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import { stringQueryBuilder } from './../../utils/querybuilder.util';
-import { setObjectId as objectId } from './../../utils/uid.util';
-
-const ObjectID = require('mongodb').ObjectID
-const { CONSTANTS } = require('./../../constants');
-const globals = require('../../globals');
+import { ObjectId } from 'mongodb';
+import { CONSTANTS } from './../../constants';
+import globals from '../../globals';
 
 
 let getSpecialityEncode = (speciality) => {
@@ -80,7 +78,7 @@ export = {
             let { base_version, id } = args;
             let db = globals.get(CONSTANTS.CLIENT_DB);
             let collection = db.collection(`${CONSTANTS.COLLECTION.SPECIALITY}`);
-            let speciality = await collection.findOne({ _id: objectId(id) });
+            let speciality = await collection.findOne({ _id: new ObjectId(id) });
             return speciality ? speciality : { notFound: 404 };
         } catch (err) {
             let message, system, code = '';

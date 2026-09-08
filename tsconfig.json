@@ -1,13 +1,13 @@
 {
     "compilerOptions": {
-        "target": "es2022",
-        "module": "Node16",
+        "target": "ES2023",
+        "module": "NodeNext",
         "lib": [
-            "es2022"
+            "ES2023"
         ],
         "outDir": "dist",
         "rootDir": "src",
-        "moduleResolution": "node16",
+        "moduleResolution": "NodeNext",
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "experimentalDecorators": true,
@@ -18,7 +18,12 @@
         "types": [
             "node",
             "jest"
-        ]
+        ],
+        // Descomentar para vincular con la librería local en desarrollo:
+        // "baseUrl": ".",
+        // "paths": {
+        //     "@andes/fhir": ["../fhir/dist/index"]
+        // }
     },
     "include": [
         "src/**/*.ts",

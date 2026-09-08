@@ -25,7 +25,7 @@ function isObjectId(value: any): boolean {
     return (
         value &&
         typeof value === 'object' &&
-        value._bsontype === 'ObjectID' &&
+        (value._bsontype === 'ObjectID' || value._bsontype === 'ObjectId') &&
         typeof value.toString === 'function'
     );
 }

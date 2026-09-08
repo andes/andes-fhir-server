@@ -1,5 +1,5 @@
-import { Organization as fhirOrganization, Patient } from '@andes/fhir';
-import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
+import { Organization as fhirOrganization } from '@andes/fhir';
+import { resolveSchema } from '@bluehalo/node-fhir-server-core';
 import { CONSTANTS } from '../../constants';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
@@ -13,7 +13,7 @@ let getOrganization = (base_version: string) => {
     return resolveSchema(base_version, 'organization');
 };
 
-let buildAndesSearchQuery = (args: any) => {
+export let buildAndesSearchQuery = (args: any) => {
 
     // Filtros de búsqueda para organizaciones
     let id = args['id'];
@@ -25,8 +25,8 @@ let buildAndesSearchQuery = (args: any) => {
     if (id) {
         query.id = id;
     }
-    if (active) {
-        query.activo = active === true ? true : false;
+    if (active !== undefined && active !== null) {
+        query.activo = active === true || active === 'true';
     }
     if (name) {
         query.nombre = stringQueryBuilder(name, true);
@@ -48,7 +48,7 @@ export async function buscarOrganizacion(version: string, parameters: any, req: 
         const collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
         const Organization = getOrganization(version);
 
-        const paging = parsePaging(req.query, {
+        const paging = parsePaging(req?.query, {
             defaultCount: 50,
             maxCount: 200
         });
@@ -66,10 +66,10 @@ export async function buscarOrganizacion(version: string, parameters: any, req: 
             resourceType: 'Bundle',
             type: 'searchset',
             total,
-            link: req ? buildPagingLinks(req, total, paging) : undefined,
+            link: req?.originalUrl ? buildPagingLinks(req, total, paging) : undefined,
             entry: organizationsFhir.length
                 ? organizationsFhir.map(p => ({
-                    fullUrl: req
+                    fullUrl: req?.originalUrl
                         ? buildEntryFullUrl(req, version, 'Organization', p.id)
                         : fullurl(p),
                     resource: p,

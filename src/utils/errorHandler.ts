@@ -1,4 +1,4 @@
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 
 export const fhirError = function (message, severity, code, diagnostics) {
     throw new ServerError(

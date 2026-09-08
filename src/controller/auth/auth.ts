@@ -1,11 +1,11 @@
 import { CONSTANTS } from '../../constants';
-import { setObjectId as objectId } from '../../utils/uid.util';
-const globals = require('../../globals');
+import { ObjectId } from 'mongodb';
+import globals from '../../globals';
 
 
 export async function searchToken(id) {
     const db = globals.get(CONSTANTS.CLIENT_DB);
     const collection = db.collection(CONSTANTS.COLLECTION.AUTHAPPS);
-    const registroDelToken = await collection.findOne({ token: objectId(id) });
+    const registroDelToken = await collection.findOne({ token: new ObjectId(id) });
     return registroDelToken;
 }
