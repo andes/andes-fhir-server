@@ -11,10 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ##############################
 FROM base AS deps
 COPY package*.json ./
-
-# 👉 FORZAMOS la versión de @andes/fhir
-RUN npm pkg set dependencies.@andes/fhir="^1.13.0-beta"
-
 RUN npm install
 
 ##############################
@@ -41,10 +37,6 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 COPY package*.json ./
-
-# 👉 mismo fix en runtime
-RUN npm pkg set dependencies.@andes/fhir="^1.13.0-beta"
-
 RUN npm install --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
