@@ -1,43 +1,51 @@
 /**
  * @param params {
+ *   url,
  *   host,
  *   port,
  *   path,
  *   method,
- *   rejectUnauthorized
+ *   headers,
+ *   body,
+ *   json
  * }
  * @returns Promise<[status, body]>
  */
 export async function handleHttpRequest(params: any): Promise<[number, any]> {
-
-    const got = (await import("got")).default;
-
     const {
+        url: paramUrl,
         host,
         port,
         path,
         method = "GET",
-        rejectUnauthorized = true,
+        headers = {},
+        body,
+        json,
         ...rest
     } = params;
 
-    const url = `${host}${port ? `:${port}` : ""}${path || ""}`;
+    const url = paramUrl || `${host}${port ? `:${port}` : ""}${path || ""}`;
+
+    const requestHeaders: Record<string, string> = { ...headers };
+    let requestBody: any = body;
+
+    if (body && typeof body === 'object' && !(body instanceof Uint8Array)) {
+        requestHeaders['content-type'] = requestHeaders['content-type'] || requestHeaders['Content-Type'] || 'application/json';
+        requestBody = JSON.stringify(body);
+    }
 
     try {
-        const response = await got(url, {
+        const response = await fetch(url, {
             method,
-            https: { rejectUnauthorized },
+            headers: requestHeaders,
+            body: method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'HEAD' ? requestBody : undefined,
             ...rest
         });
 
-        return [response.statusCode, response.body];
-
+        const text = await response.text();
+        return [response.status, text];
     } catch (error: any) {
-
-        if (error.response) {
-            return [error.response.statusCode, error.response.body];
-        }
-
         throw error;
     }
 }
+

@@ -20,23 +20,27 @@ export function coerceToString(target: any): string {
 }
 
 /**
- * @name tokensQueryBuilder
- * @param {string} target what we are querying for
+ * @name familyQueryBuilder
+ * @param {family, given} target what we are querying for
  * @return a mongo regex query
  */
-export const familyQueryBuilder = function (target) {
-    const text = coerceToString(target);
-    const ExpRegFilter = /([-_()\[\]{}+?*.$\^|¨`´~,:#<>¡!\\])/g;
-    let words: any = text.replace(ExpRegFilter, '');
-    words = replaceChars(words);
-    words = words.trim().toLowerCase().split(' ');
-    const andQuery = [];
-    words.forEach(w => {
-        if (w) {
-            andQuery.push({ tokens: RegExp(`^${w}`) });
-        }
-    });
-    return andQuery;
+export const familyQueryBuilder = (family: string, given: string) => {
+    const ExpRegFilter = /[-_()[\]{}+?*.$^|¨`´~,:#<>¡!\\]/g;
+    const normalize = (value: string) =>
+        replaceChars(coerceToString(value))
+            .replace(ExpRegFilter, '')
+            .trim()
+            .toLowerCase();
+    const query = [];
+    const apellido = normalize(family);
+    const nombre = normalize(given);
+    if (apellido) {
+        query.push({ apellido: RegExp(`${apellido}`, 'i') });
+    }
+    if (nombre) {
+        query.push({ nombre: RegExp(`${nombre}`, 'i') });
+    }
+    return query;
 };
 
 /**
@@ -47,10 +51,18 @@ export const familyQueryBuilder = function (target) {
  */
 export const stringQueryBuilder = function (target, contains = false) {
     const text = coerceToString(target);
-    const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const ini = contains ? '' : '^';
+    const escaped = stringEscape(text);
+    const ini = contains === true ? '' : '^';
     return { $regex: new RegExp(ini + escaped, 'i') };
 };
+
+export const stringEscape = function (text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export const stringInsensitive = function (text) {
+    return { $regex: new RegExp(`^${text}$`, 'i') };
+}
 
 /**
  * @name addressQueryBuilder

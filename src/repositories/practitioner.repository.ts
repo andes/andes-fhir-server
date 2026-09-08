@@ -37,7 +37,7 @@ function buildAndesSearchQuery(args: any) {
 
     // Si hay filtros de nombre
     if (family || given) {
-        query.$and.push(...familyQueryBuilder(family + ' ' + given));
+        query.$and.push(...familyQueryBuilder(family, given));
     }
 
     // Controles de identifier de profesional
