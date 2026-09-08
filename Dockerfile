@@ -29,7 +29,7 @@ RUN npm run tsc
 ##############################
 # production
 ##############################
-FROM node:22-bookworm-slim AS production
+FROM node:24-bookworm-slim AS production
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
