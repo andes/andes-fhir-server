@@ -5,6 +5,7 @@ import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
 import PatientRepository from '../../repositories/patient.repository';
 import { FhirIdentifierSystems } from '../../constants';
+import IpsService from '../ips/ips.service';
 
 const getPatientSchema = (base_version: string) => {
     return resolveSchema(base_version, 'Patient');
@@ -164,10 +165,98 @@ async function create(args: any, context: any) {
     }
 }
 
+/**
+ * Devuelve el International Patient Summary (IPS) para un paciente dado su ID de Andes.
+ * FHIR Operation: GET /Patient/:id/$summary
+ */
+async function summary(args: any, context: any, _logger?: any) {
+    try {
+        const { base_version, id } = args;
+        const patientId = id || context?.req?.params?.id;
+
+        if (!patientId) {
+            throw new ServerError('Se requiere el ID del paciente para generar el IPS', {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'required', diagnostics: 'Se requiere el ID del paciente' }]
+            });
+        }
+
+        const patient = await PatientRepository.findById(patientId);
+        if (!patient) {
+            throw new ServerError(`Paciente con ID ${patientId} no encontrado`, {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'not-found', diagnostics: `Paciente con ID ${patientId} no encontrado` }]
+            });
+        }
+
+        return await IpsService.build(base_version, patient);
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || 'Error al generar el resumen IPS', {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
+    }
+}
+
+/**
+ * Devuelve el International Patient Summary (IPS) buscando al paciente por su identificador.
+ * FHIR Operation: GET /Patient/$summary?identifier=...
+ */
+async function summaryByIdentifier(args: any, context: any, _logger?: any) {
+    try {
+        const { base_version, identifier } = args;
+        const rawIdentifier = identifier || context?.req?.query?.identifier;
+
+        if (!rawIdentifier) {
+            throw new ServerError('Se requiere el parámetro identifier para generar el IPS', {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'required', diagnostics: 'Se requiere el parámetro identifier' }]
+            });
+        }
+
+        const query = PatientRepository.buildQuery({ identifier: rawIdentifier });
+        const patients = await PatientRepository.find(query);
+
+        if (!patients || patients.length === 0) {
+            throw new ServerError(`No se encontró paciente con identificador ${rawIdentifier}`, {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'not-found', diagnostics: `No se encontró paciente con identificador ${rawIdentifier}` }]
+            });
+        }
+
+        if (patients.length > 1) {
+            throw new ServerError(`Se encontró más de un paciente con el identificador ${rawIdentifier}`, {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'warning', code: 'multiple-matches', diagnostics: 'Múltiples pacientes encontrados para el identificador suministrado' }]
+            });
+        }
+
+        return await IpsService.build(base_version, patients[0]);
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || 'Error al generar el resumen IPS por identificador', {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
+    }
+}
+
 const PatientService = {
     search,
     searchById,
-    create
+    create,
+    summary,
+    summaryByIdentifier
 };
 
 export = PatientService;

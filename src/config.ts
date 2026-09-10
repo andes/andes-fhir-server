@@ -36,7 +36,21 @@ export const fhirServerConfig = {
     profiles: {
         patient: {
             service: path.join(servicesBase, 'patient', 'patient.service.js'),
-            versions: [VERSIONS['4_0_1']]
+            versions: [VERSIONS['4_0_1']],
+            operation: [
+                {
+                    name: 'summary',              // → busca "summary"
+                    route: '/:id/$summary',
+                    method: 'GET',
+                    reference: 'https://hl7.org/fhir/uv/ips/OperationDefinition-summary.html',
+                },
+                {
+                    name: 'summary-by-identifier', // → busca "summaryByIdentifier"
+                    route: '/$summary',
+                    method: 'GET',
+                    reference: 'https://hl7.org/fhir/uv/ips/OperationDefinition-summary.html',
+                },
+            ],
         },
         practitioner: {
             service: path.join(servicesBase, 'practitioner', 'practitioner.service.js'),

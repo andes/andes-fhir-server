@@ -21,10 +21,13 @@ export class ApiAndes {
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}/childs`;
             const response = await fetch(url);
             if (!response.ok) {
+                console.log('error al obtener los hijos del concepto: ', conceptId);
                 return null;
             }
+            console.log('url: ', url);
             return await response.json();
         } catch (err) {
+            console.log('error al obtener los hijos del concepto: ', conceptId, 'error: ', err);
             return err;
         }
     }
