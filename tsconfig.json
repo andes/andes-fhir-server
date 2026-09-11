@@ -22,7 +22,9 @@
         // Descomentar para vincular con la librería local en desarrollo:
         // "baseUrl": ".",
         // "paths": {
-        //     "@andes/fhir": ["../fhir/dist/index"]
+        //     "@andes/fhir": [
+        //         "../fhir/dist/index"
+        //     ]
         // }
     },
     "include": [

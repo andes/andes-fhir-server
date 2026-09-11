@@ -52,18 +52,15 @@ describe('IpsService', () => {
         const patientEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Patient');
         expect(patientEntry).toBeDefined();
 
-        // Empty fallbacks for AllergyIntolerance, Immunization, Condition, MedicationStatement
-        const allergyEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'AllergyIntolerance');
-        expect(allergyEntry).toBeDefined();
-        expect(allergyEntry.resource.code.coding[0].code).toBe('no-allergy-info');
+        // Empty sections should use emptyReason with 'nilknown'
+        const composition = compositionEntry.resource;
+        const medSection = composition.section.find((s: any) => s.title.includes('Medicamentos'));
+        expect(medSection).toBeDefined();
+        expect(medSection.emptyReason?.coding[0].code).toBe('nilknown');
 
-        const immEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Immunization');
-        expect(immEntry).toBeDefined();
-        expect(immEntry.resource.vaccineCode.coding[0].code).toBe('no-immunization-info');
-
-        const condEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Condition');
-        expect(condEntry).toBeDefined();
-        expect(condEntry.resource.code.coding[0].code).toBe('no-problem-info');
+        const allergySection = composition.section.find((s: any) => s.title.includes('Alergias'));
+        expect(allergySection).toBeDefined();
+        expect(allergySection.emptyReason?.coding[0].code).toBe('nilknown');
     });
 
     it('should include clinical conditions, allergies and vaccines when patient has records', async () => {

@@ -1,86 +1,100 @@
 export function EmptyAllergyIntolerance(patientReference: string) {
     return {
-        category: ['medication'],
-        criticality: 'high',
-        patient: {
-            reference: patientReference
-        },
+        resourceType: 'AllergyIntolerance',
         id: 'empty-allergy',
+        meta: {
+            profile: ['http://hl7.org/fhir/uv/ips/StructureDefinition/AllergyIntolerance-uv-ips']
+        },
+        text: {
+            status: 'generated',
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">No information about allergies</div>'
+        },
+        clinicalStatus: {
+            coding: [
+                {
+                    system: 'http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical',
+                    code: 'active'
+                }
+            ]
+        },
+        verificationStatus: {
+            coding: [
+                {
+                    system: 'http://terminology.hl7.org/CodeSystem/allergyintolerance-verification',
+                    code: 'confirmed'
+                }
+            ]
+        },
         code: {
             coding: [
                 {
                     system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
-                    display: 'No hay registro de alergías',
-                    code: 'no-allergy-info'
+                    code: 'no-allergy-info',
+                    display: 'No information about allergies'
                 }
             ]
         },
-        meta: {
-            profile: ['http://hl7.org/fhir/uv/ips/StructureDefinition/allergyintolerance-uv-ips']
-        },
-        text: {
-            status: 'generated',
-            div: '<div xmlns="http://www.w3.org/1999/xhtml">No hay registro de alergías</div>'
-        },
-        resourceType: 'AllergyIntolerance',
-        type: 'allergy'
+        patient: {
+            reference: patientReference
+        }
     };
 }
 
 export function EmptyImmunization(patientReference: string) {
     return {
-        status: 'completed',
-        patient: {
-            reference: patientReference
-        },
+        resourceType: 'Immunization',
         id: 'empty-immunization',
+        meta: {
+            profile: ['http://hl7.org/fhir/uv/ips/StructureDefinition/Immunization-uv-ips']
+        },
+        text: {
+            status: 'generated',
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">No information about immunizations</div>'
+        },
+        status: 'completed',
         vaccineCode: {
             coding: [
                 {
                     system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
                     code: 'no-immunization-info',
-                    display: 'No hay información sobre vacunas aplicadas'
-                }
-            ]
-        },
-        resourceType: 'Immunization',
-        occurrenceDateTime: {
-            url: 'http://build.fhir.org/extension-data-absent-reason.html',
-            valueCode: 'unknown'
-        }
-    };
-}
-
-export function EmptyMedicationStatement(patientReference: string) {
-    return {
-        status: 'active',
-        text: '',
-        medicationCodeableConcept: {
-            coding: [
-                {
-                    system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips'
+                    display: 'No information about immunizations'
                 }
             ]
         },
         patient: {
             reference: patientReference
         },
+        occurrenceDateTime: new Date().toISOString()
+    };
+}
+
+export function EmptyMedicationStatement(patientReference: string) {
+    return {
+        resourceType: 'MedicationStatement',
         id: 'empty-medication',
-        code: {
+        meta: {
+            profile: [
+                'http://hl7.org/fhir/uv/ips/StructureDefinition/MedicationStatement-uv-ips'
+            ]
+        },
+        text: {
+            status: 'generated',
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">No information about medications</div>'
+        },
+        status: 'active',
+        medicationCodeableConcept: {
             coding: [
                 {
                     system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
-                    display: 'No information about current medications',
-                    code: 'no-medication-info'
+                    code: 'no-medication-info',
+                    display: 'No information about medications'
                 }
             ]
         },
-        meta: {
-            profile: [
-                'http://hl7.org/fhir/uv/ips/StructureDefinition/medication-ips'
-            ]
+        subject: {
+            reference: patientReference
         },
-        resourceType: 'MedicationStatement'
+        effectiveDateTime: new Date().toISOString()
     };
 }
 
@@ -88,12 +102,18 @@ export function EmptyCondition(patientReference: string) {
     return {
         resourceType: 'Condition',
         id: 'empty-condition',
+        meta: {
+            profile: ['http://hl7.org/fhir/uv/ips/StructureDefinition/Condition-uv-ips']
+        },
+        text: {
+            status: 'generated',
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">No information about problems</div>'
+        },
         category: [
             {
                 coding: [
                     {
                         system: 'http://loinc.org',
-                        display: 'Problem',
                         code: '75326-9'
                     }
                 ]
@@ -107,22 +127,6 @@ export function EmptyCondition(patientReference: string) {
                 }
             ]
         },
-        code: {
-            coding: [
-                {
-                    code: 'no-problem-info',
-                    system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
-                    display: 'No information about current problems'
-                }
-            ]
-        },
-        subject: {
-            reference: patientReference
-        },
-        onsetDateTime: {
-            url: 'http://hl7.org/fhir/StructureDefinition/data-absent-reason',
-            valueCode: 'unknown'
-        },
         clinicalStatus: {
             coding: [
                 {
@@ -130,6 +134,19 @@ export function EmptyCondition(patientReference: string) {
                     code: 'active'
                 }
             ]
-        }
+        },
+        code: {
+            coding: [
+                {
+                    system: 'http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips',
+                    code: 'no-problem-info',
+                    display: 'No information about problems'
+                }
+            ]
+        },
+        subject: {
+            reference: patientReference
+        },
+        onsetDateTime: new Date().toISOString()
     };
 }

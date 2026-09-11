@@ -17,12 +17,6 @@ import { createResource, fullurl } from '../../utils/data.util';
 import { FhirIdentifierSystems } from '../../constants';
 import PrestationRepository from '../../repositories/prestation.repository';
 import VaccineRepository from '../../repositories/vaccine.repository';
-import {
-    EmptyAllergyIntolerance,
-    EmptyCondition,
-    EmptyImmunization,
-    EmptyMedicationStatement
-} from './ips-empty-resources';
 
 const getMedication = (base_version: string) => resolveSchema(base_version, 'medication');
 const getMedicationStatement = (base_version: string) => resolveSchema(base_version, 'medicationstatement');
@@ -72,7 +66,7 @@ function filtrarRegistrosClinicos(prestaciones: any[], semanticTags: string[], s
 
 async function procesarMedicamentos(version: string, prestacionMedicamentos: any[], FHIRPatient: any, apiAndes: ApiAndes): Promise<any[]> {
     if (!prestacionMedicamentos || prestacionMedicamentos.length === 0) {
-        return [EmptyMedicationStatement(fullurl(FHIRPatient))];
+        return [];
     }
     const medicationSchema = getMedication(version);
     const medicationStatementSchema = getMedicationStatement(version);
@@ -153,11 +147,11 @@ export class IpsService {
                 };
                 return new AllergyIntoleranceSchema(AllergyIntolerance.encode(fullurl(FHIRPatient), registroNormalizado));
             })
-            : [EmptyAllergyIntolerance(fullurl(FHIRPatient))];
+            : [];
 
         const FHIRImmunization = vacunas.length
             ? vacunas.map(vacuna => Immunization.encode(fullurl(FHIRPatient), vacuna))
-            : [EmptyImmunization(fullurl(FHIRPatient))];
+            : [];
 
         const rs = filtrarDuplicados(registrosMedicos);
         const FHIRCondition = rs.length
@@ -172,7 +166,7 @@ export class IpsService {
                 };
                 return Condition.encode(fullurl(FHIRPatient), registroNormalizado);
             })
-            : [EmptyCondition(fullurl(FHIRPatient))];
+            : [];
 
         // 7. Generar Composition y Bundle tipo document
         const CompositionID = new ObjectId();
