@@ -6,6 +6,12 @@ export const mongoConfig = {
     db_name: process.env.MONGO_DB_NAME
 };
 
+export const snomedConfig = {
+    snowstormHost: process.env.SNOWSTORM_HOST || 'http://172.16.1.16:8080',
+    snowstormBranch: process.env.SNOWSTORM_BRANCH || 'MAIN/ODONTO/NEUQUEN',
+    snowstormElastic: process.env.SNOWSTORM_ELASTIC || 'http://10.1.72.11:9201'
+};
+
 const whitelist_env = process.env.WHITELIST && process.env.WHITELIST.split(',').map(host => host.trim()) || false;
 
 const whitelist = whitelist_env && whitelist_env.length === 1

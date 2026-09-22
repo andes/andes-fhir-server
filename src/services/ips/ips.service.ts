@@ -12,7 +12,7 @@ import {
 } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
-import { ApiAndes } from '../../utils/apiAndesQuery';
+import { snowstormService } from '../snomed/snowstorm.service';
 import { createResource, fullurl } from '../../utils/data.util';
 import { FhirIdentifierSystems } from '../../constants';
 import PrestationRepository from '../../repositories/prestation.repository';
@@ -64,7 +64,7 @@ function filtrarRegistrosClinicos(prestaciones: any[], semanticTags: string[], s
     return { registrosMedicos, prestacionMedicamentos, registrosAlergias };
 }
 
-async function procesarMedicamentos(version: string, prestacionMedicamentos: any[], FHIRPatient: any, apiAndes: ApiAndes): Promise<any[]> {
+async function procesarMedicamentos(version: string, prestacionMedicamentos: any[], FHIRPatient: any): Promise<any[]> {
     if (!prestacionMedicamentos || prestacionMedicamentos.length === 0) {
         return [];
     }
@@ -73,7 +73,7 @@ async function procesarMedicamentos(version: string, prestacionMedicamentos: any
     const FHIRMedicationStatement: any[] = [];
 
     for (const pm of prestacionMedicamentos) {
-        const medicamento = await apiAndes.getSnomedByConceptId(pm.concepto.conceptId);
+        const medicamento = await snowstormService.getConcept(pm.concepto.conceptId);
         const FHIRMedication = new medicationSchema(Medication.encode(medicamento));
         FHIRMedicationStatement.push(new medicationStatementSchema(MedicationStatement.encode(fullurl(FHIRPatient), fullurl(FHIRMedication), pm)));
     }
@@ -100,11 +100,10 @@ export class IpsService {
             });
         }
 
-        const apiAndes = new ApiAndes();
         const pacienteId = patientRaw._id?.toString() || patientRaw.id;
 
-        // 1. Obtener conceptos SNOMED para alergias a sustancias
-        const snomedAlergias = await apiAndes.getSnomedAllergies(419199007) || [];
+        // 1. Obtener conceptos SNOMED para alergias a sustancias directamente desde Snowstorm
+        const snomedAlergias = await snowstormService.getSnomedAllergies(419199007) || [];
 
         // 2. Obtener organización custodio (SISA '0' -> Subsecretaría de Salud)
         const FHIRCustodian = await buscarOrganizacionSisa(version, '0');
@@ -136,7 +135,7 @@ export class IpsService {
         const FHIRDevice = Device.encode();
 
         // 6. Armar secciones clínicas (Medicamentos, Alergias, Vacunas, Condiciones)
-        const FHIRMedicationStatement = await procesarMedicamentos(version, prestacionMedicamentos, FHIRPatient, apiAndes);
+        const FHIRMedicationStatement = await procesarMedicamentos(version, prestacionMedicamentos, FHIRPatient);
 
         const AllergyIntoleranceSchema = getAllergyIntolerance(version);
         const FHIRAllergyIntolerance = registrosAlergias.length

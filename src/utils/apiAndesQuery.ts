@@ -1,8 +1,18 @@
+/**
+ * @deprecated Esta clase ha quedado obsoleta y sus métodos no deben ser utilizados.
+ * - Para conceptos SNOMED y alergias, usar `SnowstormService` (`src/services/snomed/snowstorm.service.ts`).
+ * - Para pacientes, consultar directamente MongoDB a través de `PatientRepository`.
+ */
 export class ApiAndes {
+    /*
     base = process.env.ANDES_HOST;
     baseSnomed = '/core/term/snomed/';
     basePatient = '/core-v2/mpi/pacientes';
 
+    /**
+     * @deprecated Usar `snowstormService.getConcept(conceptId)` directamente.
+     */
+    /*
     async getSnomedByConceptId(conceptId: string | number) {
         try {
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}`;
@@ -15,7 +25,12 @@ export class ApiAndes {
             return err;
         }
     }
+    */
 
+    /**
+     * @deprecated Usar `snowstormService.getSnomedAllergies(conceptId)` directamente.
+     */
+    /*
     async getSnomedAllergies(conceptId: string | number) {
         try {
             const url = `${this.base}${this.baseSnomed}concepts/${conceptId}/childs`;
@@ -31,7 +46,12 @@ export class ApiAndes {
             return err;
         }
     }
+    */
 
+    /**
+     * @deprecated El servidor FHIR ahora interactúa directamente con MongoDB a través de PatientRepository.
+     */
+    /*
     async getPatient(id: string) {
         const url = `${this.base}${this.basePatient}/${id}`;
         try {
@@ -63,5 +83,5 @@ export class ApiAndes {
             };
         }
     }
+    */
 }
-
