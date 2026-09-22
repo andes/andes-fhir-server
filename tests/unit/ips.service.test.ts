@@ -3,7 +3,7 @@ import { IpsService } from '../../src/services/ips/ips.service';
 import PrestationRepository from '../../src/repositories/prestation.repository';
 import VaccineRepository from '../../src/repositories/vaccine.repository';
 import * as orgController from '../../src/controller/organization/organization';
-import { ApiAndes } from '../../src/utils/apiAndesQuery';
+import { snowstormService } from '../../src/services/snomed/snowstorm.service';
 
 describe('IpsService', () => {
     const mockVersion = '4_0_1';
@@ -28,9 +28,9 @@ describe('IpsService', () => {
             name: 'Subsecretaría de Salud'
         } as any);
 
-        // Mock ApiAndes calls
-        jest.spyOn(ApiAndes.prototype, 'getSnomedAllergies').mockResolvedValue([]);
-        jest.spyOn(ApiAndes.prototype, 'getSnomedByConceptId').mockResolvedValue(null);
+        // Mock SnowstormService calls
+        jest.spyOn(snowstormService, 'getSnomedAllergies').mockResolvedValue([]);
+        jest.spyOn(snowstormService, 'getConcept').mockResolvedValue(null);
     });
 
     it('should generate an IPS document Bundle with empty sections when patient has no records', async () => {
@@ -100,7 +100,7 @@ describe('IpsService', () => {
             }
         ];
 
-        jest.spyOn(ApiAndes.prototype, 'getSnomedAllergies').mockResolvedValue([
+        jest.spyOn(snowstormService, 'getSnomedAllergies').mockResolvedValue([
             { conceptId: '300916003', term: 'alergia a penicilina' }
         ] as any);
         jest.spyOn(PrestationRepository, 'findByPatientId').mockResolvedValue(mockPrestaciones as any);
