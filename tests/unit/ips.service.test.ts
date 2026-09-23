@@ -128,4 +128,17 @@ describe('IpsService', () => {
     it('should throw ServerError when patient is null or undefined', async () => {
         await expect(IpsService.build(mockVersion, null)).rejects.toThrow('Patient not found');
     });
+
+    it('should use fallback custodian organization when SISA 0 is not found in database', async () => {
+        jest.spyOn(orgController, 'buscarOrganizacionSisa').mockResolvedValue(null as any);
+        jest.spyOn(PrestationRepository, 'findByPatientId').mockResolvedValue([]);
+        jest.spyOn(VaccineRepository, 'findByDocument').mockResolvedValue([]);
+
+        const bundle = await IpsService.build(mockVersion, mockPatient);
+
+        expect(bundle).toBeDefined();
+        const custodianEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Organization');
+        expect(custodianEntry).toBeDefined();
+        expect(custodianEntry.resource.name).toBe('Subsecretaría de Salud de la Provincia del Neuquén');
+    });
 });

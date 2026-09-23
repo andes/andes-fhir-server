@@ -43,28 +43,18 @@ function parseDate(date) {
  *
  * @param {*} dates
  */
-let validateDate = function (dates) {
-    let parsedDate = {};
-    if (dates) {
-        // dates could be comma delimited if passed in more than one
-        const dateArr = dates.split(',');
-        if (dateArr) {
-            for (let date in dateArr) {
-                parsedDate = Object.assign(parsedDate, parseDate(dateArr[date]));
-            }
-        }
+export function fullurl(resource: any): string {
+    if (!resource || !resource.resourceType || (!resource.id && !resource._id)) {
+        return '';
     }
-
-    return parsedDate;
-};
-
-
-export function fullurl(resource) {
-    return `${process.env.IPS_DOMINIO}/${resource.resourceType}/${resource.id}`;
-    // return `${env.FHIR_DOMAIN}/${resource.resourceType}/${resource.id}`;// Este usaba con lo que tenía en archivo env
+    const id = resource.id || resource._id;
+    return `${process.env.IPS_DOMINIO}/${resource.resourceType}/${id}`;
 }
 
-export function createResource(resource) {
+export function createResource(resource: any): { fullUrl: string; resource: any } | null {
+    if (!resource) {
+        return null;
+    }
     return {
         fullUrl: fullurl(resource),
         resource

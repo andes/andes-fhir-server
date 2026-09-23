@@ -8,6 +8,7 @@ import {
     Immunization,
     Medication,
     MedicationStatement,
+    Organization as fhirOrganization,
     Patient as fhirPac
 } from '@andes/fhir';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
@@ -22,6 +23,7 @@ const getMedication = (base_version: string) => resolveSchema(base_version, 'med
 const getMedicationStatement = (base_version: string) => resolveSchema(base_version, 'medicationstatement');
 const getAllergyIntolerance = (base_version: string) => resolveSchema(base_version, 'allergyintolerance');
 const getPatientSchema = (base_version: string) => resolveSchema(base_version, 'Patient');
+const getOrganizationSchema = (base_version: string) => resolveSchema(base_version, 'organization');
 
 function filtrarDuplicados(registros: any[]): any[] {
     const mapping: Record<string, any> = {};
@@ -106,7 +108,18 @@ export class IpsService {
         const snomedAlergias = await snowstormService.getSnomedAllergies(419199007) || [];
 
         // 2. Obtener organización custodio (SISA '0' -> Subsecretaría de Salud)
-        const FHIRCustodian = await buscarOrganizacionSisa(version, '0');
+        let FHIRCustodian = await buscarOrganizacionSisa(version, '0');
+        if (!FHIRCustodian || FHIRCustodian instanceof Error) {
+            const OrganizationSchema = getOrganizationSchema(version);
+            const fallbackOrg = {
+                _id: '0',
+                id: '0',
+                nombre: 'Subsecretaría de Salud de la Provincia del Neuquén',
+                activo: true,
+                codigo: { sisa: '0' }
+            };
+            FHIRCustodian = new OrganizationSchema(fhirOrganization.encode(fallbackOrg));
+        }
 
         // 3. Obtener prestaciones validadas de la historia clínica del paciente
         const prestaciones = await PrestationRepository.findByPatientId(pacienteId);
@@ -181,7 +194,7 @@ export class IpsService {
         );
 
         const BundleID = new ObjectId();
-        const FHIRBundle = Bundle.encode(BundleID, [
+        const rawResources = [
             createResource(FHIRComposition),
             createResource(FHIRPatient),
             ...FHIRMedicationStatement.map(createResource),
@@ -190,7 +203,8 @@ export class IpsService {
             ...FHIRImmunization.map(createResource),
             createResource(FHIRDevice),
             createResource(FHIRCustodian)
-        ]);
+        ];
+        const FHIRBundle = Bundle.encode(BundleID, rawResources.filter(Boolean));
 
         return FHIRBundle;
     }
