@@ -1,4 +1,4 @@
-const Strategy = require('passport-http-bearer').Strategy;
+import { Strategy } from 'passport-http-bearer';
 const env = process.env;
 
 /**
@@ -10,7 +10,7 @@ const env = process.env;
  * Requires ENV variables for introspecting the token
  */
 
-module.exports.strategy = new Strategy(
+export const strategy = new Strategy(
 	function (token, done) {
 
 		if (!env.INTROSPECTION_URL) {

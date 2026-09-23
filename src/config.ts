@@ -1,5 +1,7 @@
 import path from 'path';
-const { VERSIONS } = require('@bluehalo/node-fhir-server-core').constants;
+import { constants } from '@bluehalo/node-fhir-server-core';
+
+const { VERSIONS } = constants;
 
 export const mongoConfig = {
     connection: process.env.MONGO_HOSTNAME,

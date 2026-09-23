@@ -1,4 +1,4 @@
-const { Strategy } = require('passport-http-bearer');
+import { Strategy } from 'passport-http-bearer';
 import { searchToken } from './../../controller/auth/auth';
 import { SaludDigitalClient } from './../../controller/ips/autenticacion';
 

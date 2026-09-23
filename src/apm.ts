@@ -1,9 +1,11 @@
-export let APM;
+import apmNode from 'elastic-apm-node';
 
-export const APMIsActive = process.env.APM_SERVER && process.env.APM_APP_NAME;
+export let APM: any;
+
+export const APMIsActive = Boolean(process.env.APM_SERVER && process.env.APM_APP_NAME);
 
 if (APMIsActive) {
-    APM = require('elastic-apm-node').start({
+    APM = apmNode.start({
         serviceName: process.env.APM_APP_NAME,
         serverUrl: process.env.APM_SERVER,
     });

@@ -1,4 +1,3 @@
-import console = require('console');
 import { getDocumentReference } from '../../controller/documentreference/documentreference';
 import { CONSTANTS } from './../../constants';
 import { fhirError } from './../../utils/errorHandler';

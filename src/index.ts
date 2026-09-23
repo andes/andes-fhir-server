@@ -14,8 +14,8 @@ import { fhirServerConfig, mongoConfig } from './config';
 import { CONSTANTS } from './constants';
 import { mongoConnect } from './lib/mongo';
 
-const asyncHandler = require('./lib/async-handler');
-const globals = require('./globals');
+import asyncHandler from './lib/async-handler';
+import globals from './globals';
 
 const main = async function () {
 
