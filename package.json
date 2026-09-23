@@ -19,7 +19,7 @@
     "test:jest": "jest --forceExit"
   },
   "dependencies": {
-    "@andes/fhir": "^1.13.0-beta",
+    "@andes/fhir": "file:../fhir",
     "@bluehalo/fhir-json-schema-validator": "^0.11.0",
     "@bluehalo/node-fhir-server-core": "^2.3.0",
     "@bluehalo/sof-scope-checker": "^1.1.0",

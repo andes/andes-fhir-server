@@ -20,8 +20,9 @@ export function getSemanticTagFromFsn(fsn: string): string {
 }
 
 export class SnowstormService {
-    private host: string;
-    private branch: string;
+    public host: string;
+    public branch: string;
+    public config = snomedConfig;
 
     constructor(host = snomedConfig.snowstormHost, branch = snomedConfig.snowstormBranch) {
         this.host = host.replace(/\/+$/, '');

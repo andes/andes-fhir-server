@@ -8,8 +8,7 @@ export const mongoConfig = {
 
 export const snomedConfig = {
     snowstormHost: process.env.SNOWSTORM_HOST || 'http://172.16.1.16:8080',
-    snowstormBranch: process.env.SNOWSTORM_BRANCH || 'MAIN/ODONTO/NEUQUEN',
-    snowstormElastic: process.env.SNOWSTORM_ELASTIC || 'http://10.1.72.11:9201'
+    snowstormBranch: process.env.SNOWSTORM_BRANCH || 'MAIN/ODONTO/NEUQUEN'
 };
 
 const whitelist_env = process.env.WHITELIST && process.env.WHITELIST.split(',').map(host => host.trim()) || false;
