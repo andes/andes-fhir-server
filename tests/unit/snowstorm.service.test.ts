@@ -204,4 +204,113 @@ describe('SnowstormService', () => {
             expect(result[0].semanticTag).toBe('trastorno');
         });
     });
+
+    describe('Cache functionality', () => {
+        it('should cache allergies and avoid redundant fetch on consecutive calls', async () => {
+            const mockChildren = [
+                {
+                    conceptId: '419199008',
+                    active: true,
+                    fsn: { term: 'alergia a polvo (hallazgo)', lang: 'es' },
+                    pt: { term: 'alergia a polvo', lang: 'es' }
+                }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockChildren
+            } as any);
+
+            // First call -> calls fetch
+            const res1 = await service.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res1).toHaveLength(1);
+            expect(service.getCacheSize()).toBe(1);
+
+            // Second call -> returns from cache, fetch NOT called again
+            const res2 = await service.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res2).toEqual(res1);
+        });
+
+        it('should bypass cache when bypassCache is true', async () => {
+            const mockChildren = [
+                {
+                    conceptId: '419199008',
+                    active: true,
+                    fsn: { term: 'alergia a polvo (hallazgo)', lang: 'es' },
+                    pt: { term: 'alergia a polvo', lang: 'es' }
+                }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockChildren
+            } as any);
+
+            await service.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            // Call with bypassCache = true -> should call fetch again
+            await service.getSnomedAllergies(419199007, true);
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('should cache getConcept calls and respect clearCache', async () => {
+            const mockRawConcept = {
+                conceptId: '123456',
+                fsn: { term: 'amoxicilina (fármaco de uso clínico)' },
+                pt: { term: 'amoxicilina' }
+            };
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockRawConcept
+            } as any);
+
+            const c1 = await service.getConcept('123456', 'summary');
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(c1.term).toBe('amoxicilina');
+
+            // Cached call
+            const c2 = await service.getConcept('123456', 'summary');
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(c2).toEqual(c1);
+
+            // Clear cache and call again
+            service.clearCache();
+            expect(service.getCacheSize()).toBe(0);
+
+            await service.getConcept('123456', 'summary');
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('should treat expired cache entries as cache miss', async () => {
+            // Service with 1ms TTL
+            const shortLivedService = new SnowstormService(mockHost, mockBranch, 1);
+
+            const mockChildren = [
+                {
+                    conceptId: '100',
+                    active: true,
+                    fsn: { term: 'alergia (hallazgo)' },
+                    pt: { term: 'alergia' }
+                }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockChildren
+            } as any);
+
+            await shortLivedService.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            // Wait 10ms for TTL to expire
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            await shortLivedService.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+        });
+    });
 });

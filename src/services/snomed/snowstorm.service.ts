@@ -7,6 +7,11 @@ export interface SnomedConceptSummary {
     semanticTag: string;
 }
 
+export interface CacheEntry<T> {
+    data: T;
+    expiresAt: number;
+}
+
 export function getSemanticTagFromFsn(fsn: string): string {
     if (!fsn) {
         return '';
@@ -23,10 +28,31 @@ export class SnowstormService {
     public host: string;
     public branch: string;
     public config = snomedConfig;
+    public defaultTtlMs: number;
+    private cache = new Map<string, CacheEntry<any>>();
 
-    constructor(host = snomedConfig.snowstormHost, branch = snomedConfig.snowstormBranch) {
+    constructor(
+        host = snomedConfig.snowstormHost,
+        branch = snomedConfig.snowstormBranch,
+        defaultTtlMs = 60 * 60 * 1000 // 1 hora por defecto
+    ) {
         this.host = host.replace(/\/+$/, '');
         this.branch = branch.replace(/^\/+|\/+$/g, '');
+        this.defaultTtlMs = defaultTtlMs;
+    }
+
+    /**
+     * Limpia toda la caché en memoria.
+     */
+    clearCache(): void {
+        this.cache.clear();
+    }
+
+    /**
+     * Obtiene el tamaño actual de elementos en caché.
+     */
+    getCacheSize(): number {
+        return this.cache.size;
     }
 
     /**
@@ -69,9 +95,17 @@ export class SnowstormService {
     }
 
     /**
-     * Obtiene un concepto completo o normalizado por su conceptId (SCTID).
+     * Obtiene un concepto completo o normalizado por su conceptId (SCTID), con soporte de caché.
      */
-    async getConcept(sctid: string | number, format: 'full' | 'summary' = 'full'): Promise<any> {
+    async getConcept(sctid: string | number, format: 'full' | 'summary' = 'full', bypassCache = false): Promise<any> {
+        const cacheKey = `concept:${sctid}:${format}`;
+        if (!bypassCache) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && cached.expiresAt > Date.now()) {
+                return cached.data;
+            }
+        }
+
         const concept = await this.httpGetSnowstorm(`browser/${this.branch}/concepts/${sctid}`);
         if (!concept) {
             return null;
@@ -81,21 +115,26 @@ export class SnowstormService {
         const fsn = concept.fsn?.term || concept.fsn || '';
         const semanticTag = getSemanticTagFromFsn(fsn);
 
-        if (format === 'full') {
-            return {
+        const result = format === 'full'
+            ? {
                 ...concept,
                 term,
                 fsn,
                 semanticTag
+            }
+            : {
+                conceptId: concept.conceptId,
+                term,
+                fsn,
+                semanticTag
             };
-        }
 
-        return {
-            conceptId: concept.conceptId,
-            term,
-            fsn,
-            semanticTag
-        };
+        this.cache.set(cacheKey, {
+            data: result,
+            expiresAt: Date.now() + this.defaultTtlMs
+        });
+
+        return result;
     }
 
     /**
@@ -151,11 +190,29 @@ export class SnowstormService {
     }
 
     /**
-     * Obtiene conceptos hijos para alergias (por defecto conceptId: 419199007 "alergia a sustancia")
+     * Obtiene conceptos hijos para alergias (por defecto conceptId: 419199007 "alergia a sustancia"),
+     * almacenándolos en caché en memoria para optimizar sucesivas consultas.
      */
-    async getSnomedAllergies(conceptId: string | number = 419199007): Promise<SnomedConceptSummary[]> {
+    async getSnomedAllergies(conceptId: string | number = 419199007, bypassCache = false): Promise<SnomedConceptSummary[]> {
+        const cacheKey = `allergies:${conceptId}`;
+        if (!bypassCache) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && cached.expiresAt > Date.now()) {
+                return cached.data;
+            }
+        }
+
         const childs = await this.getChildren(conceptId, { all: false, completed: true });
-        return (childs || []) as SnomedConceptSummary[];
+        const result = (childs || []) as SnomedConceptSummary[];
+
+        if (result.length > 0) {
+            this.cache.set(cacheKey, {
+                data: result,
+                expiresAt: Date.now() + this.defaultTtlMs
+            });
+        }
+
+        return result;
     }
 
     /**
