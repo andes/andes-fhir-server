@@ -1,4 +1,4 @@
-import { SnowstormService, getSemanticTagFromFsn } from '../../src/services/snomed/snowstorm.service';
+import { SnowstormService, getSemanticTagFromFsn, SNOMED_ALLERGIES, SNOMED_INTOLERANCES } from '../../src/services/snomed/snowstorm.service';
 
 describe('SnowstormService', () => {
     let service: SnowstormService;
@@ -174,6 +174,66 @@ describe('SnowstormService', () => {
         });
     });
 
+    describe('getSnomedIntolerances & getSnomedAllergiesAndIntolerances', () => {
+        it('should query children and filter active concepts for intolerances using 782197009 by default', async () => {
+            const mockChildren = [
+                {
+                    conceptId: '235719003',
+                    active: true,
+                    fsn: { term: 'intolerancia a la lactosa (trastorno)' },
+                    pt: { term: 'intolerancia a la lactosa' }
+                },
+                {
+                    conceptId: '999999999',
+                    active: false,
+                    fsn: { term: 'intolerancia inactiva (trastorno)' },
+                    pt: { term: 'intolerancia inactiva' }
+                }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockChildren
+            } as any);
+
+            const intolerances = await service.getSnomedIntolerances();
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.stringContaining(`${mockHost}/browser/${mockBranch}/concepts/${SNOMED_INTOLERANCES}/children?limit=1000&form=inferred`),
+                expect.any(Object)
+            );
+
+            expect(intolerances.length).toBe(1);
+            expect(intolerances[0]).toEqual({
+                conceptId: '235719003',
+                term: 'intolerancia a la lactosa',
+                fsn: 'intolerancia a la lactosa (trastorno)',
+                semanticTag: 'trastorno'
+            });
+        });
+
+        it('should combine allergies and intolerances and include root concepts without duplicates', async () => {
+            jest.spyOn(service, 'getSnomedAllergies').mockResolvedValue([
+                { conceptId: '419199008', term: 'alergia a penicilina', fsn: 'alergia a penicilina (hallazgo)', semanticTag: 'hallazgo' }
+            ]);
+            jest.spyOn(service, 'getSnomedIntolerances').mockResolvedValue([
+                { conceptId: '235719003', term: 'intolerancia a la lactosa', fsn: 'intolerancia a la lactosa (trastorno)', semanticTag: 'trastorno' }
+            ]);
+
+            const combined = await service.getSnomedAllergiesAndIntolerances();
+
+            expect(service.getSnomedAllergies).toHaveBeenCalledWith(SNOMED_ALLERGIES, false);
+            expect(service.getSnomedIntolerances).toHaveBeenCalledWith(SNOMED_INTOLERANCES, false);
+
+            const ids = combined.map(c => c.conceptId);
+            expect(ids).toContain(String(SNOMED_ALLERGIES));
+            expect(ids).toContain(String(SNOMED_INTOLERANCES));
+            expect(ids).toContain('419199008');
+            expect(ids).toContain('235719003');
+            expect(combined.length).toBe(4);
+        });
+    });
+
     describe('getConcepts', () => {
         it('should fetch multiple concepts by ids in batch', async () => {
             const mockBatchResponse = {
@@ -229,6 +289,31 @@ describe('SnowstormService', () => {
 
             // Second call -> returns from cache, fetch NOT called again
             const res2 = await service.getSnomedAllergies(419199007);
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res2).toEqual(res1);
+        });
+
+        it('should cache intolerances and avoid redundant fetch on consecutive calls', async () => {
+            const mockChildren = [
+                {
+                    conceptId: '235719003',
+                    active: true,
+                    fsn: { term: 'intolerancia a la lactosa (trastorno)' },
+                    pt: { term: 'intolerancia a la lactosa' }
+                }
+            ];
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockChildren
+            } as any);
+
+            const res1 = await service.getSnomedIntolerances();
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res1).toHaveLength(1);
+            expect(service.getCacheSize()).toBe(1);
+
+            const res2 = await service.getSnomedIntolerances();
             expect(global.fetch).toHaveBeenCalledTimes(1);
             expect(res2).toEqual(res1);
         });

@@ -30,6 +30,8 @@ describe('IpsService', () => {
 
         // Mock SnowstormService calls
         jest.spyOn(snowstormService, 'getSnomedAllergies').mockResolvedValue([]);
+        jest.spyOn(snowstormService, 'getSnomedIntolerances').mockResolvedValue([]);
+        jest.spyOn(snowstormService, 'getSnomedAllergiesAndIntolerances').mockResolvedValue([]);
         jest.spyOn(snowstormService, 'getConcept').mockResolvedValue(null);
     });
 
@@ -100,7 +102,7 @@ describe('IpsService', () => {
             }
         ];
 
-        jest.spyOn(snowstormService, 'getSnomedAllergies').mockResolvedValue([
+        jest.spyOn(snowstormService, 'getSnomedAllergiesAndIntolerances').mockResolvedValue([
             { conceptId: '300916003', term: 'alergia a penicilina' }
         ] as any);
         jest.spyOn(PrestationRepository, 'findByPatientId').mockResolvedValue(mockPrestaciones as any);
@@ -123,6 +125,66 @@ describe('IpsService', () => {
         // Immunization should match mock data
         const immEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Immunization');
         expect(immEntry).toBeDefined();
+    });
+
+    it('should include both allergy and intolerance records in AllergyIntolerance resources and not in Condition', async () => {
+        const mockPrestaciones = [
+            {
+                _id: new ObjectId(),
+                estados: [{ tipo: 'validada' }],
+                ejecucion: {
+                    registros: [
+                        {
+                            concepto: {
+                                conceptId: '195967001',
+                                term: 'asma',
+                                semanticTag: 'trastorno'
+                            },
+                            createdAt: new Date()
+                        },
+                        {
+                            concepto: {
+                                conceptId: '300916003',
+                                term: 'alergia a penicilina',
+                                semanticTag: 'hallazgo'
+                            },
+                            createdAt: new Date()
+                        },
+                        {
+                            concepto: {
+                                conceptId: '235719003',
+                                term: 'intolerancia a la lactosa',
+                                semanticTag: 'trastorno'
+                            },
+                            createdAt: new Date()
+                        }
+                    ]
+                }
+            }
+        ];
+
+        jest.spyOn(snowstormService, 'getSnomedAllergiesAndIntolerances').mockResolvedValue([
+            { conceptId: '300916003', term: 'alergia a penicilina' },
+            { conceptId: '235719003', term: 'intolerancia a la lactosa' }
+        ] as any);
+        jest.spyOn(PrestationRepository, 'findByPatientId').mockResolvedValue(mockPrestaciones as any);
+        jest.spyOn(VaccineRepository, 'findByDocument').mockResolvedValue([]);
+
+        const bundle = await IpsService.build(mockVersion, mockPatient);
+
+        expect(bundle).toBeDefined();
+
+        // Condition should only contain asma (195967001), not intolerancia a la lactosa
+        const conditionEntries = bundle.entry.filter((e: any) => e.resource.resourceType === 'Condition');
+        expect(conditionEntries).toHaveLength(1);
+        expect(conditionEntries[0].resource.code.coding[0].code).toBe('195967001');
+
+        // AllergyIntolerance should contain both alergia a penicilina (300916003) and intolerancia a la lactosa (235719003)
+        const allergyEntries = bundle.entry.filter((e: any) => e.resource.resourceType === 'AllergyIntolerance');
+        expect(allergyEntries).toHaveLength(2);
+        const codes = allergyEntries.map((e: any) => e.resource.code.coding[0].code);
+        expect(codes).toContain('300916003');
+        expect(codes).toContain('235719003');
     });
 
     it('should throw ServerError when patient is null or undefined', async () => {

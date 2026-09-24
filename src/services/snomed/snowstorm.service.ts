@@ -24,6 +24,9 @@ export function getSemanticTagFromFsn(fsn: string): string {
     return fsn.substring(startAt + 1, endAt);
 }
 
+export const SNOMED_ALLERGIES = 419199007;
+export const SNOMED_INTOLERANCES = 782197009;
+
 export class SnowstormService {
     public host: string;
     public branch: string;
@@ -193,7 +196,7 @@ export class SnowstormService {
      * Obtiene conceptos hijos para alergias (por defecto conceptId: 419199007 "alergia a sustancia"),
      * almacenándolos en caché en memoria para optimizar sucesivas consultas.
      */
-    async getSnomedAllergies(conceptId: string | number = 419199007, bypassCache = false): Promise<SnomedConceptSummary[]> {
+    async getSnomedAllergies(conceptId: string | number = SNOMED_ALLERGIES, bypassCache = false): Promise<SnomedConceptSummary[]> {
         const cacheKey = `allergies:${conceptId}`;
         if (!bypassCache) {
             const cached = this.cache.get(cacheKey);
@@ -213,6 +216,64 @@ export class SnowstormService {
         }
 
         return result;
+    }
+
+    /**
+     * Obtiene conceptos hijos para intolerancias (por defecto conceptId: 782197009 "intolerancia a sustancia"),
+     * almacenándolos en caché en memoria para optimizar sucesivas consultas.
+     */
+    async getSnomedIntolerances(conceptId: string | number = SNOMED_INTOLERANCES, bypassCache = false): Promise<SnomedConceptSummary[]> {
+        const cacheKey = `intolerances:${conceptId}`;
+        if (!bypassCache) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && cached.expiresAt > Date.now()) {
+                return cached.data;
+            }
+        }
+
+        const childs = await this.getChildren(conceptId, { all: false, completed: true });
+        const result = (childs || []) as SnomedConceptSummary[];
+
+        if (result.length > 0) {
+            this.cache.set(cacheKey, {
+                data: result,
+                expiresAt: Date.now() + this.defaultTtlMs
+            });
+        }
+
+        return result;
+    }
+
+    /**
+     * Obtiene conceptos de alergias (419199007) e intolerancias (782197009),
+     * combinando ambos resultados y deduplicando por conceptId.
+     * También incluye los conceptos raíz correspondientes.
+     */
+    async getSnomedAllergiesAndIntolerances(bypassCache = false): Promise<SnomedConceptSummary[]> {
+        const [allergies, intolerances] = await Promise.all([
+            this.getSnomedAllergies(SNOMED_ALLERGIES, bypassCache),
+            this.getSnomedIntolerances(SNOMED_INTOLERANCES, bypassCache)
+        ]);
+
+        const conceptsMap = new Map<string, SnomedConceptSummary>();
+
+        conceptsMap.set(String(SNOMED_ALLERGIES), {
+            conceptId: String(SNOMED_ALLERGIES),
+            term: 'alergia a sustancia',
+            fsn: 'alergia a sustancia (trastorno)',
+            semanticTag: 'trastorno'
+        });
+        conceptsMap.set(String(SNOMED_INTOLERANCES), {
+            conceptId: String(SNOMED_INTOLERANCES),
+            term: 'intolerancia a sustancia',
+            fsn: 'intolerancia a sustancia (trastorno)',
+            semanticTag: 'trastorno'
+        });
+
+        (allergies || []).forEach(item => conceptsMap.set(String(item.conceptId), item));
+        (intolerances || []).forEach(item => conceptsMap.set(String(item.conceptId), item));
+
+        return Array.from(conceptsMap.values());
     }
 
     /**

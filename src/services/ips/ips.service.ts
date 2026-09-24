@@ -104,8 +104,8 @@ export class IpsService {
 
         const pacienteId = patientRaw._id?.toString() || patientRaw.id;
 
-        // 1. Obtener conceptos SNOMED para alergias a sustancias directamente desde Snowstorm
-        const snomedAlergias = await snowstormService.getSnomedAllergies(419199007) || [];
+        // 1. Obtener conceptos SNOMED para alergias e intolerancias a sustancias directamente desde Snowstorm
+        const snomedAlergias = await snowstormService.getSnomedAllergiesAndIntolerances() || [];
 
         // 2. Obtener organización custodio (SISA '0' -> Subsecretaría de Salud)
         let FHIRCustodian = await buscarOrganizacionSisa(version, '0');
