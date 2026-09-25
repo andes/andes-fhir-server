@@ -42,6 +42,7 @@ function filtrarRegistrosClinicos(prestaciones: any[], semanticTags: string[], s
     let registrosMedicos: any[] = [];
     let prestacionMedicamentos: any[] = [];
     let registrosAlergias: any[] = [];
+    const snomedAlergiasSet = new Set(snomedAlergias.map(al => String(al.conceptId)));
 
     prestaciones.forEach(prestacion => {
         if (!prestacion.ejecucion?.registros) {
@@ -52,9 +53,10 @@ function filtrarRegistrosClinicos(prestaciones: any[], semanticTags: string[], s
             if (semTag === 'producto' || semTag === 'fármaco de uso clínico') {
                 // Actualmente no se incluyen fármacos desde prestaciones directamente
             } else {
-                const alergia = snomedAlergias.find(al => al.conceptId === registro.concepto?.conceptId);
+                const conceptId = registro.concepto?.conceptId ? String(registro.concepto.conceptId) : null;
+                const isAlergia = conceptId ? snomedAlergiasSet.has(conceptId) : false;
                 const exist = semanticTags.includes(semTag);
-                if (alergia) {
+                if (isAlergia) {
                     registrosAlergias.push(registro);
                 } else if (exist) {
                     registrosMedicos.push(registro);

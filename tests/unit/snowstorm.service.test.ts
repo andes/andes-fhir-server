@@ -1,4 +1,4 @@
-import { SnowstormService, getSemanticTagFromFsn, SNOMED_ALLERGIES, SNOMED_INTOLERANCES } from '../../src/services/snomed/snowstorm.service';
+import { SnowstormService, getSemanticTagFromFsn, SNOMED_ADVERSE_REACTIONS, SNOMED_ALLERGIES, SNOMED_INTOLERANCES, ALLERGIES_INTOLERANCES_TTL_MS } from '../../src/services/snomed/snowstorm.service';
 
 describe('SnowstormService', () => {
     let service: SnowstormService;
@@ -212,25 +212,144 @@ describe('SnowstormService', () => {
             });
         });
 
-        it('should combine allergies and intolerances and include root concepts without duplicates', async () => {
-            jest.spyOn(service, 'getSnomedAllergies').mockResolvedValue([
-                { conceptId: '419199008', term: 'alergia a penicilina', fsn: 'alergia a penicilina (hallazgo)', semanticTag: 'hallazgo' }
-            ]);
-            jest.spyOn(service, 'getSnomedIntolerances').mockResolvedValue([
+        it('should call getConceptsByEcl with <<420134006 and 24 hours TTL', async () => {
+            const mockEclResults = [
+                { conceptId: '419199008', term: 'alergia a penicilina', fsn: 'alergia a penicilina (hallazgo)', semanticTag: 'hallazgo' },
                 { conceptId: '235719003', term: 'intolerancia a la lactosa', fsn: 'intolerancia a la lactosa (trastorno)', semanticTag: 'trastorno' }
-            ]);
+            ];
+            const eclSpy = jest.spyOn(service, 'getConceptsByEcl').mockResolvedValue(mockEclResults);
 
-            const combined = await service.getSnomedAllergiesAndIntolerances();
+            const result = await service.getSnomedAllergiesAndIntolerances();
 
-            expect(service.getSnomedAllergies).toHaveBeenCalledWith(SNOMED_ALLERGIES, false);
-            expect(service.getSnomedIntolerances).toHaveBeenCalledWith(SNOMED_INTOLERANCES, false);
+            expect(eclSpy).toHaveBeenCalledWith(`<<${SNOMED_ADVERSE_REACTIONS}`, {
+                bypassCache: false,
+                ttlMs: ALLERGIES_INTOLERANCES_TTL_MS
+            });
+            expect(result).toEqual(mockEclResults);
+        });
+    });
 
-            const ids = combined.map(c => c.conceptId);
-            expect(ids).toContain(String(SNOMED_ALLERGIES));
-            expect(ids).toContain(String(SNOMED_INTOLERANCES));
-            expect(ids).toContain('419199008');
-            expect(ids).toContain('235719003');
-            expect(combined.length).toBe(4);
+    describe('getConceptsByEcl', () => {
+        it('should fetch concepts with ECL in a single page and map fields', async () => {
+            const mockResponse = {
+                items: [
+                    {
+                        conceptId: '16224591000119103',
+                        active: true,
+                        fsn: { term: 'alergia a veneno de abeja (hallazgo)', lang: 'es' },
+                        pt: { term: 'alergia a veneno de abeja', lang: 'es' }
+                    }
+                ],
+                total: 1,
+                limit: 1000
+            };
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockResponse
+            } as any);
+
+            const result = await service.getConceptsByEcl('<<420134006');
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.stringContaining(`${mockHost}/${mockBranch}/concepts?ecl=%3C%3C420134006&limit=1000&activeFilter=true`),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'Accept-Language': 'es'
+                    })
+                })
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual({
+                conceptId: '16224591000119103',
+                term: 'alergia a veneno de abeja',
+                fsn: 'alergia a veneno de abeja (hallazgo)',
+                semanticTag: 'hallazgo'
+            });
+        });
+
+        it('should paginate multiple pages using searchAfter until all concepts are retrieved', async () => {
+            const page1 = {
+                items: [
+                    { conceptId: '111', pt: { term: 'Alergia 1' }, fsn: { term: 'Alergia 1 (hallazgo)' } }
+                ],
+                total: 2,
+                limit: 1,
+                searchAfter: 'cursor-token-page-1'
+            };
+            const page2 = {
+                items: [
+                    { conceptId: '222', pt: { term: 'Alergia 2' }, fsn: { term: 'Alergia 2 (hallazgo)' } }
+                ],
+                total: 2,
+                limit: 1
+            };
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({ ok: true, json: async () => page1 } as any)
+                .mockResolvedValueOnce({ ok: true, json: async () => page2 } as any);
+
+            const result = await service.getConceptsByEcl('<<420134006', { limit: 1 });
+
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+            expect(global.fetch).toHaveBeenNthCalledWith(
+                1,
+                expect.stringContaining('limit=1&activeFilter=true'),
+                expect.any(Object)
+            );
+            expect(global.fetch).toHaveBeenNthCalledWith(
+                2,
+                expect.stringContaining('searchAfter=cursor-token-page-1'),
+                expect.any(Object)
+            );
+
+            expect(result).toHaveLength(2);
+            expect(result.map(c => c.conceptId)).toEqual(['111', '222']);
+        });
+
+        it('should cache ECL results with custom ttlMs and return from cache without re-fetching', async () => {
+            const mockResponse = {
+                items: [
+                    { conceptId: '333', pt: { term: 'Intolerancia' }, fsn: { term: 'Intolerancia (trastorno)' } }
+                ],
+                total: 1,
+                limit: 1000
+            };
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockResponse
+            } as any);
+
+            const res1 = await service.getConceptsByEcl('<<782197009', { ttlMs: 24 * 60 * 60 * 1000 });
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res1).toHaveLength(1);
+
+            const res2 = await service.getConceptsByEcl('<<782197009');
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(res2).toEqual(res1);
+        });
+
+        it('should bypass cache when bypassCache is true', async () => {
+            const mockResponse = {
+                items: [
+                    { conceptId: '444', pt: { term: 'Hipersensibilidad' }, fsn: { term: 'Hipersensibilidad (trastorno)' } }
+                ],
+                total: 1,
+                limit: 1000
+            };
+
+            global.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                json: async () => mockResponse
+            } as any);
+
+            await service.getConceptsByEcl('<<21626009');
+            expect(global.fetch).toHaveBeenCalledTimes(1);
+
+            await service.getConceptsByEcl('<<21626009', { bypassCache: true });
+            expect(global.fetch).toHaveBeenCalledTimes(2);
         });
     });
 

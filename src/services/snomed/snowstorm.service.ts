@@ -24,8 +24,12 @@ export function getSemanticTagFromFsn(fsn: string): string {
     return fsn.substring(startAt + 1, endAt);
 }
 
+export const SNOMED_ADVERSE_REACTIONS = 420134006;
 export const SNOMED_ALLERGIES = 419199007;
 export const SNOMED_INTOLERANCES = 782197009;
+
+export const DEFAULT_SNOMED_TTL_MS = 60 * 60 * 1000; // 1 hora por defecto
+export const ALLERGIES_INTOLERANCES_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
 
 export class SnowstormService {
     public host: string;
@@ -37,7 +41,7 @@ export class SnowstormService {
     constructor(
         host = snomedConfig.snowstormHost,
         branch = snomedConfig.snowstormBranch,
-        defaultTtlMs = 60 * 60 * 1000 // 1 hora por defecto
+        defaultTtlMs = DEFAULT_SNOMED_TTL_MS
     ) {
         this.host = host.replace(/\/+$/, '');
         this.branch = branch.replace(/^\/+|\/+$/g, '');
@@ -245,35 +249,83 @@ export class SnowstormService {
     }
 
     /**
-     * Obtiene conceptos de alergias (419199007) e intolerancias (782197009),
-     * combinando ambos resultados y deduplicando por conceptId.
-     * También incluye los conceptos raíz correspondientes.
+     * Realiza consultas con Expression Constraint Language (ECL) sobre Snowstorm,
+     * paginando automáticamente mediante 'searchAfter' para obtener la totalidad de los conceptos.
+     * Soporta almacenamiento en caché en memoria con TTL configurable.
+     */
+    async getConceptsByEcl(
+        ecl: string,
+        options: { limit?: number; languageCode?: string; bypassCache?: boolean; ttlMs?: number } = {}
+    ): Promise<SnomedConceptSummary[]> {
+        const { limit = 1000, languageCode = 'es', bypassCache = false, ttlMs = this.defaultTtlMs } = options;
+        const cacheKey = `ecl:${ecl}:${languageCode}`;
+
+        if (!bypassCache) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && cached.expiresAt > Date.now()) {
+                return cached.data;
+            }
+        }
+
+        let allConcepts: SnomedConceptSummary[] = [];
+        let searchAfter: string | undefined = undefined;
+        let hasMore = true;
+
+        while (hasMore) {
+            const qs: Record<string, any> = {
+                ecl,
+                limit,
+                activeFilter: true
+            };
+            if (searchAfter) {
+                qs.searchAfter = searchAfter;
+            }
+
+            const response = await this.httpGetSnowstorm(`${this.branch}/concepts`, qs, languageCode);
+            if (!response || !Array.isArray(response.items) || response.items.length === 0) {
+                hasMore = false;
+                break;
+            }
+
+            const mapped: SnomedConceptSummary[] = response.items.map((concept: any) => {
+                const term = concept.pt?.term || concept.term || '';
+                const fsn = concept.fsn?.term || concept.fsn || '';
+                return {
+                    conceptId: String(concept.conceptId),
+                    term,
+                    fsn,
+                    semanticTag: getSemanticTagFromFsn(fsn)
+                };
+            });
+
+            allConcepts = allConcepts.concat(mapped);
+
+            if (response.searchAfter && response.items.length === limit) {
+                searchAfter = response.searchAfter;
+            } else {
+                hasMore = false;
+            }
+        }
+
+        if (allConcepts.length > 0) {
+            this.cache.set(cacheKey, {
+                data: allConcepts,
+                expiresAt: Date.now() + ttlMs
+            });
+        }
+
+        return allConcepts;
+    }
+
+    /**
+     * Obtiene la jerarquía completa de alergias, intolerancias y propensiones a reacciones adversas
+     * mediante el ECL <<420134006 con paginación automática y caché de 24 horas.
      */
     async getSnomedAllergiesAndIntolerances(bypassCache = false): Promise<SnomedConceptSummary[]> {
-        const [allergies, intolerances] = await Promise.all([
-            this.getSnomedAllergies(SNOMED_ALLERGIES, bypassCache),
-            this.getSnomedIntolerances(SNOMED_INTOLERANCES, bypassCache)
-        ]);
-
-        const conceptsMap = new Map<string, SnomedConceptSummary>();
-
-        conceptsMap.set(String(SNOMED_ALLERGIES), {
-            conceptId: String(SNOMED_ALLERGIES),
-            term: 'alergia a sustancia',
-            fsn: 'alergia a sustancia (trastorno)',
-            semanticTag: 'trastorno'
+        return this.getConceptsByEcl(`<<${SNOMED_ADVERSE_REACTIONS}`, {
+            bypassCache,
+            ttlMs: ALLERGIES_INTOLERANCES_TTL_MS
         });
-        conceptsMap.set(String(SNOMED_INTOLERANCES), {
-            conceptId: String(SNOMED_INTOLERANCES),
-            term: 'intolerancia a sustancia',
-            fsn: 'intolerancia a sustancia (trastorno)',
-            semanticTag: 'trastorno'
-        });
-
-        (allergies || []).forEach(item => conceptsMap.set(String(item.conceptId), item));
-        (intolerances || []).forEach(item => conceptsMap.set(String(item.conceptId), item));
-
-        return Array.from(conceptsMap.values());
     }
 
     /**
