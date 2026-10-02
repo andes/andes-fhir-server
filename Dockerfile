@@ -1,18 +1,47 @@
-FROM node:8.9.4
+FROM node:24-bookworm-slim AS base
+WORKDIR /app
 
-# Update everything on the box
-RUN apt-get -y update
-RUN apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
-WORKDIR /srv/src
+##############################
+# deps
+##############################
+FROM base AS deps
+COPY package*.json ./
+RUN npm ci
 
-# Copy our package.json & install our dependencies
-COPY package.json /srv/src/package.json
-RUN yarn install
+##############################
+# build
+##############################
+FROM deps AS build
+COPY tsconfig.json ./
+COPY src ./src
 
-# Copy the remaining application code
-COPY . /srv/src
+RUN npm run tsc
 
-# Start the app
-CMD yarn start
+##############################
+# production
+##############################
+FROM node:24-bookworm-slim AS production
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=build /app/dist ./dist
+
+EXPOSE 3000
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/index.js"]

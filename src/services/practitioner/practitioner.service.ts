@@ -1,162 +1,149 @@
-import { ServerError, resolveSchema } from '@asymmetrik/node-fhir-server-core';
 import { Practitioner as fhirPractitioner } from '@andes/fhir';
-import { familyQueryBuilder, tokenQueryBuilder } from './../../utils/querybuilder.util';
-import { setObjectId as objectId } from './../../utils/uid.util';
-var moment = require('moment');
-const ObjectID = require('mongodb').ObjectID
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
+import { fullurl } from '../../utils/data.util';
+import { pruneEmpty } from '../../utils/pruneFhir';
+import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
+import PractitionerRepository from '../../repositories/practitioner.repository';
+import { FhirIdentifierSystems } from '../../constants';
 
-const { CONSTANTS } = require('./../../constants');
-const globals = require('../../globals');
-
-let getPractitioner = (base_version) => {
+const getPractitionerSchema = (base_version: string) => {
     return resolveSchema(base_version, 'Practitioner');
 };
 
-let buildAndesSearchQuery = (args) => {
-    // Filtros de búsqueda para profesionales
-    let active = args['active'] ? args['active'] : true;
-    let family = args['family'] ? args['family'] : '';
-    let given = args['given'] ? args['given'] : '';
-    let identifier = args['identifier'];
-    let query: any = {};
-
-    query.$and = [];
-    query.$and.push({ profesionalMatriculado: true });
-    if (active === true || active === 'true') {
-        query.$and.push({
-            $or: [
-                { habilitado: true },
-                { habilitado: { $exists: false } }
-            ]
-        });
-    } else {
-        query.$and.push({ habilitado: false });
-    }
-
-    // Si hay filtros de nombre
-    if (family || given) {
-        query.$and.push(...familyQueryBuilder(family + ' ' + given));
-    }
-
-    // Controles de identifier de profesional
-    if (identifier) {
-        let tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
-        switch (tokenBuilder.system) {
-            case 'andes.gob.ar':
-                query._id = new ObjectID(tokenBuilder.value);
-                break;
-            case 'andes.gob.ar/matriculaciones':
-                if (tokenBuilder.value.includes('@')) {
-                    /*  Consulta por profesional. Dado un nro de matricula y codigo de carrera de grado o posgrado,
-                        retorna un profesional siempre que esté activo.
-                    */
-                    const [nroMatricula, tipoProfesion] = tokenBuilder.value.split('@');
-                    query['$or'] = [];
-                    query['$or'].push({ 'formacionGrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionGrado.profesion.codigo': parseInt(tipoProfesion || 0, 10) });
-                    query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(nroMatricula || 0, 10), 'formacionPosgrado.especialidad.codigo.sisa': parseInt(tipoProfesion || 0, 10) });
-                } else {
-                    if (parseInt(tokenBuilder.value)) {
-                        query['$or'] = [];
-                        query['$or'].push({ 'formacionGrado.matriculacion.matriculaNumero': parseInt(tokenBuilder.value || 0, 10) });
-                        query['$or'].push({ 'formacionPosgrado.matriculacion.matriculaNumero': parseInt(tokenBuilder.value || 0, 10) });
-                    }
-                }
-                break;
-            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
-                query.cuit = tokenBuilder.value;
-                break;
-            case 'http://www.renaper.gob.ar/dni':
-                query.documento = tokenBuilder.value;
-                break;
-            default:
-                query.documento = tokenBuilder.value;
-        }
-    }
-    return query;
-};
-
-let verificarVigencia = (formacion, codigoProfesion, nroMatricula) => {
-    if (formacion.profesion.codigo.toString() === codigoProfesion && formacion.matriculacion[formacion.matriculacion.length - 1].matriculaNumero.toString() === nroMatricula) {
-        if (formacion.matriculacion[formacion.matriculacion.length - 1].fin >= moment().toDate()) {
-            return true;
-        }
-    }
-    return false
+function escapeHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
-export = {
-    search: async (args, context) => {
-        try {
-            let { base_version } = args;
-            if (Object.keys(args).length > 1) {
-                const query = buildAndesSearchQuery(args);
-                const db = globals.get(CONSTANTS.CLIENT_DB);
-                const collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
-                const Practitioner = getPractitioner(base_version);
-                let practitioners = await collection.find(query).toArray();
-                if (practitioners.length) {
-                    return practitioners.map(prac => new Practitioner(fhirPractitioner.encode(prac)));
-                } else {
-                    return []
-                }
-            } else {
-                throw { warning: 'Al menos un parámetro de entrada es requerido' };
-            }
-        } catch (err) {
-            let message, system, code = '';
-            if (typeof err === 'object') {
-                message = err.message;
-                system = err.system;
-                code = err.code
-            } else {
-                message = err
-            }
-            throw new ServerError(message, {
-                resourceType: "OperationOutcome",
-                issue: [
-                    {
-                        severity: 'error',
-                        code,
-                        diagnostics: message
-                    }
-                ]
-            });
+function buildPractitionerNarrative(practitioner: any) {
+    const family = practitioner?.name?.[0]?.family ?? '';
+    const given = practitioner?.name?.[0]?.given?.join(' ') ?? '';
+    const dni = practitioner?.identifier?.find((x: any) => x.system === FhirIdentifierSystems.DNI)?.value ?? '';
 
-        }
-    },
-    searchById: async (args, context) => {
-        try {
-            let { base_version, id } = args;
-            let Practitioner = getPractitioner(base_version);
-            let db = globals.get(CONSTANTS.CLIENT_DB);
-            let collection = db.collection(`${CONSTANTS.COLLECTION.PRACTITIONER}`);
-            let practitioner = await collection.findOne({ _id: objectId(id) });
-            return practitioner ? new Practitioner(fhirPractitioner.encode(practitioner)) : { notFound: 404 };
-        } catch (err) {
-            let message, system, code = '';
-            if (typeof err === 'object') {
-                message = err.message;
-                system = err.system;
-                code = err.code
-            } else {
-                message = err
-            }
-            throw new ServerError(message, {
-                resourceType: "OperationOutcome",
-                issue: [
-                    {
-                        severity: 'error',
-                        code,
-                        diagnostics: message
-                    }
-                ]
+    const summary = `Practitioner: ${family}, ${given}. DNI: ${dni}.`;
+
+    return {
+        status: 'generated',
+        div: `<div xmlns="http://www.w3.org/1999/xhtml">${escapeHtml(summary)}</div>`
+    };
+}
+
+/**
+ * Busca profesionales aplicando filtros y paginación.
+ */
+async function search(args: any, context: any) {
+    try {
+        const { base_version } = args;
+        const req = context.req;
+
+        if (Object.keys(args).length === 0) {
+            throw new ServerError('Se requiere enviar al menos un parámetro de búsqueda', {
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'warning', code: 'required', diagnostics: 'Se requiere enviar al menos un parámetro de búsqueda' }]
             });
         }
+
+        const query = PractitionerRepository.buildQuery(args);
+        const paging = parsePaging(req?.query || {}, {
+            defaultCount: 50,
+            maxCount: 200
+        });
+
+        const total = await PractitionerRepository.count(query);
+        const practitioners = await PractitionerRepository.find(query, {
+            skip: paging.offset,
+            limit: paging.count
+        });
+
+        const Practitioner = getPractitionerSchema(base_version);
+        const practitionersFhir = practitioners.map((prac, index) => {
+            try {
+                const encoded = fhirPractitioner.encode(prac);
+                const resource = {
+                    ...encoded,
+                    text: buildPractitionerNarrative(encoded)
+                };
+                return new Practitioner(resource);
+            } catch (e) {
+                console.error(`Error encoding practitioner ID: ${prac._id} at index ${index + paging.offset}:`, e.message);
+                return null;
+            }
+        }).filter(p => p !== null);
+
+        const bundle: any = {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            total,
+            link: req ? buildPagingLinks(req, total, paging) : undefined,
+            entry: practitionersFhir.length
+                ? practitionersFhir.map(p => ({
+                    fullUrl: req
+                        ? buildEntryFullUrl(req, base_version, 'Practitioner', p.id)
+                        : fullurl(p),
+                    resource: p,
+                    search: { mode: 'match' }
+                }))
+                : undefined
+        };
+
+        return pruneEmpty(bundle);
+    } catch (err) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || err, {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: (err as any).code || 'exception', diagnostics: err.message || err }]
+        });
     }
+}
 
+/**
+ * Busca un profesional por su ID.
+ */
+async function searchById(args: any, _context: any) {
+    try {
+        const { base_version, id } = args;
+        const Practitioner = getPractitionerSchema(base_version);
+        const practitioner = await PractitionerRepository.findById(id);
+
+        if (!practitioner) {
+            return null;
+        }
+
+        try {
+            const encoded = fhirPractitioner.encode(practitioner);
+            const resource = {
+                ...encoded,
+                text: buildPractitionerNarrative(encoded)
+            };
+
+            return new Practitioner(resource);
+        } catch (e) {
+            console.error(`Error encoding practitioner ID: ${id}:`, e.message);
+            throw new ServerError(`Error de datos en el profesional con ID: ${id}`, {
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'invariant', diagnostics: e.message }]
+            });
+        }
+    } catch (err) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || err, {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: (err as any).code || 'exception', diagnostics: err.message || err }]
+        });
+    }
+}
+
+const PractitionerService = {
+    search,
+    searchById
 };
 
-
-
-
-
+export = PractitionerService;

@@ -1,67 +1,43 @@
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
-import { stringQueryBuilder } from './../../utils/querybuilder.util';
-import { setObjectId as objectId } from './../../utils/uid.util';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
+import SpecialityRepository from '../../repositories/speciality.repository';
 
-const ObjectID = require('mongodb').ObjectID
-const { CONSTANTS } = require('./../../constants');
-const globals = require('../../globals');
-
-
-let getSpecialityEncode = (specility) => {
+let getSpecialityEncode = (speciality: any) => {
     return {
-        identifier: specility._id,
+        identifier: speciality._id,
         code: {
             "system": "https://sisa.msal.gov.ar/sisa/#sisa",
-            "code": specility.codigo.sisa,
-            "display": specility.codigo.sisa
+            "code": speciality.codigo?.sisa,
+            "display": speciality.codigo?.sisa
         },
-        text: specility.nombre,
+        text: speciality.nombre,
         author: "https://sisa.msal.gov.ar/sisa/#sisa"
-    }
+    };
 };
 
-
-
-let buildAndesSearchQuery = (args) => {
-    // Filtros de búsqueda para especialidades
-    let nombre = args['nombre'];
-    let codigo = args['codigo'];
-
-    let query: any = {};
-
-    if (nombre) {
-        query.nombre = stringQueryBuilder(nombre);
-    }
-    if (codigo) {
-        query.sisa.codigo = parseInt(codigo);
-    }
-
-    return query;
-};
-
-export = {
-    search: async (args, context) => {
+const SpecialityService = {
+    search: async (args: any, context: any) => {
         try {
+            const params = context?.req?.query || {};
             let query = {};
-            if (Object.keys(args).length > 1) {
-                query = buildAndesSearchQuery(args);
+            if (Object.keys(params).length > 0) {
+                query = SpecialityRepository.buildQuery(params);
             }
-            const db = globals.get(CONSTANTS.CLIENT_DB);
-            const collection = db.collection(`${CONSTANTS.COLLECTION.SPECILITY}`);
-            let specialities = await collection.find(query).toArray();
+            const specialities = await SpecialityRepository.find(query);
             if (specialities.length) {
                 return specialities.map(speciality => getSpecialityEncode(speciality));
             } else {
-                return []
+                return [];
             }
-        } catch (err) {
-            let message, system, code = '';
-            if (typeof err === 'object') {
-                message = err.message;
-                system = err.system;
-                code = err.code
+        } catch (err: any) {
+            let message = '';
+            let system = '';
+            let code = '';
+            if (typeof err === 'object' && err !== null) {
+                message = err.message || '';
+                system = err.system || '';
+                code = err.code || '';
             } else {
-                message = err
+                message = String(err);
             }
             throw new ServerError(message, {
                 resourceType: "OperationOutcome",
@@ -73,24 +49,24 @@ export = {
                     }
                 ]
             });
-
         }
     },
-    searchById: async (args, context) => {
+
+    searchById: async (args: any, _context?: any) => {
         try {
-            let { base_version, id } = args;
-            let db = globals.get(CONSTANTS.CLIENT_DB);
-            let collection = db.collection(`${CONSTANTS.COLLECTION.SPECILITY}`);
-            let speciality = await collection.findOne({ _id: objectId(id) });
+            const { id } = args;
+            const speciality = await SpecialityRepository.findById(id);
             return speciality ? speciality : { notFound: 404 };
-        } catch (err) {
-            let message, system, code = '';
-            if (typeof err === 'object') {
-                message = err.message;
-                system = err.system;
-                code = err.code
+        } catch (err: any) {
+            let message = '';
+            let system = '';
+            let code = '';
+            if (typeof err === 'object' && err !== null) {
+                message = err.message || '';
+                system = err.system || '';
+                code = err.code || '';
             } else {
-                message = err
+                message = String(err);
             }
             throw new ServerError(message, {
                 resourceType: "OperationOutcome",
@@ -102,8 +78,8 @@ export = {
                     }
                 ]
             });
-
         }
     }
-
 };
+
+export = SpecialityService;

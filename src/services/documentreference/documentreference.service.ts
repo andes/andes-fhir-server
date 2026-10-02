@@ -1,4 +1,3 @@
-import console = require('console');
 import { getDocumentReference } from '../../controller/documentreference/documentreference';
 import { CONSTANTS } from './../../constants';
 import { fhirError } from './../../utils/errorHandler';
@@ -7,8 +6,6 @@ export = {
 	search: async (args) => {
 
 		try {
-
-			console.log(args)
 			let { base_version } = args;
 			let subjIdentifier = args['subject:identifier'] || args['subject'];
 			let type = args['type'];

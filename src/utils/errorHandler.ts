@@ -1,10 +1,10 @@
-import { ServerError } from '@asymmetrik/node-fhir-server-core';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 
 export const fhirError = function (message, severity, code, diagnostics) {
     throw new ServerError(
         message,
         {
-            resourceType: "OperationOutcome",
+            resourceType: 'OperationOutcome',
             issue: [
                 {
                     severity,
@@ -14,4 +14,4 @@ export const fhirError = function (message, severity, code, diagnostics) {
             ]
         }
     );
-}
+};
