@@ -1,15 +1,38 @@
 {
     "compilerOptions": {
-        "target": "es2015",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "sourceMap": true,
-        "emitDecoratorMetadata": true,
+        "target": "ES2023",
+        "module": "NodeNext",
+        "lib": [
+            "ES2023"
+        ],
+        "outDir": "dist",
+        "rootDir": "src",
+        "moduleResolution": "NodeNext",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
         "experimentalDecorators": true,
-        "removeComments": false,
-        "noImplicitAny": false,
-        "noImplicitReturns": true,
-        "allowUnusedLabels": false,
-        "baseUrl": "."
-    }
+        "emitDecoratorMetadata": true,
+        "skipLibCheck": true,
+        "strict": false,
+        "isolatedModules": true,
+        "types": [
+            "node",
+            "jest"
+        ],
+        // Descomentar para vincular con la librería local en desarrollo:
+        // "baseUrl": ".",
+        // "paths": {
+        //     "@andes/fhir": [
+        //         "../fhir/dist/index"
+        //     ]
+        // }
+    },
+    "include": [
+        "src/**/*.ts",
+    ],
+    "exclude": [
+        "node_modules",
+        "tests",
+        "dist"
+    ]
 }

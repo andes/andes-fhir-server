@@ -1,65 +1,79 @@
 import { Organization as fhirOrganization } from '@andes/fhir';
-import { resolveSchema } from '@asymmetrik/node-fhir-server-core';
-import { CONSTANTS} from './../../constants';
-const globals = require('../../globals');
-const { stringQueryBuilder, keyQueryBuilder } = require('../../utils/querybuilder.util');
+import { resolveSchema } from '@bluehalo/node-fhir-server-core';
+import { fullurl } from '../../utils/data.util';
+import { pruneEmpty } from '../../utils/pruneFhir';
+import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
+import OrganizationRepository, { buildAndesSearchQuery } from '../../repositories/organization.repository';
 
+export { buildAndesSearchQuery };
 
-let getOrganization = (base_version) => {
+let getOrganization = (base_version: string) => {
     return resolveSchema(base_version, 'organization');
 };
 
-let buildAndesSearchQuery = (args) => {
-
-    // Filtros de búsqueda para organizaciones
-    let id = args['id'];
-    let active = args['active'];
-    let identifier = args['identifier']; // codigo
-    let name = args['name'];
-    let query: any = {};
-
-    if (id) {
-        query.id = id;
-    }
-    if (active) {
-        query.activo = active === true ? true : false;
-    }
-    if (name) {
-        query.nombre = stringQueryBuilder(name, true);
-    }
-    if (identifier) {
-        let queryBuilder = keyQueryBuilder(identifier, 'codigo.sisa');
-        for (let i in queryBuilder) {
-            query[i] = queryBuilder[i];
-        }
-    }
-    return query;
-};
-
-
-export async function buscarOrganizacion(version, parameters) {
+export async function buscarOrganizacion(version: string, parameters: any, req: any) {
     try {
-        let query = buildAndesSearchQuery(parameters);
-        const db = globals.get(CONSTANTS.CLIENT_DB);
-        let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
-        let Organization = getOrganization(version);
-        let organizations = await collection.find(query).toArray();
-        return organizations.map(org => new Organization(fhirOrganization.encode(org)));
+        const query = OrganizationRepository.buildQuery(parameters);
+        const Organization = getOrganization(version);
+
+        const paging = parsePaging(req?.query, {
+            defaultCount: 50,
+            maxCount: 200
+        });
+
+        const total = await OrganizationRepository.count(query);
+        const organizations = await OrganizationRepository.find(query, {
+            skip: paging.offset,
+            limit: paging.count
+        });
+
+        const organizationsFhir = organizations.map(org => new Organization(fhirOrganization.encode(org)));
+
+        const bundle = {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            total,
+            link: req?.originalUrl ? buildPagingLinks(req, total, paging) : undefined,
+            entry: organizationsFhir.length
+                ? organizationsFhir.map(p => ({
+                    fullUrl: req?.originalUrl
+                        ? buildEntryFullUrl(req, version, 'Organization', p.id)
+                        : fullurl(p),
+                    resource: p,
+                    search: {
+                        mode: "match"
+                    }
+                }))
+                : undefined
+        };
+
+        return pruneEmpty(bundle);
     } catch (err) {
-        return err
+        return err;
+    }
+}
+
+export async function buscarOrganizacionId(version: string, id: string) {
+    try {
+        const Organization = getOrganization(version);
+        const org = await OrganizationRepository.findById(id);
+        return org ? new Organization(fhirOrganization.encode(org)) : null;
+    } catch (err) {
+        return err;
     }
 }
 
 // Vermos como generalizar más adelante
-export async function buscarOrganizacionSisa(version, codigoSisa) {
+export async function buscarOrganizacionSisa(version: string, codigoSisa: string) {
     try {
-        const db = globals.get(CONSTANTS.CLIENT_DB);
-        let collection = db.collection(`${CONSTANTS.COLLECTION.ORGANIZATION}`);
-        let Organization = getOrganization(version);
-        let org = await collection.findOne({ 'codigo.sisa': codigoSisa });
+        const Organization = getOrganization(version);
+        const org = await OrganizationRepository.findBySisa(codigoSisa);
+        if (!org) {
+            return null;
+        }
         org.id = org._id;
-        return new Organization(fhirOrganization.encode(org))
+        return new Organization(fhirOrganization.encode(org));
     } catch (err) {
-        return err
+        return err;
     }
 }
