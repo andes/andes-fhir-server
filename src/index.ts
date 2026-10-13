@@ -8,7 +8,6 @@ try {
 
 import { initialize } from '@andes/fhir';
 import * as FHIRServer from '@bluehalo/node-fhir-server-core';
-import './apm';
 import { fhirServerConfig, mongoConfig } from './config';
 import { CONSTANTS } from './constants';
 import { mongoConnect } from './lib/mongo';
