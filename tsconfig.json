@@ -18,14 +18,7 @@
         "types": [
             "node",
             "jest"
-        ],
-        // Descomentar para vincular con la librería local en desarrollo:
-        // "baseUrl": ".",
-        // "paths": {
-        //     "@andes/fhir": [
-        //         "../fhir/dist/index"
-        //     ]
-        // }
+        ]
     },
     "include": [
         "src/**/*.ts",

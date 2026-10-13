@@ -1,0 +1,192 @@
+{
+    "_id": "58d30d6fgbb1a96b254d9877",
+    "entidadesValidadoras": [
+        "RENAPER",
+        "Sisa"
+    ],
+    "documento": "42910660",
+    "apellido": "PERINGA PONCE",
+    "nombre": "HUGO AGUSTIN",
+    "sexo": "masculino",
+    "fechaNacimiento": "1979-11-14T03:00:00.000-03:00",
+    "estado": "validado",
+    "genero": "masculino",
+    "financiador": [
+        {
+            "codigoPuco": 921001,
+            "nombre": "O.S.P. NEUQUEN",
+            "financiador": "O.S.P. NEUQUEN"
+        },
+        {
+            "codigoPuco": 921001,
+            "nombre": "O.S.P. NEUQUEN",
+            "financiador": "O.S.P. NEUQUEN"
+        }
+    ],
+    "relaciones": [
+        {
+            "_id": "5b92dec9646d99436065cbfc",
+            "relacion": {
+                "_id": "59247c391ebf0273353b23c0",
+                "nombre": "hijo/a",
+                "opuesto": "progenitor/a"
+            },
+            "referencia": "5b92de583173b053ae88f2d0",
+            "nombre": "JOSEFINA",
+            "apellido": "PERINGA PONCE",
+            "documento": "333333333",
+            "fotoId": "5f9072d00254f253d9c7dd54"
+        },
+        {
+            "_id": "5b92dec9646d99436065cbfa",
+            "relacion": {
+                "_id": "59247c391ebf0273353b23c0",
+                "nombre": "hijo/a",
+                "opuesto": "progenitor/a"
+            },
+            "referencia": "5b9287f10394a225c25a150b",
+            "nombre": "IGNACIO",
+            "apellido": "PERINGA PONCE",
+            "documento": "222222222",
+            "fotoId": "5f9072d00254f253d9c7dd2c"
+        },
+        {
+            "_id": "5f00d31e044ef317c36fd4f8",
+            "relacion": {
+                "_id": "59247c391ebf0273353b23c0",
+                "nombre": "hijo/a",
+                "opuesto": "progenitor/a"
+            },
+            "referencia": "5f00d2f7acfe3a7e46a88227",
+            "nombre": "JUAN CRUZ",
+            "apellido": "PERINGA  PONCE",
+            "documento": "11111111",
+            "fotoId": "5f9078ff0254f253d9dc7212"
+        },
+        {
+            "_id": "5f09f00d5cec191aa5908457",
+            "relacion": {
+                "_id": "59247e1c1ebf0273353b23c5",
+                "nombre": "otro",
+                "opuesto": "otro"
+            },
+            "referencia": "59cb176acd21ce293061b67b",
+            "nombre": "FLORENCIA INES",
+            "apellido": "YAMIL",
+            "documento": "15365478",
+            "fotoId": "5f9072b40254f253d9c79556"
+        }
+    ],
+    "direccion": [
+        {
+            "geoReferencia": [
+                -38.9305707,
+                -68.0839758
+            ],
+            "activo": true,
+            "_id": "58d90d6f0bb1a96b254d9878",
+            "valor": "Enrique Santos Discepolo 1856",
+            "codigoPostal": "8300",
+            "ubicacion": {
+                "_id": "58d90d6f0bb1a96b254d9879",
+                "pais": {
+                    "_id": "57f3b5c469fe79a598e6281f",
+                    "nombre": "Argentina"
+                },
+                "provincia": {
+                    "_id": "57f3f3aacebd681cc2014c53",
+                    "nombre": "Neuquén"
+                },
+                "localidad": {
+                    "_id": "57f538a472325875a199a82d",
+                    "nombre": "NEUQUEN"
+                },
+                "barrio": null
+            },
+            "ranking": 0,
+            "ultimaActualizacion": "2017-03-27T10:02:16.809-03:00"
+        },
+        {
+            "geoReferencia": null,
+            "activo": true,
+            "_id": "6046105ba4e2d85f81ad60f7",
+            "valor": "NORDENSTROM 1898 0 0",
+            "codigoPostal": "8300",
+            "ranking": 1,
+            "ubicacion": {
+                "_id": "6046105ba4e2d85f81ad60f8",
+                "pais": {
+                    "_id": "57f3b5c469fe79a598e6281f",
+                    "nombre": "Argentina"
+                },
+                "provincia": {
+                    "_id": "57f3f3aacebd681cc2014c53",
+                    "nombre": "Neuquén"
+                },
+                "localidad": {
+                    "_id": "57f538a472325875a199a82d",
+                    "nombre": "Neuquén"
+                },
+                "barrio": null
+            },
+            "ultimaActualizacion": "2021-03-08T08:54:04.089-03:00"
+        }
+    ],
+    "contacto": [
+        {
+            "activo": true,
+            "_id": "5cabf8cc129519c9cd5bf6f2",
+            "tipo": "celular",
+            "valor": "4462221"
+        },
+        {
+            "activo": true,
+            "_id": "5cabf8cc129519c9cd5bf6f1",
+            "tipo": "email",
+            "valor": "hugoperingaponce@gmail.com"
+        }
+    ],
+    "identificadores": [
+        {
+            "entidad": "RENAPER",
+            "valor": "241654536"
+        }
+    ],
+    "estadoCivil": "soltero",
+    "reportarError": false,
+    "scan": "27381849",
+    "carpetaEfectores": [
+        {
+            "_id": "5992e06a0e3f6446112e9bd5",
+            "organizacion": {
+                "_id": "59650203d03019f919ea31ed",
+                "nombre": "CENTRO DE SALUD PARQUE INDUSTRIAL"
+            },
+            "nroCarpeta": ""
+        },
+        {
+            "_id": "5b57565dc0202168d3d5762d",
+            "organizacion": {
+                "_id": "57e9670e52df311059bc8964",
+                "nombre": "HOSPITAL PROVINCIAL NEUQUEN - DR. EDUARDO CASTRO RENDON"
+            },
+            "nroCarpeta": "PDR27381849"
+        }
+    ],
+    "notas": [],
+    "cuil": "23273818499",
+    "foto": null,
+    "activo": true,
+    "notaError": "",
+    "tipoIdentificacion": null,
+    "numeroIdentificacion": null,
+    "fotoId": "6046105c18944f849e9fe315",
+    "documentos": [],
+    "fechaFallecimiento": null,
+    "createdBy": {
+        "organizacion": {
+            "id": "50580352367779",
+            "nombre": "LABORATORIO RAÑA - SERVICIOS MEDICOS"
+        }
+    }
+}

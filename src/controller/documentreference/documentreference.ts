@@ -1,4 +1,4 @@
-import { Bundle, Device, DocumentReference } from '@andes/fhir';
+import { Bundle, Device, DocumentReference } from '../../encoders';
 import * as JSONSchemaValidator from '@bluehalo/fhir-json-schema-validator';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';

@@ -1,4 +1,4 @@
-import { Patient as fhirPac } from '@andes/fhir';
+import { Patient as fhirPac } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';

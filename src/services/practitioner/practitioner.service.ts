@@ -1,4 +1,4 @@
-import { Practitioner as fhirPractitioner } from '@andes/fhir';
+import { Practitioner as fhirPractitioner } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';

@@ -19,10 +19,10 @@
     "test:jest": "jest --forceExit"
   },
   "dependencies": {
-    "@andes/fhir": "^1.13.0",
     "@bluehalo/fhir-json-schema-validator": "^0.11.0",
     "@bluehalo/node-fhir-server-core": "^2.3.0",
     "@bluehalo/sof-scope-checker": "^1.1.0",
+    "@types/fhir": "^0.0.41",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.10.0",
     "passport-http-bearer": "^1.0.1",

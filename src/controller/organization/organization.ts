@@ -1,4 +1,4 @@
-import { Organization as fhirOrganization } from '@andes/fhir';
+import { Organization as fhirOrganization } from '../../encoders';
 import { resolveSchema } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
