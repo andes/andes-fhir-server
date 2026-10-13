@@ -1,4 +1,4 @@
-import { FhirIdentifierSystems } from "../constants/identifier-systems";
+import { FhirIdentifierSystems } from "../../constants";
 
 let DOMINIO: string = FhirIdentifierSystems.ANDES_ID;
 

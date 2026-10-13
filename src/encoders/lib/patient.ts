@@ -14,7 +14,7 @@ import {
     AndesRelacion
 } from '../types/andes/patient.types';
 import { mapAndesRankingToFhirRank, mapFhirRankToAndesRanking } from '../utils/rankingMapping';
-import { FhirIdentifierSystems } from '../constants/identifier-systems';
+import { FhirIdentifierSystems } from '../../constants';
 
 /**
  * Helpers

@@ -5,15 +5,15 @@ beforeEach(() => {
 });
 
 test('Get default domain', () => {
-    expect(getDominio()).toBe('http://andes.gob.ar');
+    expect(getDominio()).toBe('https://andes.gob.ar');
 });
 
 test('Get default URL without id', () => {
-    expect(makeUrl('patient')).toBe('http://andes.gob.ar/patient');
+    expect(makeUrl('patient')).toBe('https://andes.gob.ar/patient');
 });
 
 test('Get default URL with id', () => {
-    expect(makeUrl('patient', '123456')).toBe('http://andes.gob.ar/patient/123456');
+    expect(makeUrl('patient', '123456')).toBe('https://andes.gob.ar/patient/123456');
 });
 
 test('Initialize domain modifies getDominio', () => {

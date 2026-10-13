@@ -3,7 +3,7 @@
  * @param {} medicationRequest
  */
 
-import { FhirIdentifierSystems } from '../constants/identifier-systems';
+import { FhirIdentifierSystems } from '../../constants';
 
 // Muy incompleto hay que mejorarlo mucho todavía
 

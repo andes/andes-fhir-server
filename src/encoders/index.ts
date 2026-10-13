@@ -28,3 +28,4 @@ export {
     MedicationRequest,
     AllergyIntolerance
 };
+export { FhirIdentifierSystems } from '../constants';

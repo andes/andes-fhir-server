@@ -11,7 +11,7 @@ import {
     AndesDireccionOrg
 } from '../types/andes/organization.types';
 import { mapAndesRankingToFhirRank } from '../utils/rankingMapping';
-import { FhirIdentifierSystems } from '../constants/identifier-systems';
+import { FhirIdentifierSystems } from '../../constants';
 
 /**
  * Encode an ANDES Organization to FHIR Organization

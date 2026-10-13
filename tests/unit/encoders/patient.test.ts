@@ -1,7 +1,7 @@
 import * as patient from './data/patient.json';
 import { decode, encode } from '../../../src/encoders/lib/patient';
 import { createPatient } from './helpers/patientFactory';
-import { FhirIdentifierSystems } from '../../../src/encoders/constants/identifier-systems';
+import { FhirIdentifierSystems } from '../../../src/constants';
 
 const pacienteFhir = encode(patient)!;
 
@@ -87,7 +87,7 @@ describe('encode patient from ANDES to FHIR R4', () => {
         expect(fhir).not.toBeNull();
         const id = fhir!.identifier?.find(t => t.system === FhirIdentifierSystems.FOREIGN_ID);
         expect(id?.value).toBe('ABC123');
-        expect(id?.system).toBe('http://andes.gob.ar/sid/foreign-id');
+        expect(id?.system).toBe(FhirIdentifierSystems.FOREIGN_ID);
     });
 
     it('Verifica pasaporte', () => {
@@ -96,7 +96,7 @@ describe('encode patient from ANDES to FHIR R4', () => {
         expect(fhir).not.toBeNull();
         const id = fhir!.identifier?.find(t => t.system === FhirIdentifierSystems.PASSPORT);
         expect(id?.value).toBe('ABC123CD');
-        expect(id?.system).toBe('http://andes.gob.ar/sid/passport');
+        expect(id?.system).toBe(FhirIdentifierSystems.PASSPORT);
     });
 });
 
