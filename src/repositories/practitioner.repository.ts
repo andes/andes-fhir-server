@@ -64,7 +64,7 @@ function buildAndesSearchQuery(args: any) {
                     }
                 }
                 break;
-            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
+            case FhirIdentifierSystems.CUIT:
                 query.cuit = tokenBuilder.value;
                 break;
             case FhirIdentifierSystems.DNI:

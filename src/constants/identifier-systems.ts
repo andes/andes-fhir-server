@@ -3,6 +3,7 @@ export const FhirIdentifierSystems = {
     MATRICULACIONES: 'https://andes.gob.ar/matriculaciones',
     DNI: 'https://www.renaper.gob.ar/dni',
     CUIL: 'https://www.anses.gob.ar/cuil',
+    CUIT: 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do',
     PASSPORT: 'https://andes.gob.ar/sid/passport',
     FOREIGN_ID: 'https://andes.gob.ar/sid/foreign-id',
     PRESCRIPTIONS: 'https://app.andes.gob.ar/prescriptions',

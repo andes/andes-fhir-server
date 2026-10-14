@@ -15,6 +15,7 @@ import {
 } from '../types/andes/practitioner.types';
 import { formatFHIRDateTime, formatFHIRDate } from '../utils/fhirDate';
 import { mapAndesRankingToFhirRank } from '../utils/rankingMapping';
+import { FhirIdentifierSystems } from '../../constants';
 
 export function encode(practitioner: AndesPractitioner | null | undefined): Practitioner | null {
     const data = practitioner;
@@ -30,14 +31,14 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
 
     if (data.documento) {
         identificadores.push({
-            system: 'http://www.renaper.gob.ar/dni',
+            system: FhirIdentifierSystems.DNI,
             value: data.documento
         });
     }
 
     if (data.cuit) {
         identificadores.push({
-            system: 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do',
+            system: FhirIdentifierSystems.CUIT,
             value: data.cuit
         });
     }

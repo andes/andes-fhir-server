@@ -2,6 +2,7 @@ import { ObjectId, Collection } from 'mongodb';
 import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { getDominio } from '../encoders';
 import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder, stringEscape, stringInsensitive } from '../utils/querybuilder.util';
 
 /**
@@ -38,6 +39,8 @@ function buildAndesSearchQuery(args: any) {
             const identificador = stringInsensitive(stringEscape(queryBuilder.value));
             switch (queryBuilder.system) {
                 case FhirIdentifierSystems.ANDES_ID:
+                case getDominio():
+                case 'http://andes.gob.ar':
                     if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
                         query._id = new ObjectId(queryBuilder.value);
                     } else {

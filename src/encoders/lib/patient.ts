@@ -1,4 +1,4 @@
-import { getDominio, makeUrl } from './config';
+import { makeUrl } from './config';
 import {
     Patient,
     ContactPoint,
@@ -133,7 +133,7 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
 
     // Dominio local (id de ANDES o equivalente)
     identificadores.push({
-        system: getDominio(),
+        system: FhirIdentifierSystems.ANDES_ID,
         value: patient._id ?? patient.id
     });
 
@@ -359,7 +359,7 @@ export function decode(patient: Patient): AndesPatient {
         : '';
 
     const pacienteAndes: AndesPatient = {
-        id: getValue(patient.identifier, makeUrl('Patient')) ?? patient.id,
+        id: getValue(patient.identifier, FhirIdentifierSystems.ANDES_ID) ?? getValue(patient.identifier, makeUrl('Patient')) ?? patient.id,
         documento: getValue(patient.identifier, FhirIdentifierSystems.DNI),
         tipoIdentificacion,
         numeroIdentificacion,
