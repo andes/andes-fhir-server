@@ -9,18 +9,18 @@ export function encode(ID: any, author: any, organization: any, patient: any, bi
         },
         contained: [
             {
-                resourceType: 'Practitioner',
+                resourceType: author.resourceType || 'Device',
                 id: author.id,
                 identifier: [{
-                    system: makeUrl('Device'),
+                    system: makeUrl(author.resourceType || 'Device'),
                     value: author.id
                 }]
             },
             {
-                resourceType: 'Organization',
+                resourceType: organization.resourceType || 'Organization',
                 id: organization.id,
                 identifier: [{
-                    system: makeUrl('Organization'),
+                    system: makeUrl(organization.resourceType || 'Organization'),
                     value: organization.id
                 }]
             }
