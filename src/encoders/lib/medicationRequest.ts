@@ -4,6 +4,7 @@
  */
 
 import { FhirIdentifierSystems } from '../../constants';
+import { formatFHIRDate } from '../utils/fhirDate';
 
 // Muy incompleto hay que mejorarlo mucho todavía
 
@@ -50,7 +51,7 @@ export function encode(patientReference: any, practitionerReference: any, medica
             reference: patientReference  // podría ser una reference a un group también
         },
         // encounter: Por ahora lo dejo pendiente. Podría ponerse una referencia a otra prestación o al informe del encuentro.
-        authoredOn: data.registro?.createdAt ? new Date(data.registro.createdAt).toISOString().slice(0, 10) : undefined,
+        authoredOn: formatFHIRDate(data.registro?.createdAt),
         // requester & performer: pueden ser  Reference(Practitioner|PractitionerRole|Organization|Patient|Device|RelatedPerson|CareTeam)
         // por el momento vamos a tomar al profesional porque no tenemos otra info en la prestación
         requester: {

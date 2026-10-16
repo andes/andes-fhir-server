@@ -1,4 +1,3 @@
-import { getDominio } from './config';
 import {
     Practitioner,
     ContactPoint,
@@ -44,7 +43,7 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
     }
 
     identificadores.push({
-        system: getDominio(),
+        system: FhirIdentifierSystems.ANDES_ID,
         value: data._id
     });
 

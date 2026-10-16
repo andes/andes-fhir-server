@@ -1,4 +1,3 @@
-import { makeUrl } from './config';
 import {
     Organization,
     ContactPoint,
@@ -49,7 +48,7 @@ export function encode(organization: AndesOrganization | null | undefined): Orga
     }
 
     identificadores.push({
-        system: makeUrl('Organization'),
+        system: FhirIdentifierSystems.ANDES_ID,
         value: data._id ?? data.id
     });
 

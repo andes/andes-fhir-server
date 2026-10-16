@@ -1,3 +1,4 @@
+import { formatFHIRDateTime } from '../utils/fhirDate';
 
 /**
  *
@@ -13,6 +14,8 @@ export function encode(patientReference: any, registro: any) {
     } else if (estado === 'resuelto' || estado === 'resolved') {
         clinicalStatusCode = 'resolved';
     }
+
+    const createdAtIso = formatFHIRDateTime(registro.createdAt);
 
     const condition: any = {
         resourceType: 'Condition',
@@ -40,7 +43,7 @@ export function encode(patientReference: any, registro: any) {
         subject: {
             reference: patientReference
         },
-        onsetDateTime: registro.createdAt ? new Date(registro.createdAt).toISOString() : new Date().toISOString(),
+        onsetDateTime: createdAtIso ?? new Date().toISOString(),
         verificationStatus: {
             coding: [
                 {
@@ -66,7 +69,7 @@ export function encode(patientReference: any, registro: any) {
             ],
             text: registro.concepto.term || registro.concepto.fsn
         },
-        recordedDate: registro.createdAt ? new Date(registro.createdAt).toISOString() : undefined,
+        recordedDate: createdAtIso,
         text: {
             status: 'generated',
             div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Problema: </p><p>${registro.nombre || registro.concepto?.term || ''}</p></div>`

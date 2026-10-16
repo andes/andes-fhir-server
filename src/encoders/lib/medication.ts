@@ -12,7 +12,7 @@ export function encode(medication: any) {
                 'http://hl7.org/fhir/uv/ips/StructureDefinition/medication-ips'
             ]
         },
-        identifier: medication.moduleId, // Acá va el serial number del medicamento.
+        identifier: medication.moduleId ? [{ value: String(medication.moduleId) }] : undefined, // Acá va el serial number del medicamento.
         code: {
             coding: [
                 {
@@ -24,37 +24,9 @@ export function encode(medication: any) {
             text: medication.fsn
         },
         status: medication.active === true ? 'active' : 'inactive',
-        // manufacturer: null,
-        // form: null,
-        // amount: null,
-        // ingredient: null,
-        // ingredient: [ // ejemplo
-        //     {
-        //         code: {
-        //             coding: [
-        //                 {
-        //                     system: "http://snomed.info/sct",
-        //                     display: "salbutamol (sustancia)",
-        //                     code: "372897005"
-        //                 }
-        //             ]
-        //         },
-        //         isActive: true,
-        //         strength: {
-        //             numerator: {
-        //                 value: 200,
-        //                 unit: "mcg"
-        //             },
-        //             denominator: {
-        //                 value: 1,
-        //                 unit: "disparo"
-        //             }
-        //         }
-        //     }
-        // ],
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion</p><p><b>meta</b>: </p><p><b>text</b>: ${medication.pt.term}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion</p><p><b>meta</b>: </p><p><b>text</b>: ${medication.pt?.term ?? medication.term ?? ''}</p></div>`
         }
     };
 }

@@ -1,3 +1,4 @@
+import { formatFHIRDateTime } from '../utils/fhirDate';
 
 /**
  * Encode de Vacunas Nomivac from ANDES to FHIR
@@ -6,9 +7,7 @@
  * [ASk] Location no se sabe. Solo esta el texto
  */
 export function encode(patientReference: any, nomivac: any) {
-    const occurrenceDate = nomivac.fechaAplicacion
-        ? new Date(nomivac.fechaAplicacion).toISOString()
-        : new Date().toISOString();
+    const occurrenceDate = formatFHIRDateTime(nomivac.fechaAplicacion) ?? new Date().toISOString();
 
     const immunization: any = {
         resourceType: 'Immunization',

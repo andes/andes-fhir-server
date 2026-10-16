@@ -14,25 +14,12 @@ import {
     AndesRelacion
 } from '../types/andes/patient.types';
 import { mapAndesRankingToFhirRank, mapFhirRankToAndesRanking } from '../utils/rankingMapping';
+import { formatFHIRDate, formatFHIRDateTime } from '../utils/fhirDate';
 import { FhirIdentifierSystems } from '../../constants';
 
 /**
  * Helpers
  */
-
-function formatDateOnly(value?: string | Date): string | undefined {
-    if (!value) return undefined;
-    const d = typeof value === 'string' ? new Date(value) : value;
-    if (isNaN(d.getTime())) return undefined;
-    return d.toISOString().slice(0, 10);
-}
-
-function formatDateTime(value?: string | Date): string | undefined {
-    if (!value) return undefined;
-    const d = typeof value === 'string' ? new Date(value) : value;
-    if (isNaN(d.getTime())) return undefined;
-    return d.toISOString();
-}
 
 function mapGeneroFHIRToAndes(gender?: Patient['gender']): string | undefined {
     switch (gender) {
@@ -249,7 +236,7 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
     const genderIdentityExtensions = buildGenderIdentityExtension(patient.genero)
     const statusExtensions = buildStatusExtension(patient.estado);
 
-    const birthDate = formatDateOnly(patient.fechaNacimiento);
+    const birthDate = formatFHIRDate(patient.fechaNacimiento);
 
     const extensions = [...statusExtensions, ...genderIdentityExtensions];
 
@@ -274,7 +261,7 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
     };
 
     if (patient.fechaFallecimiento) {
-        const deceased = formatDateTime(patient.fechaFallecimiento);
+        const deceased = formatFHIRDateTime(patient.fechaFallecimiento);
         if (deceased) {
             pacienteFHIR.deceasedDateTime = deceased;
         }

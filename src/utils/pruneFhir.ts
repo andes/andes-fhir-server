@@ -36,7 +36,8 @@ function isObjectId(value: any): boolean {
 const VALID_RESOURCE_TYPES = new Set([
     'Patient', 'Bundle', 'Observation', 'Encounter', 'Practitioner',
     'Organization', 'Location', 'Medication', 'Procedure', 'Condition',
-    // Agregar otros tipos de recursos FHIR que se necesiten
+    'Composition', 'AllergyIntolerance', 'Immunization', 'MedicationStatement',
+    'MedicationRequest', 'DocumentReference', 'Device', 'Basic', 'OperationOutcome',
 ]);
 
 /**
