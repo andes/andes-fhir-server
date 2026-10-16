@@ -13,7 +13,8 @@ describe('Speciality Repository - buildQuery', () => {
         const query = SpecialityRepository.buildQuery({ nombre: 'Cardiologia' });
         expect(query.nombre).toBeDefined();
         expect(query.nombre.$regex).toBeDefined();
-        expect(query.nombre.$regex.source).toBe('^Cardiologia');
+        expect(query.nombre.$regex.source).toBe('Cardiologia');
+        expect(query.nombre.$regex.flags).toBe('i');
     });
 
     it('should build query with SISA code as integer', () => {
