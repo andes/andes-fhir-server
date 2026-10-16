@@ -133,12 +133,6 @@ async function create(args: any, context: any) {
         const paciente = fhirPac.decode(body as any);
         const result = await PatientRepository.insert(paciente);
 
-        const Patient = getPatientSchema(base_version);
-        const newPatient = new Patient({
-            ...body,
-            id: result.insertedId.toString()
-        });
-
         // En FHIR Create exitoso usualmente devuelve el recurso.
         // Pero el servidor a veces espera OperationOutcome vía ServerError para casos especiales.
         // Si queremos devolver 201 Created estándar, simplemente retornamos el recurso.

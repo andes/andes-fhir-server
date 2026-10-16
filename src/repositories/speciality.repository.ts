@@ -46,6 +46,9 @@ const SpecialityRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         return collection.findOne({ _id: new ObjectId(id) });
     },

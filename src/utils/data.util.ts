@@ -11,7 +11,7 @@ function toUtcIsoString(d: string | Date): string {
  *
  * @param {*} date
  */
-function parseDate(date) {
+export function parseDate(date) {
     // supports date formats with prefix
     const regex = /(^\D\D)?([\d-Tt:+]+)([\d: ]+)?/;
     const match = date.match(regex);

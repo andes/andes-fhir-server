@@ -1,5 +1,4 @@
-import { Bundle, Device, DocumentReference } from '../../encoders';
-import * as JSONSchemaValidator from '@bluehalo/fhir-json-schema-validator';
+import { Bundle, Device, DocumentReference, Organization as fhirOrganization } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
 import { buscarPacienteId } from '../../controller/patient/patient';
@@ -17,15 +16,9 @@ const getDevice = (base_version) => {
     return resolveSchema(base_version, 'device');
 };
 
-function validateResource(resource) {
-    const validator = new JSONSchemaValidator();
-    const errors = validator.validate(resource);
-    if (errors && errors.length > 0) {
-        throw errors;
-    } else {
-        return true;
-    }
-}
+const getOrganizationSchema = (base_version) => {
+    return resolveSchema(base_version, 'organization');
+};
 
 export async function getDocumentReference(version, pacienteID) {
     try {
@@ -34,48 +27,58 @@ export async function getDocumentReference(version, pacienteID) {
             const DocumentReferenceSchema = getDocReference(version);
             const BundleSchema = getBundle(version);
             const DeviceSchema = getDevice(version);
-            const FHIRCustodian = await buscarOrganizacionSisa(version, '0');
-            // validateResource(FHIRCustodian);
+            let FHIRCustodian = await buscarOrganizacionSisa(version, '0');
+            if (!FHIRCustodian || FHIRCustodian instanceof Error) {
+                const OrganizationSchema = getOrganizationSchema(version);
+                FHIRCustodian = new OrganizationSchema(fhirOrganization.encode({
+                    _id: '0',
+                    id: '0',
+                    nombre: 'Subsecretaría de Salud de la Provincia del Neuquén',
+                    activo: true,
+                    codigo: { sisa: '0' }
+                }));
+            }
             const FHIRDevice = new DeviceSchema(Device.encode());
-            // validateResource(FHIRDevice);
             const binaryURL = `Bundle/${pacienteID}`;
             const documentReferenceID = new ObjectId();
             const docRefFHIR = new DocumentReferenceSchema(DocumentReference.encode(documentReferenceID, FHIRDevice, FHIRCustodian, FHIRPatient, binaryURL));
-            // validateResource(docRefFHIR);
             const BundleID = new ObjectId();
             const FHIRBundle = new BundleSchema(
                 Bundle.encode(BundleID, [
                     createResource(docRefFHIR)
                 ])
             );
-            // validateResource(FHIRBundle);
             return FHIRBundle;
         } else {
             const message = 'patient not found';
             throw new ServerError(
                 message,
                 {
+                    statusCode: 404,
                     resourceType: 'OperationOutcome',
                     issue: [
                         {
                             severity: 'error',
-                            code: 404,
+                            code: 'not-found',
                             diagnostics: message
                         }
                     ]
                 }
             );
         }
-    } catch (err) {
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
         throw new ServerError(
-            err,
+            err?.message || String(err),
             {
                 resourceType: 'OperationOutcome',
                 issue: [
                     {
                         severity: 'error',
-                        code: 404,
-                        diagnostics: err
+                        code: 'exception',
+                        diagnostics: err?.message || String(err)
                     }
                 ]
             }

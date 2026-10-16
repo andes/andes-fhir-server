@@ -47,7 +47,11 @@ function buildAndesSearchQuery(args: any) {
         switch (tokenBuilder.system) {
             case FhirIdentifierSystems.ANDES_ID:
             case getDominio():
-                query._id = new ObjectId(tokenBuilder.value);
+                if (typeof tokenBuilder.value === 'string' && ObjectId.isValid(tokenBuilder.value)) {
+                    query._id = new ObjectId(tokenBuilder.value);
+                } else {
+                    query._id = null;
+                }
                 break;
             case FhirIdentifierSystems.MATRICULACIONES:
                 if (tokenBuilder.value.includes('@')) {
@@ -105,6 +109,9 @@ const PractitionerRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         return collection.findOne({ _id: new ObjectId(id) });
     }

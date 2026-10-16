@@ -101,6 +101,9 @@ const PatientRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         // Consistente con buildAndesSearchQuery: no exponer pacientes dados de
         // baja lógicamente (activo: false) a través del acceso directo por ID.

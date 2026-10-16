@@ -17,14 +17,28 @@ export async function handleHttpRequest(params: any): Promise<[number, any]> {
         host,
         port,
         path,
-        method = "GET",
+        method = 'GET',
         headers = {},
         body,
-        json,
+        qs,
+        json: _json,
         ...rest
     } = params;
 
-    const url = paramUrl || `${host}${port ? `:${port}` : ""}${path || ""}`;
+    let url = paramUrl || `${host}${port ? `:${port}` : ''}${path || ''}`;
+
+    if (qs && typeof qs === 'object' && Object.keys(qs).length > 0) {
+        const searchParams = new URLSearchParams();
+        Object.entries(qs).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) {
+                searchParams.append(k, String(v));
+            }
+        });
+        const queryString = searchParams.toString();
+        if (queryString) {
+            url += (url.includes('?') ? '&' : '?') + queryString;
+        }
+    }
 
     const requestHeaders: Record<string, string> = { ...headers };
     let requestBody: any = body;
@@ -34,18 +48,14 @@ export async function handleHttpRequest(params: any): Promise<[number, any]> {
         requestBody = JSON.stringify(body);
     }
 
-    try {
-        const response = await fetch(url, {
-            method,
-            headers: requestHeaders,
-            body: method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'HEAD' ? requestBody : undefined,
-            ...rest
-        });
+    const response = await fetch(url, {
+        method,
+        headers: requestHeaders,
+        body: method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'HEAD' ? requestBody : undefined,
+        ...rest
+    });
 
-        const text = await response.text();
-        return [response.status, text];
-    } catch (error: any) {
-        throw error;
-    }
+    const text = await response.text();
+    return [response.status, text];
 }
 

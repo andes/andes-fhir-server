@@ -13,7 +13,7 @@ async function search(args: any, context: any) {
 	}
 }
 
-async function searchById(args: any, context: any) {
+async function searchById(args: any, _context: any) {
 	try {
 		let { base_version, id } = args;
 		return await buscarOrganizacionId(base_version, id);
