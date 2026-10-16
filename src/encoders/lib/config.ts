@@ -1,9 +1,9 @@
-import { FhirIdentifierSystems } from "../../constants";
+import { FhirIdentifierSystems } from '../../constants';
 
-let DOMINIO: string = FhirIdentifierSystems.ANDES_ID;
+let DOMINIO: string = process.env.FHIR_DOMAIN || FhirIdentifierSystems.ANDES_ID;
 
-export function initialize(config: { dominio: string }): void {
-    DOMINIO = config.dominio;
+export function initialize(config?: { dominio?: string }): void {
+    DOMINIO = config?.dominio || process.env.FHIR_DOMAIN || FhirIdentifierSystems.ANDES_ID;
 }
 
 export function getDominio(): string {

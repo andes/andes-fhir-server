@@ -1,3 +1,5 @@
+import { makeUrl } from '../encoders';
+
 function toUtcIsoString(d: string | Date): string {
     const date = typeof d === 'string' ? new Date(d) : d;
     return isNaN(date.getTime()) ? String(d) : date.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -48,7 +50,7 @@ export function fullurl(resource: any): string {
         return '';
     }
     const id = resource.id || resource._id;
-    return `${process.env.IPS_DOMINIO}/${resource.resourceType}/${id}`;
+    return makeUrl(resource.resourceType, String(id));
 }
 
 export function createResource(resource: any): { fullUrl: string; resource: any } | null {

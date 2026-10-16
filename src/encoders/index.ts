@@ -12,7 +12,7 @@ import * as Organization from './lib/organization';
 import * as Patient from './lib/patient';
 import * as Practitioner from './lib/practitioner';
 
-export { getDominio, initialize } from './lib/config';
+export { getDominio, initialize, makeUrl } from './lib/config';
 export {
     Patient,
     Practitioner,

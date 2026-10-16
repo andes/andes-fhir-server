@@ -17,7 +17,7 @@ import globals from './globals';
 
 const main = async function () {
 
-    initialize({ dominio: process.env.IPS_DOMINIO });
+    initialize({ dominio: process.env.FHIR_DOMAIN });
     // Inicializa la base de datos mongo.
     const [mongoErr, client] = await asyncHandler(mongoConnect(mongoConfig.connection));
     if (mongoErr) {

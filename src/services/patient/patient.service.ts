@@ -1,4 +1,4 @@
-import { Patient as fhirPac } from '../../encoders';
+import { Patient as fhirPac, getDominio } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
@@ -148,7 +148,7 @@ async function create(args: any, context: any) {
             resourceType: 'OperationOutcome',
             issue: [],
             data: {
-                system: process.env.IPS_DOMINIO,
+                system: getDominio(),
                 value: result.insertedId.toString()
             }
         });

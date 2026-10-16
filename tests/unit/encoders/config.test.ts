@@ -20,3 +20,10 @@ test('Initialize domain modifies getDominio', () => {
     initialize({ dominio: 'http://nuevo-dominio.com' });
     expect(getDominio()).toBe('http://nuevo-dominio.com');
 });
+
+test('Initialize with undefined dominio falls back to default', () => {
+    delete process.env.FHIR_DOMAIN;
+    initialize({ dominio: undefined });
+    expect(getDominio()).toBe('https://andes.gob.ar');
+});
+
