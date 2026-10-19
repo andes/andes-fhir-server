@@ -1,4 +1,5 @@
 import { formatFHIRDateTime } from '../utils/fhirDate';
+import { escapeHtml } from '../utils/escapeHtml';
 
 /**
  * Encode de Vacunas Nomivac from ANDES to FHIR
@@ -19,7 +20,7 @@ export function encode(patientReference: any, nomivac: any) {
         },
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${nomivac.vacuna || 'Vacuna'}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${escapeHtml(nomivac.vacuna || 'Vacuna')}</p></div>`
         },
         status: 'completed',
         vaccineCode: {

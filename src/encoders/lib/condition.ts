@@ -1,4 +1,5 @@
 import { formatFHIRDateTime } from '../utils/fhirDate';
+import { escapeHtml } from '../utils/escapeHtml';
 
 /**
  *
@@ -64,15 +65,15 @@ export function encode(patientReference: any, registro: any) {
             coding: [
                 {
                     system: 'http://snomed.info/sct',
-                    code: String(registro.concepto.conceptId)
+                    code: String(registro.concepto?.conceptId ?? '')
                 }
             ],
-            text: registro.concepto.term || registro.concepto.fsn
+            text: registro.concepto?.term || registro.concepto?.fsn
         },
         recordedDate: createdAtIso,
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Problema: </p><p>${registro.nombre || registro.concepto?.term || ''}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Problema: </p><p>${escapeHtml(registro.nombre || registro.concepto?.term || '')}</p></div>`
         }
     };
 

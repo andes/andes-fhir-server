@@ -1,4 +1,5 @@
 import { formatFHIRDateTime } from '../utils/fhirDate';
+import { escapeHtml } from '../utils/escapeHtml';
 
 /**
  * Encode de Medicamentos from ANDES to FHIR
@@ -51,7 +52,7 @@ export function encode(patientReference: any, medicationReference: any, prestaci
         ],
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion </p><p><b>meta</b>: </p><p><b>text</b>: ${prestacionMedicamento.concepto?.term ?? ''}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion </p><p><b>meta</b>: </p><p><b>text</b>: ${escapeHtml(prestacionMedicamento.concepto?.term ?? '')}</p></div>`
         }
     };
 }

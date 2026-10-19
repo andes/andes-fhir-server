@@ -1,3 +1,5 @@
+import { escapeHtml } from '../utils/escapeHtml';
+
 /**
  * Encode de Medicamentos from ANDES to FHIR
  * @param {} medication
@@ -26,7 +28,7 @@ export function encode(medication: any) {
         status: medication.active === true ? 'active' : 'inactive',
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion</p><p><b>meta</b>: </p><p><b>text</b>: ${medication.pt?.term ?? medication.term ?? ''}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Medicacion</p><p><b>meta</b>: </p><p><b>text</b>: ${escapeHtml(medication.pt?.term ?? medication.term ?? '')}</p></div>`
         }
     };
 }

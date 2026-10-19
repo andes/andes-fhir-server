@@ -1,4 +1,5 @@
 import { formatFHIRDateTime } from '../utils/fhirDate';
+import { escapeHtml } from '../utils/escapeHtml';
 
 /**
  * Encode de Alergias e Intolerancias from ANDES to FHIR
@@ -44,7 +45,7 @@ export function encode(patientReference: any, alergiaIntolerancia: any) {
         },
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Alergia </p><p><b>meta</b>: </p><p><b>text</b>: ${alergiaIntolerancia.concepto?.semanticTag ?? ''}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative with Details</b></p><p><b>id</b>: Alergia </p><p><b>meta</b>: </p><p><b>text</b>: ${escapeHtml(alergiaIntolerancia.concepto?.semanticTag ?? '')}</p></div>`
         },
         resourceType: 'AllergyIntolerance',
         type: 'allergy',

@@ -15,6 +15,7 @@ import {
 } from '../types/andes/patient.types';
 import { mapAndesRankingToFhirRank, mapFhirRankToAndesRanking } from '../utils/rankingMapping';
 import { formatFHIRDate, formatFHIRDateTime } from '../utils/fhirDate';
+import { escapeHtml } from '../utils/escapeHtml';
 import { FhirIdentifierSystems } from '../../constants';
 
 /**
@@ -224,7 +225,7 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
                 }],
                 name: {
                     family: unaRelacion.apellido,
-                    given: unaRelacion.nombre.split(' ')
+                    given: unaRelacion.nombre ? unaRelacion.nombre.split(' ') : []
                 } as HumanName
             };
         });
@@ -245,15 +246,15 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
         id: patient._id ?? patient.id,
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${`${patient.nombre || ''} ${patient.apellido || ''}`.trim()}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${escapeHtml(`${patient.nombre || ''} ${patient.apellido || ''}`.trim())}</p></div>`
         },
         identifier: identificadores,
         active: patient.activo ?? undefined,
         name: [{
             use: 'official',
             family: patient.apellido,
-            given: patient.nombre.split(' '),
-            text: `${patient.nombre} ${patient.apellido}`
+            given: patient.nombre ? patient.nombre.split(' ') : [],
+            text: `${patient.nombre || ''} ${patient.apellido || ''}`.trim()
         }],
         gender: generoFHIR,
         birthDate,
@@ -437,7 +438,7 @@ export function decode(patient: Patient): AndesPatient {
     if (patient.managingOrganization) {
         pacienteAndes.createdBy = {
             organizacion: {
-                id: patient.managingOrganization.reference ?? '',
+                id: (patient.managingOrganization.reference ?? '').replace(/^(?:.*\/)?Organization\//, ''),
                 nombre: patient.managingOrganization.display ?? ''
             }
         };

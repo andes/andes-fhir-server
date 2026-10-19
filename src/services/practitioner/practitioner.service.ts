@@ -4,33 +4,10 @@ import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
 import PractitionerRepository from '../../repositories/practitioner.repository';
-import { FhirIdentifierSystems } from '../../constants';
 
 const getPractitionerSchema = (base_version: string) => {
     return resolveSchema(base_version, 'Practitioner');
 };
-
-function escapeHtml(value = '') {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function buildPractitionerNarrative(practitioner: any) {
-    const family = practitioner?.name?.[0]?.family ?? '';
-    const given = practitioner?.name?.[0]?.given?.join(' ') ?? '';
-    const dni = practitioner?.identifier?.find((x: any) => x.system === FhirIdentifierSystems.DNI)?.value ?? '';
-
-    const summary = `Practitioner: ${family}, ${given}. DNI: ${dni}.`;
-
-    return {
-        status: 'generated',
-        div: `<div xmlns="http://www.w3.org/1999/xhtml">${escapeHtml(summary)}</div>`
-    };
-}
 
 /**
  * Busca profesionales aplicando filtros y paginación.
@@ -62,12 +39,7 @@ async function search(args: any, context: any) {
         const Practitioner = getPractitionerSchema(base_version);
         const practitionersFhir = practitioners.map((prac, index) => {
             try {
-                const encoded = fhirPractitioner.encode(prac);
-                const resource = {
-                    ...encoded,
-                    text: buildPractitionerNarrative(encoded)
-                };
-                return new Practitioner(resource);
+                return new Practitioner(fhirPractitioner.encode(prac));
             } catch (e) {
                 console.error(`Error encoding practitioner ID: ${prac._id} at index ${index + paging.offset}:`, e.message);
                 return null;
@@ -116,13 +88,7 @@ async function searchById(args: any, _context: any) {
         }
 
         try {
-            const encoded = fhirPractitioner.encode(practitioner);
-            const resource = {
-                ...encoded,
-                text: buildPractitionerNarrative(encoded)
-            };
-
-            return new Practitioner(resource);
+            return new Practitioner(fhirPractitioner.encode(practitioner));
         } catch (e) {
             console.error(`Error encoding practitioner ID: ${id}:`, e.message);
             throw new ServerError(`Error de datos en el profesional con ID: ${id}`, {

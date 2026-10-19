@@ -119,4 +119,49 @@ describe('decode patient from FHIR R4 to ANDES', () => {
         expect(fhirDecode?.numeroIdentificacion).toBe('ABC123CD');
         expect(fhirDecode?.estado).toBe('temporal');
     });
+
+    it('No falla al codificar relación sin nombre y escapa caracteres especiales en narrative', () => {
+        const paciente = createPatient({
+            nombre: 'JUAN & PEDRO',
+            apellido: 'O\'CONNOR <JR>',
+            relaciones: [
+                {
+                    relacion: { nombre: 'padre', opuesto: 'hijo/a' },
+                    apellido: 'PEREZ',
+                    nombre: undefined as any
+                }
+            ]
+        });
+        const fhirEncode = encode(paciente);
+        expect(fhirEncode).not.toBeNull();
+        expect(fhirEncode!.contact![0].name!.given).toEqual([]);
+        expect(fhirEncode!.text?.div).toContain('JUAN &amp; PEDRO');
+        expect(fhirEncode!.text?.div).toContain('O&#39;CONNOR &lt;JR&gt;');
+    });
+
+    it('Decodifica managingOrganization limpiando el prefijo Organization/', () => {
+        const paciente = createPatient({
+            createdBy: {
+                organizacion: {
+                    id: '57e9670e52df311059bc8964',
+                    nombre: 'HOSPITAL CASTRO RENDON'
+                }
+            }
+        });
+        const fhirEncode = encode(paciente)!;
+        expect(fhirEncode.managingOrganization?.reference).toContain('Organization/57e9670e52df311059bc8964');
+
+        const decodedFromFullUrl = decode(fhirEncode);
+        expect(decodedFromFullUrl?.createdBy?.organizacion?.id).toBe('57e9670e52df311059bc8964');
+
+        const decodedFromRelativeRef = decode({
+            ...fhirEncode,
+            managingOrganization: {
+                reference: 'Organization/57e9670e52df311059bc8964',
+                display: 'HOSPITAL CASTRO RENDON'
+            }
+        });
+        expect(decodedFromRelativeRef?.createdBy?.organizacion?.id).toBe('57e9670e52df311059bc8964');
+    });
 });
+

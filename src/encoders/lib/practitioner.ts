@@ -14,7 +14,20 @@ import {
 } from '../types/andes/practitioner.types';
 import { formatFHIRDateTime, formatFHIRDate } from '../utils/fhirDate';
 import { mapAndesRankingToFhirRank } from '../utils/rankingMapping';
+import { escapeHtml } from '../utils/escapeHtml';
 import { FhirIdentifierSystems } from '../../constants';
+
+function buildPractitionerNarrative(data: AndesPractitioner) {
+    const family = data.apellido ?? '';
+    const given = data.nombre ?? '';
+    const dni = data.documento ?? '';
+    const summary = `Practitioner: ${family}, ${given}. DNI: ${dni}.`;
+
+    return {
+        status: 'generated' as const,
+        div: `<div xmlns="http://www.w3.org/1999/xhtml">${escapeHtml(summary)}</div>`
+    };
+}
 
 export function encode(practitioner: AndesPractitioner | null | undefined): Practitioner | null {
     const data = practitioner;
@@ -114,7 +127,7 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
             : undefined;
 
         const unaMatricula: any = {
-            identifier: datosGrado.profesion.nombre
+            identifier: datosGrado.profesion?.nombre
                 ? [{
                     system: 'https://www.saludneuquen.gob.ar/matriculacionGrado',
                     value: String(datosGrado.profesion.nombre ?? '')
@@ -126,8 +139,8 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
             unaMatricula.code = {
                 coding: [{
                     system: 'http://www.saludneuquen.gob.ar/fiscalizacion.html',
-                    code: String(datosGrado.profesion.codigo ?? ''),
-                    display: String(datosGrado.profesion.tipoDeFormacion ?? '')
+                    code: String(datosGrado.profesion?.codigo ?? ''),
+                    display: String(datosGrado.profesion?.tipoDeFormacion ?? '')
                 }],
                 text: String(ultima.matriculaNumero ?? '')
             };
@@ -160,7 +173,7 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
             : undefined;
 
         const unaMatricula: any = {
-            identifier: datosPosgrado.especialidad.nombre
+            identifier: datosPosgrado.especialidad?.nombre
                 ? [{
                     system: 'https://www.saludneuquen.gob.ar/matriculacionEspecialidad/',
                     value: String(datosPosgrado.especialidad.nombre ?? '')
@@ -172,8 +185,8 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
             unaMatricula.code = {
                 coding: [{
                     system: 'http://www.saludneuquen.gob.ar/fiscalizacion.html',
-                    code: String(datosPosgrado.especialidad.codigo.sisa ?? ''),
-                    display: String(datosPosgrado.especialidad.nombre ?? '')
+                    code: String(datosPosgrado.especialidad?.codigo?.sisa ?? ''),
+                    display: String(datosPosgrado.especialidad?.nombre ?? '')
                 }],
                 text: String(ultima.matriculaNumero ?? '')
             };
@@ -223,6 +236,7 @@ export function encode(practitioner: AndesPractitioner | null | undefined): Prac
     const profesionalFHIR: Practitioner = {
         resourceType: 'Practitioner',
         id: data._id,
+        text: buildPractitionerNarrative(data),
         identifier: identificadores,
         active: data.habilitado ?? undefined,
         name: [{

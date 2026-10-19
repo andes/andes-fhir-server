@@ -10,6 +10,7 @@ import {
     AndesDireccionOrg
 } from '../types/andes/organization.types';
 import { mapAndesRankingToFhirRank } from '../utils/rankingMapping';
+import { escapeHtml } from '../utils/escapeHtml';
 import { FhirIdentifierSystems } from '../../constants';
 
 /**
@@ -107,7 +108,7 @@ export function encode(organization: AndesOrganization | null | undefined): Orga
         id: data._id ?? data.id,
         text: {
             status: 'generated',
-            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${data.nombre || 'Organización'}</p></div>`
+            div: `<div xmlns="http://www.w3.org/1999/xhtml"><p>${escapeHtml(data.nombre || 'Organización')}</p></div>`
         },
         identifier: identificadores,
         active: data.activo ?? undefined,

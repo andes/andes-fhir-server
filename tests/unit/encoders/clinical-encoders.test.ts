@@ -146,13 +146,22 @@ describe('Clinical and Organizational Encoders', () => {
             const prac = Practitioner.encode({
                 _id: 'prac-1',
                 nombre: 'Maria',
-                apellido: 'Gomez',
-                documento: '22333444'
+                apellido: 'Gomez & Perez',
+                documento: '22333444',
+                formacionGrado: [
+                    { matriculacion: [{ matriculaNumero: 123 }] },
+                    { profesion: { nombre: 'Médico', codigo: 1 } }
+                ],
+                formacionPosgrado: [
+                    { matriculacion: [{ matriculaNumero: 456 }], especialidad: { nombre: 'Pediatría' } }
+                ]
             });
             expect(prac?.identifier).toContainEqual({
                 system: FhirIdentifierSystems.ANDES_ID,
                 value: 'prac-1'
             });
+            expect(prac?.text?.div).toContain('Gomez &amp; Perez');
+            expect(prac?.qualification).toHaveLength(3);
         });
     });
 
