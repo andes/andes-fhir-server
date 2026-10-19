@@ -1,7 +1,9 @@
 import { ObjectId, Collection } from 'mongodb';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
-import { CONSTANTS } from '../constants';
-import { stringQueryBuilder, keyQueryBuilder } from '../utils/querybuilder.util';
+import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { getDominio } from '../encoders';
+import { stringQueryBuilder, tokenQueryBuilder } from '../utils/querybuilder.util';
 
 /**
  * Obtiene la colección de organizaciones de la base de datos.
@@ -31,9 +33,43 @@ export function buildAndesSearchQuery(args: any): Record<string, any> {
         query.nombre = stringQueryBuilder(name, true);
     }
     if (identifier) {
-        const queryBuilder = keyQueryBuilder(identifier, 'codigo.sisa');
-        for (const i in queryBuilder) {
-            query[i] = queryBuilder[i];
+        const queryBuilder = tokenQueryBuilder(identifier, 'value', 'identifier', false) as any;
+        if (!queryBuilder.system) {
+            query['codigo.sisa'] = queryBuilder.value;
+        } else {
+            switch (queryBuilder.system) {
+                case FhirIdentifierSystems.SISA:
+                case 'sisa':
+                    query['codigo.sisa'] = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.CUIE:
+                case 'cuie':
+                    query['codigo.cuie'] = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.REMEDIAR:
+                case 'remediar':
+                    query['codigo.remediar'] = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.SIPS:
+                case 'sips':
+                    query['codigo.sips'] = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.CUIT:
+                case 'cuit':
+                    query['codigo.cuit'] = queryBuilder.value;
+                    break;
+                case FhirIdentifierSystems.ANDES_ID:
+                case getDominio():
+                case 'http://andes.gob.ar':
+                    if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
+                        query._id = new ObjectId(queryBuilder.value);
+                    } else {
+                        throw new ServerError('ID de Andes incorrecto o inválido');
+                    }
+                    break;
+                default:
+                    throw new ServerError('System incorrecto');
+            }
         }
     }
     return query;
@@ -65,6 +101,9 @@ const OrganizationRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         return collection.findOne({ _id: new ObjectId(id) });
     },

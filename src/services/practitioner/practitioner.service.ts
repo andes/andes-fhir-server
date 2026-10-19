@@ -17,7 +17,10 @@ async function search(args: any, context: any) {
         const { base_version } = args;
         const req = context.req;
 
-        if (Object.keys(args).length === 0) {
+        const searchParams = Object.keys(args).filter(
+            key => key !== 'base_version' && args[key] !== undefined && args[key] !== ''
+        );
+        if (searchParams.length === 0) {
             throw new ServerError('Se requiere enviar al menos un parámetro de búsqueda', {
                 resourceType: 'OperationOutcome',
                 issue: [{ severity: 'warning', code: 'required', diagnostics: 'Se requiere enviar al menos un parámetro de búsqueda' }]

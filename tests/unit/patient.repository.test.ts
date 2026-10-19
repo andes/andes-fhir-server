@@ -124,4 +124,16 @@ describe('Patient Repository - buildQuery', () => {
         expect(query.documento).toBeDefined();
         expect(query.documento.$regex.source).toBe('^\\[object Object\\]$');
     });
+
+    it('should build query with gender filter matching both sexo and genero and combine with family/given', () => {
+        const query = PatientRepository.buildQuery({ family: 'Gómez', gender: 'female' });
+        expect(query.$and).toEqual([
+            { apellido: /gomez/i },
+            { $or: [{ sexo: 'femenino' }, { genero: 'femenino' }] }
+        ]);
+
+        expect(() => {
+            PatientRepository.buildQuery({ gender: 'invalid-gender' });
+        }).toThrow(ServerError);
+    });
 });

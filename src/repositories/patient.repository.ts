@@ -21,7 +21,9 @@ function buildAndesSearchQuery(args: any) {
     const family = args['family'] ? args['family'] : '';
     const given = args['given'] ? args['given'] : '';
     const identifier = args['identifier'];
-    let query: Record<string, any> = { activo: true };
+    const genderParam = args['gender'];
+    const query: Record<string, any> = { activo: true };
+    const andConditions: Record<string, any>[] = [];
 
     if (id) {
         query.id = stringQueryBuilder(id);
@@ -68,11 +70,33 @@ function buildAndesSearchQuery(args: any) {
     }
 
     if (family || given) {
-        query = {
-            ...query,
-            $and: familyQueryBuilder(family, given)
-        };
+        andConditions.push(...familyQueryBuilder(family, given));
     }
+
+    if (genderParam) {
+        const gender = String(genderParam).toLowerCase();
+        let generoAndes: string;
+        if (gender === 'male' || gender === 'masculino') {
+            generoAndes = 'masculino';
+        } else if (gender === 'female' || gender === 'femenino') {
+            generoAndes = 'femenino';
+        } else if (gender === 'other' || gender === 'otro') {
+            generoAndes = 'otro';
+        } else {
+            throw new ServerError('Género incorrecto');
+        }
+        andConditions.push({
+            $or: [
+                { sexo: generoAndes },
+                { genero: generoAndes }
+            ]
+        });
+    }
+
+    if (andConditions.length > 0) {
+        query.$and = andConditions;
+    }
+
     return query;
 }
 

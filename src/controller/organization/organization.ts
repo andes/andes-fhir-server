@@ -1,5 +1,5 @@
 import { Organization as fhirOrganization } from '../../encoders';
-import { resolveSchema } from '@bluehalo/node-fhir-server-core';
+import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
@@ -7,7 +7,7 @@ import OrganizationRepository, { buildAndesSearchQuery } from '../../repositorie
 
 export { buildAndesSearchQuery };
 
-let getOrganization = (base_version: string) => {
+const getOrganization = (base_version: string) => {
     return resolveSchema(base_version, 'organization');
 };
 
@@ -41,15 +41,21 @@ export async function buscarOrganizacion(version: string, parameters: any, req: 
                         : fullurl(p),
                     resource: p,
                     search: {
-                        mode: "match"
+                        mode: 'match'
                     }
                 }))
                 : undefined
         };
 
         return pruneEmpty(bundle);
-    } catch (err) {
-        return err;
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || err, {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
     }
 }
 
@@ -58,12 +64,18 @@ export async function buscarOrganizacionId(version: string, id: string) {
         const Organization = getOrganization(version);
         const org = await OrganizationRepository.findById(id);
         return org ? new Organization(fhirOrganization.encode(org)) : null;
-    } catch (err) {
-        return err;
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || err, {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
     }
 }
 
-// Vermos como generalizar más adelante
+// Veremos como generalizar más adelante
 export async function buscarOrganizacionSisa(version: string, codigoSisa: string) {
     try {
         const Organization = getOrganization(version);
@@ -73,7 +85,13 @@ export async function buscarOrganizacionSisa(version: string, codigoSisa: string
         }
         org.id = org._id;
         return new Organization(fhirOrganization.encode(org));
-    } catch (err) {
-        return err;
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || err, {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
     }
 }

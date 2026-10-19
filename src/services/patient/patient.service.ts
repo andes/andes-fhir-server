@@ -19,25 +19,16 @@ async function search(args: any, context: any) {
         const { base_version } = args;
         const req = context.req;
 
-        if (Object.keys(args).length === 0) {
+        const searchParams = Object.keys(args).filter(
+            key => key !== 'base_version' && args[key] !== undefined && args[key] !== ''
+        );
+        if (searchParams.length === 0) {
             throw new ServerError('Se requiere enviar al menos un parámetro de búsqueda', {
                 resourceType: 'OperationOutcome',
                 issue: [{ severity: 'warning', code: 'required', diagnostics: 'Se requiere enviar al menos un parámetro de búsqueda' }]
             });
         }
         const query = PatientRepository.buildQuery(args);
-        if (args.gender) {
-            const gender = args.gender.toLowerCase();
-            if (gender === 'male' || gender === 'masculino') {
-                query.genero = 'masculino';
-            } else if (gender === 'female' || gender === 'femenino') {
-                query.genero = 'femenino';
-            } else if (gender === 'other' || gender === 'otro') {
-                query.genero = 'otro';
-            } else {
-                throw new ServerError('Género incorrecto');
-            }
-        }
 
         const paging = parsePaging(req?.query || {}, {
             defaultCount: 50,
