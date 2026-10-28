@@ -1,3 +1,4 @@
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import OrganizationService from '../../src/services/organization/organization.service';
 import * as organizationController from '../../src/controller/organization/organization';
 
@@ -9,9 +10,9 @@ describe('Organization Service', () => {
     });
 
     describe('search', () => {
-        it('should return warning if only base_version is provided (no search criteria)', async () => {
-            const result = await OrganizationService.search({ base_version: '4_0_1' }, { req: {} });
-            expect(result).toEqual({ warning: 'Se requiere enviar al menos un parámetro de búsqueda' });
+        it('should throw ServerError if only base_version is provided (no search criteria)', async () => {
+            await expect(OrganizationService.search({ base_version: '4_0_1' }, { req: {} }))
+                .rejects.toThrow(ServerError);
         });
 
         it('should call buscarOrganizacion when search criteria is provided', async () => {
@@ -30,14 +31,13 @@ describe('Organization Service', () => {
             buscarSpy.mockRestore();
         });
 
-        it('should catch and return error when buscarOrganizacion throws', async () => {
+        it('should throw ServerError when buscarOrganizacion throws', async () => {
             const error = new Error('Database failure');
             const buscarSpy = jest.spyOn(organizationController, 'buscarOrganizacion').mockRejectedValueOnce(error);
 
             const args = { base_version: '4_0_1', name: 'Hospital' };
-            const result = await OrganizationService.search(args, { req: {} });
-
-            expect(result).toBe(error);
+            await expect(OrganizationService.search(args, { req: {} }))
+                .rejects.toThrow('Database failure');
 
             buscarSpy.mockRestore();
         });
@@ -57,14 +57,13 @@ describe('Organization Service', () => {
             buscarIdSpy.mockRestore();
         });
 
-        it('should catch and return error when buscarOrganizacionId throws', async () => {
+        it('should throw ServerError when buscarOrganizacionId throws', async () => {
             const error = new Error('ID error');
             const buscarIdSpy = jest.spyOn(organizationController, 'buscarOrganizacionId').mockRejectedValueOnce(error);
 
             const args = { base_version: '4_0_1', id: 'invalid-id' };
-            const result = await OrganizationService.searchById(args, {});
-
-            expect(result).toBe(error);
+            await expect(OrganizationService.searchById(args, {}))
+                .rejects.toThrow('ID error');
 
             buscarIdSpy.mockRestore();
         });

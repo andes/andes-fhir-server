@@ -101,13 +101,13 @@ describe('Organization Controller - Database Operations', () => {
             expect(result).toBeNull();
         });
 
-        it('should return error when id is invalid ObjectId format', async () => {
+        it('should return null when id is invalid ObjectId format', async () => {
             const fakeDb = { collection: jest.fn().mockReturnValue({ findOne: jest.fn() }) };
             globals.set(CONSTANTS.CLIENT_DB, fakeDb);
 
             const result = await buscarOrganizacionId('4_0_1', 'invalid-id');
 
-            expect(result).toBeInstanceOf(Error);
+            expect(result).toBeNull();
         });
     });
 

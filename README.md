@@ -4,14 +4,14 @@ This project is a FHIR facade server built on `@bluehalo/node-fhir-server-core`.
 ## Getting Started with Docker
 1. Install the latest [Docker Community Edition](https://www.docker.com/community-edition) for your OS if you do not already have it installed.
 2. Run `docker-compose up`.
-3. Visit `localhost:3000/4_0_0/metadata` to view the conformance statement.
+3. Visit `localhost:3000/4_0_1/metadata` to view the conformance statement.
 
 ## Getting Started with Node
 1. Install the latest LTS for [Node.js](https://nodejs.org/en/) if you do not already have it installed.
-2. Make sure the default values defined in `env.json` are valid.
+2. Configure the environment variables in `.env`.
 3. Run `npm install`.
 4. Run `npm run start`.
-5. Visit `localhost:3000/4_0_0/metadata` to view the conformance statement.
+5. Visit `localhost:3000/4_0_1/metadata` to view the conformance statement.
 
 ## Next steps
 At this point you can now start testing the endpoints. Depending what profiles you opt into, certain routes will be available. You can view the routes enabled based on which service methods you provide over at [`@bluehalo/node-fhir-server-core`](https://github.com/BlueHalo/node-fhir-server-core#profiles).

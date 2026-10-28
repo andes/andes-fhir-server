@@ -30,11 +30,9 @@ const SpecialityService = {
             }
         } catch (err: any) {
             let message = '';
-            let system = '';
             let code = '';
             if (typeof err === 'object' && err !== null) {
                 message = err.message || '';
-                system = err.system || '';
                 code = err.code || '';
             } else {
                 message = String(err);
@@ -59,11 +57,9 @@ const SpecialityService = {
             return speciality ? speciality : { notFound: 404 };
         } catch (err: any) {
             let message = '';
-            let system = '';
             let code = '';
             if (typeof err === 'object' && err !== null) {
                 message = err.message || '';
-                system = err.system || '';
                 code = err.code || '';
             } else {
                 message = String(err);

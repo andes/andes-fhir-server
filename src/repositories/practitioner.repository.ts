@@ -1,6 +1,7 @@
 import { ObjectId, Collection } from 'mongodb';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { getDominio } from '../encoders';
 import { tokenQueryBuilder, familyQueryBuilder } from '../utils/querybuilder.util';
 
 /**
@@ -45,7 +46,12 @@ function buildAndesSearchQuery(args: any) {
         const tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
         switch (tokenBuilder.system) {
             case FhirIdentifierSystems.ANDES_ID:
-                query._id = new ObjectId(tokenBuilder.value);
+            case getDominio():
+                if (typeof tokenBuilder.value === 'string' && ObjectId.isValid(tokenBuilder.value)) {
+                    query._id = new ObjectId(tokenBuilder.value);
+                } else {
+                    query._id = null;
+                }
                 break;
             case FhirIdentifierSystems.MATRICULACIONES:
                 if (tokenBuilder.value.includes('@')) {
@@ -64,7 +70,7 @@ function buildAndesSearchQuery(args: any) {
                     }
                 }
                 break;
-            case 'https://seti.afip.gob.ar/padron-puc-constancia-internet/ConsultaConstanciaAction.do':
+            case FhirIdentifierSystems.CUIT:
                 query.cuit = tokenBuilder.value;
                 break;
             case FhirIdentifierSystems.DNI:
@@ -103,6 +109,9 @@ const PractitionerRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         return collection.findOne({ _id: new ObjectId(id) });
     }

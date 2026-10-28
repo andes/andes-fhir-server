@@ -52,8 +52,8 @@ export class SaludDigitalClient {
                 clientAssertion: token
             },
         };
-        const [status, body] = await handleHttpRequest(options);
-        const response = JSON.parse(body);
+        const [_status, body] = await handleHttpRequest(options);
+        const response = typeof body === 'string' ? JSON.parse(body) : body;
         this.token = response.accessToken;
         return this.token;
 
@@ -75,11 +75,12 @@ export class SaludDigitalClient {
         };
         const [status, body] = await handleHttpRequest(options);
         if (status >= 200 && status <= 299) {
+            const parsed = typeof body === 'string' ? JSON.parse(body) : body;
             const data: any = {
                 valid: true,
-                name: body.name
-            }
-            return data
+                name: parsed?.name
+            };
+            return data;
         }
     }
 
@@ -94,7 +95,7 @@ export class SaludDigitalClient {
                 'Content-Type': 'application/json'
             }
         };
-        const [status, body] = await handleHttpRequest(options);
+        const [status] = await handleHttpRequest(options);
         return status >= 200 && status <= 299;
     }
 
@@ -109,8 +110,9 @@ export class SaludDigitalClient {
                 'Content-Type': 'application/json'
             }
         };
-        const [status, bundle] = await handleHttpRequest(options);
-        return (bundle.total > 0 ? bundle.entry.map(e => e.resource) : []);
+        const [_status, rawBundle] = await handleHttpRequest(options);
+        const bundle = typeof rawBundle === 'string' ? JSON.parse(rawBundle) : rawBundle;
+        return (bundle?.total > 0 ? bundle.entry.map(e => e.resource) : []);
     }
 
     async getDominios(idPaciente) {
@@ -140,7 +142,7 @@ export class SaludDigitalClient {
 
     }
 
-    async solicitud({ custodian = null, fechaDesde = null, fechaHasta = null, patient, loinc }) {
+    async solicitud({ custodian = null, fechaDesde = null, fechaHasta = null, patient: _patient, loinc: _loinc }) {
         // let url = `${this.host}/fhir/DocumentReference?subject:identifier=${this.dominio}|${patient}&class=https://loinc.org/|${loinc}`;
         let url = 'https://demo5647849.mockable.io/repositorio-documentos/fhir/DocumentReference%3Fsubject:Patient.identifier=http://www.hospitalitaliano.org.ar%7C540153&class=https://loinc.org/%7C60591-5';
 

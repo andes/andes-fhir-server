@@ -10,7 +10,7 @@ import {
     MedicationStatement,
     Organization as fhirOrganization,
     Patient as fhirPac
-} from '@andes/fhir';
+} from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { buscarOrganizacionSisa } from '../../controller/organization/organization';
 import { snowstormService } from '../snomed/snowstorm.service';

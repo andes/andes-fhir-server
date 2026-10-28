@@ -2,6 +2,7 @@ import { ObjectId, Collection } from 'mongodb';
 import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
 import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { getDominio } from '../encoders';
 import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder, stringEscape, stringInsensitive } from '../utils/querybuilder.util';
 
 /**
@@ -20,7 +21,9 @@ function buildAndesSearchQuery(args: any) {
     const family = args['family'] ? args['family'] : '';
     const given = args['given'] ? args['given'] : '';
     const identifier = args['identifier'];
-    let query: Record<string, any> = { activo: true };
+    const genderParam = args['gender'];
+    const query: Record<string, any> = { activo: true };
+    const andConditions: Record<string, any>[] = [];
 
     if (id) {
         query.id = stringQueryBuilder(id);
@@ -38,6 +41,8 @@ function buildAndesSearchQuery(args: any) {
             const identificador = stringInsensitive(stringEscape(queryBuilder.value));
             switch (queryBuilder.system) {
                 case FhirIdentifierSystems.ANDES_ID:
+                case getDominio():
+                case 'http://andes.gob.ar':
                     if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
                         query._id = new ObjectId(queryBuilder.value);
                     } else {
@@ -65,11 +70,33 @@ function buildAndesSearchQuery(args: any) {
     }
 
     if (family || given) {
-        query = {
-            ...query,
-            $and: familyQueryBuilder(family, given)
-        };
+        andConditions.push(...familyQueryBuilder(family, given));
     }
+
+    if (genderParam) {
+        const gender = String(genderParam).toLowerCase();
+        let generoAndes: string;
+        if (gender === 'male' || gender === 'masculino') {
+            generoAndes = 'masculino';
+        } else if (gender === 'female' || gender === 'femenino') {
+            generoAndes = 'femenino';
+        } else if (gender === 'other' || gender === 'otro') {
+            generoAndes = 'otro';
+        } else {
+            throw new ServerError('Género incorrecto');
+        }
+        andConditions.push({
+            $or: [
+                { sexo: generoAndes },
+                { genero: generoAndes }
+            ]
+        });
+    }
+
+    if (andConditions.length > 0) {
+        query.$and = andConditions;
+    }
+
     return query;
 }
 
@@ -98,6 +125,9 @@ const PatientRepository = {
     },
 
     async findById(id: string): Promise<any> {
+        if (!id || !ObjectId.isValid(id)) {
+            return null;
+        }
         const collection = getCollection() as any;
         // Consistente con buildAndesSearchQuery: no exponer pacientes dados de
         // baja lógicamente (activo: false) a través del acceso directo por ID.

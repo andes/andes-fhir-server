@@ -1,7 +1,8 @@
 import { ObjectId } from 'mongodb';
+import { ServerError } from '@bluehalo/node-fhir-server-core';
 import OrganizationRepository from '../../src/repositories/organization.repository';
 import globals from '../../src/globals';
-import { CONSTANTS } from '../../src/constants';
+import { CONSTANTS, FhirIdentifierSystems } from '../../src/constants';
 
 describe('Organization Repository - buildQuery', () => {
     it('should build query with id', () => {
@@ -29,9 +30,31 @@ describe('Organization Repository - buildQuery', () => {
         expect(query.nombre.$regex.flags).toBe('i');
     });
 
-    it('should build query with identifier for SISA code', () => {
+    it('should build query with identifier for SISA code without system', () => {
         const query = OrganizationRepository.buildQuery({ identifier: '10580352367779' });
         expect(query['codigo.sisa']).toBe('10580352367779');
+    });
+
+    it('should build query with identifier for SISA, CUIE, REMEDIAR, SIPS and CUIT systems', () => {
+        expect(OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.SISA}|10580352367779` })['codigo.sisa']).toBe('10580352367779');
+        expect(OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.CUIE}|Q01234` })['codigo.cuie']).toBe('Q01234');
+        expect(OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.REMEDIAR}|R99` })['codigo.remediar']).toBe('R99');
+        expect(OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.SIPS}|S88` })['codigo.sips']).toBe('S88');
+        expect(OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.CUIT}|30-12345678-9` })['codigo.cuit']).toBe('30-12345678-9');
+    });
+
+    it('should build query with identifier for ANDES_ID system and throw on invalid ObjectId or unknown system', () => {
+        const validId = '507f1f77bcf86cd799439011';
+        const query = OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.ANDES_ID}|${validId}` });
+        expect(query._id.toString()).toBe(validId);
+
+        expect(() => {
+            OrganizationRepository.buildQuery({ identifier: `${FhirIdentifierSystems.ANDES_ID}|invalid-id` });
+        }).toThrow(ServerError);
+
+        expect(() => {
+            OrganizationRepository.buildQuery({ identifier: 'http://unknown.system|123' });
+        }).toThrow(ServerError);
     });
 
     it('should build combined query with multiple parameters', () => {
@@ -59,7 +82,7 @@ describe('Organization Repository - Database Operations', () => {
         globals.delete(CONSTANTS.CLIENT_DB);
     });
 
-    it('should findById and return organization document', async () => {
+    it('should findById and return organization document, or null for invalid id', async () => {
         const findOne = jest.fn().mockResolvedValue(fakeOrg);
         const fakeDb = { collection: jest.fn().mockReturnValue({ findOne }) };
         globals.set(CONSTANTS.CLIENT_DB, fakeDb);
@@ -67,6 +90,9 @@ describe('Organization Repository - Database Operations', () => {
         const result = await OrganizationRepository.findById(fakeId.toString());
         expect(findOne).toHaveBeenCalledWith({ _id: fakeId });
         expect(result).toEqual(fakeOrg);
+
+        const invalidResult = await OrganizationRepository.findById('invalid-id');
+        expect(invalidResult).toBeNull();
     });
 
     it('should findBySisa and return organization document', async () => {

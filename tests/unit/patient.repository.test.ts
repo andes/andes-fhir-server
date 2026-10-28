@@ -56,8 +56,8 @@ describe('Patient Repository - buildQuery', () => {
     it('should query family and given names correctly using familyQueryBuilder', () => {
         const query = PatientRepository.buildQuery({ family: 'Pérez', given: 'Juan' });
         expect(query.$and).toEqual([
-            { tokens: /^perez/ },
-            { tokens: /^juan/ }
+            { apellido: /perez/i },
+            { nombre: /juan/i }
         ]);
     });
 
@@ -67,34 +67,33 @@ describe('Patient Repository - buildQuery', () => {
         expect(query.id.$regex.source).toBe('^\\[object Object\\]');
     });
 
-    it('should query identifier without system case-insensitively across multiple fields', () => {
+    it('should query identifier without system across documento, cuil and numeroIdentificacion', () => {
         const query = PatientRepository.buildQuery({ identifier: '123-abc' });
         expect(query.$or).toBeDefined();
         expect(query.$or).toHaveLength(3);
-        expect(query.$or[0].documento.$regex.source).toBe('^123-abc');
-        expect(query.$or[0].documento.$regex.flags).toBe('i');
-        expect(query.$or[1].cuit.$regex.source).toBe('^123-abc');
-        expect(query.$or[2].numeroIdentificacion.$regex.source).toBe('^123-abc');
+        expect(query.$or[0]).toEqual({ documento: '123-abc', estado: 'validado' });
+        expect(query.$or[1]).toEqual({ cuil: '123-abc', estado: 'validado' });
+        expect(query.$or[2]).toEqual({ numeroIdentificacion: '123-abc' });
     });
 
     it('should query identifier with DNI system case-insensitively', () => {
         const query = PatientRepository.buildQuery({ identifier: `${FhirIdentifierSystems.DNI}|23a-bcd` });
         expect(query.documento).toBeDefined();
-        expect(query.documento.$regex.source).toBe('^23a-bcd');
+        expect(query.documento.$regex.source).toBe('^23a-bcd$');
         expect(query.documento.$regex.flags).toBe('i');
     });
 
     it('should query identifier with CUIL system case-insensitively', () => {
         const query = PatientRepository.buildQuery({ identifier: `${FhirIdentifierSystems.CUIL}|20-12345678-9` });
         expect(query.cuil).toBeDefined();
-        expect(query.cuil.$regex.source).toBe('^20-12345678-9');
+        expect(query.cuil.$regex.source).toBe('^20-12345678-9$');
         expect(query.cuil.$regex.flags).toBe('i');
     });
 
     it('should query identifier with PASSPORT system case-insensitively', () => {
         const query = PatientRepository.buildQuery({ identifier: `${FhirIdentifierSystems.PASSPORT}|arg123xyz` });
         expect(query.numeroIdentificacion).toBeDefined();
-        expect(query.numeroIdentificacion.$regex.source).toBe('^arg123xyz');
+        expect(query.numeroIdentificacion.$regex.source).toBe('^arg123xyz$');
         expect(query.numeroIdentificacion.$regex.flags).toBe('i');
         expect(query.tipoIdentificacion).toBe('pasaporte');
     });
@@ -102,7 +101,7 @@ describe('Patient Repository - buildQuery', () => {
     it('should query identifier with FOREIGN_ID system case-insensitively', () => {
         const query = PatientRepository.buildQuery({ identifier: `${FhirIdentifierSystems.FOREIGN_ID}|f123-abc` });
         expect(query.numeroIdentificacion).toBeDefined();
-        expect(query.numeroIdentificacion.$regex.source).toBe('^f123-abc');
+        expect(query.numeroIdentificacion.$regex.source).toBe('^f123-abc$');
         expect(query.numeroIdentificacion.$regex.flags).toBe('i');
         expect(query.tipoIdentificacion).toBe('dni extranjero');
     });
@@ -123,6 +122,18 @@ describe('Patient Repository - buildQuery', () => {
     it('should safely coerce object injection in identifier value', () => {
         const query = PatientRepository.buildQuery({ identifier: { system: FhirIdentifierSystems.DNI, value: { $ne: 'test' } } });
         expect(query.documento).toBeDefined();
-        expect(query.documento.$regex.source).toBe('^\\[object Object\\]');
+        expect(query.documento.$regex.source).toBe('^\\[object Object\\]$');
+    });
+
+    it('should build query with gender filter matching both sexo and genero and combine with family/given', () => {
+        const query = PatientRepository.buildQuery({ family: 'Gómez', gender: 'female' });
+        expect(query.$and).toEqual([
+            { apellido: /gomez/i },
+            { $or: [{ sexo: 'femenino' }, { genero: 'femenino' }] }
+        ]);
+
+        expect(() => {
+            PatientRepository.buildQuery({ gender: 'invalid-gender' });
+        }).toThrow(ServerError);
     });
 });
