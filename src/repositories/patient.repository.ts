@@ -1,7 +1,7 @@
 import { ObjectId, Collection } from 'mongodb';
 import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
-import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { CONSTANTS, FhirIdentifierSystems, resolveIdentifierSystem } from '../constants';
 import { getDominio } from '../encoders';
 import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder, stringEscape, stringInsensitive } from '../utils/querybuilder.util';
 
@@ -11,6 +11,17 @@ import { tokenQueryBuilder, familyQueryBuilder, stringQueryBuilder, stringEscape
 function getCollection(): Collection {
     const db = globals.get(CONSTANTS.CLIENT_DB);
     return db.collection(CONSTANTS.COLLECTION.PATIENT);
+}
+
+/**
+ * Obtiene la colección de parentescos de la base de datos si está disponible.
+ */
+function getParentescoCollection(): Collection | null {
+    const db = globals.get(CONSTANTS.CLIENT_DB);
+    if (!db || typeof db.collection !== 'function') {
+        return null;
+    }
+    return db.collection(CONSTANTS.COLLECTION.PARENTESCO);
 }
 
 /**
@@ -39,10 +50,9 @@ function buildAndesSearchQuery(args: any) {
             ];
         } else {
             const identificador = stringInsensitive(stringEscape(queryBuilder.value));
-            switch (queryBuilder.system) {
+            switch (resolveIdentifierSystem(queryBuilder.system)) {
                 case FhirIdentifierSystems.ANDES_ID:
-                case getDominio():
-                case 'http://andes.gob.ar':
+                case resolveIdentifierSystem(getDominio()):
                     if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
                         query._id = new ObjectId(queryBuilder.value);
                     } else {
@@ -132,6 +142,171 @@ const PatientRepository = {
         // Consistente con buildAndesSearchQuery: no exponer pacientes dados de
         // baja lógicamente (activo: false) a través del acceso directo por ID.
         return collection.findOne({ _id: new ObjectId(id), activo: true });
+    },
+
+    /**
+     * Obtiene múltiples documentos de la colección paciente por su _id,
+     * incluyendo pacientes en estado 'temporal' (ej. bebés recién nacidos sin DNI)
+     * siempre que no estén dados de baja lógicamente (activo !== false).
+     */
+    async findByIds(ids: string[]): Promise<any[]> {
+        if (!ids || ids.length === 0) {
+            return [];
+        }
+        const validIds = Array.from(new Set(ids.filter(id => id && ObjectId.isValid(String(id))))).map(id => new ObjectId(String(id)));
+        if (validIds.length === 0) {
+            return [];
+        }
+        const collection = getCollection() as any;
+        return collection.find({
+            _id: { $in: validIds },
+            activo: { $ne: false }
+        }).toArray();
+    },
+
+    /**
+     * Busca el paciente que contiene una relación específica (por relaciones._id o relaciones.referencia).
+     */
+    async findByRelatedId(relatedId: string): Promise<any> {
+        if (!relatedId) {
+            return null;
+        }
+        const orConditions: any[] = [
+            { 'relaciones._id': relatedId },
+            { 'relaciones.referencia': relatedId }
+        ];
+        if (ObjectId.isValid(relatedId)) {
+            const objId = new ObjectId(relatedId);
+            orConditions.push(
+                { 'relaciones._id': objId },
+                { 'relaciones.referencia': objId }
+            );
+        }
+        const collection = getCollection() as any;
+        return collection.findOne({
+            activo: true,
+            $or: orConditions
+        });
+    },
+
+    /**
+     * Agrega una nueva relación al array relaciones de un paciente en Andes,
+     * ajustándose a PacienteSchema ({ relacion: ParentescoSchema, referencia: ObjectId }).
+     * Si no se envía referencia, busca o crea el paciente relacionado en estado 'temporal'.
+     */
+    async addRelation(patientId: string, relacion: any): Promise<{ existing: boolean; relationId: string } | null> {
+        const patient = await this.findById(patientId);
+        if (!patient) {
+            return null;
+        }
+
+        const collection = getCollection() as any;
+        let targetRefId: string | undefined = relacion.referencia ? String(relacion.referencia) : undefined;
+
+        // Si no viene referencia explícita pero viene documento, verificamos si ya existe en paciente
+        if (!targetRefId && relacion.documento) {
+            const escapedDoc = stringEscape(String(relacion.documento));
+            const existingRelated = await collection.findOne({
+                documento: new RegExp(`^${escapedDoc}$`, 'i'),
+                activo: { $ne: false }
+            });
+            if (existingRelated?._id) {
+                targetRefId = String(existingRelated._id);
+            }
+        }
+
+        const existingRelaciones: any[] = Array.isArray(patient.relaciones) ? patient.relaciones : [];
+        const match = existingRelaciones.find(rel => {
+            if (targetRefId && rel.referencia && String(rel.referencia) === targetRefId) {
+                return true;
+            }
+            if (relacion.documento && rel.documento && String(rel.documento) === String(relacion.documento)) {
+                return true;
+            }
+            if (
+                relacion.nombre &&
+                relacion.apellido &&
+                rel.nombre &&
+                rel.apellido &&
+                String(rel.nombre).trim().toLowerCase() === String(relacion.nombre).trim().toLowerCase() &&
+                String(rel.apellido).trim().toLowerCase() === String(relacion.apellido).trim().toLowerCase()
+            ) {
+                return true;
+            }
+            return false;
+        });
+
+        if (match) {
+            return {
+                existing: true,
+                relationId: String(match._id ?? match.referencia ?? '')
+            };
+        }
+
+        // Si aún no existe como documento en paciente, lo creamos como paciente temporal
+        if (!targetRefId && (relacion.nombre || relacion.apellido || relacion.documento)) {
+            const newTemporalPatient: Record<string, any> = {
+                nombre: String(relacion.nombre || '').toUpperCase(),
+                apellido: String(relacion.apellido || '').toUpperCase(),
+                ...(relacion.documento && { documento: String(relacion.documento) }),
+                ...(relacion.tipoIdentificacion && { tipoIdentificacion: relacion.tipoIdentificacion }),
+                ...(relacion.numeroIdentificacion && { numeroIdentificacion: relacion.numeroIdentificacion }),
+                ...(relacion.fechaNacimiento && { fechaNacimiento: new Date(relacion.fechaNacimiento) }),
+                ...(relacion.sexo && { sexo: relacion.sexo }),
+                ...(relacion.genero && { genero: relacion.genero }),
+                estado: 'temporal',
+                activo: true
+            };
+            const inserted = await collection.insertOne(newTemporalPatient);
+            if (inserted?.insertedId) {
+                targetRefId = String(inserted.insertedId);
+            }
+        }
+
+        // Intentar resolver el documento de Parentesco desde la colección 'parentesco'
+        let parentescoObj: Record<string, any> = {
+            nombre: relacion.relacion?.nombre ?? 'otro',
+            opuesto: relacion.relacion?.opuesto ?? 'otro',
+            esConviviente: Boolean(relacion.relacion?.esConviviente)
+        };
+        const parentescoCol = getParentescoCollection() as any;
+        if (parentescoCol && typeof parentescoCol.findOne === 'function' && parentescoObj.nombre) {
+            const foundParentesco = await parentescoCol.findOne({
+                nombre: new RegExp(`^${stringEscape(String(parentescoObj.nombre))}$`, 'i')
+            });
+            if (foundParentesco) {
+                parentescoObj = {
+                    _id: foundParentesco._id,
+                    nombre: foundParentesco.nombre,
+                    opuesto: foundParentesco.opuesto,
+                    esConviviente: Boolean(foundParentesco.esConviviente)
+                };
+            }
+        }
+
+        const relObjectId = relacion._id && ObjectId.isValid(String(relacion._id))
+            ? new ObjectId(String(relacion._id))
+            : new ObjectId();
+
+        const refObjectId = targetRefId && ObjectId.isValid(targetRefId)
+            ? new ObjectId(targetRefId)
+            : undefined;
+
+        const toInsert: Record<string, any> = {
+            _id: relObjectId,
+            relacion: parentescoObj,
+            ...(refObjectId && { referencia: refObjectId })
+        };
+
+        await collection.updateOne(
+            { _id: new ObjectId(patientId) },
+            { $push: { relaciones: toInsert } }
+        );
+
+        return {
+            existing: false,
+            relationId: relObjectId.toString()
+        };
     },
 
     async insert(doc: any): Promise<any> {

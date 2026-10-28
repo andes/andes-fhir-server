@@ -1,7 +1,7 @@
 import { ObjectId, Collection } from 'mongodb';
 import { ServerError } from '@bluehalo/node-fhir-server-core';
 import globals from '../globals';
-import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { CONSTANTS, FhirIdentifierSystems, resolveIdentifierSystem } from '../constants';
 import { getDominio } from '../encoders';
 import { stringQueryBuilder, tokenQueryBuilder } from '../utils/querybuilder.util';
 
@@ -37,7 +37,7 @@ export function buildAndesSearchQuery(args: any): Record<string, any> {
         if (!queryBuilder.system) {
             query['codigo.sisa'] = queryBuilder.value;
         } else {
-            switch (queryBuilder.system) {
+            switch (resolveIdentifierSystem(queryBuilder.system)) {
                 case FhirIdentifierSystems.SISA:
                 case 'sisa':
                     query['codigo.sisa'] = queryBuilder.value;
@@ -59,8 +59,7 @@ export function buildAndesSearchQuery(args: any): Record<string, any> {
                     query['codigo.cuit'] = queryBuilder.value;
                     break;
                 case FhirIdentifierSystems.ANDES_ID:
-                case getDominio():
-                case 'http://andes.gob.ar':
+                case resolveIdentifierSystem(getDominio()):
                     if (typeof queryBuilder.value === 'string' && ObjectId.isValid(queryBuilder.value)) {
                         query._id = new ObjectId(queryBuilder.value);
                     } else {

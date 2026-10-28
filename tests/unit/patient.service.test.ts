@@ -33,6 +33,112 @@ describe('Patient Service', () => {
         expect(typeof PatientService.summaryByIdentifier).toBe('function');
     });
 
+    describe('search with _revinclude=RelatedPerson:patient and _revinclude:iterate=Patient:link', () => {
+        it('should return mother Patient, RelatedPerson entries and temporal baby Patient with link', async () => {
+            const madreId = new ObjectId().toString();
+            const bebeId = new ObjectId().toString();
+            const relBebeId = new ObjectId().toString();
+            const relAbueloId = new ObjectId().toString();
+
+            const madreDoc = {
+                _id: new ObjectId(madreId),
+                id: madreId,
+                nombre: 'MARIA',
+                apellido: 'GOMEZ',
+                documento: '28123456',
+                sexo: 'femenino',
+                genero: 'femenino',
+                estado: 'validado',
+                activo: true,
+                fechaNacimiento: '1992-05-10',
+                relaciones: [
+                    {
+                        _id: new ObjectId(relBebeId),
+                        relacion: { nombre: 'hijo/a', opuesto: 'progenitor/a' },
+                        referencia: new ObjectId(bebeId),
+                        nombre: 'MATEO',
+                        apellido: 'GOMEZ'
+                    },
+                    {
+                        _id: new ObjectId(relAbueloId),
+                        relacion: { nombre: 'progenitor/a', opuesto: 'hijo/a' },
+                        nombre: 'CARLOS',
+                        apellido: 'GOMEZ',
+                        documento: '12333444'
+                    }
+                ]
+            };
+
+            const bebeTemporalDoc = {
+                _id: new ObjectId(bebeId),
+                id: bebeId,
+                nombre: 'MATEO',
+                apellido: 'GOMEZ',
+                sexo: 'masculino',
+                genero: 'masculino',
+                estado: 'temporal',
+                activo: true,
+                fechaNacimiento: '2026-10-15'
+            };
+
+            jest.spyOn(PatientRepository, 'count').mockResolvedValue(1);
+            jest.spyOn(PatientRepository, 'find').mockResolvedValue([madreDoc] as any);
+            jest.spyOn(PatientRepository, 'findByIds').mockResolvedValue([bebeTemporalDoc] as any);
+
+            const args = {
+                base_version: mockVersion,
+                identifier: 'http://renaper.gob.ar/dni|28123456'
+            };
+            const context = {
+                req: {
+                    query: {
+                        identifier: 'http://renaper.gob.ar/dni|28123456',
+                        _revinclude: 'RelatedPerson:patient',
+                        '_revinclude:iterate': 'Patient:link'
+                    },
+                    protocol: 'http',
+                    get: () => 'localhost:3000',
+                    baseUrl: '/4_0_1/Patient',
+                    path: '',
+                    originalUrl: '/4_0_1/Patient?identifier=http://renaper.gob.ar/dni|28123456&_revinclude=RelatedPerson:patient&_revinclude:iterate=Patient:link'
+                }
+            };
+
+            const bundle = await PatientService.search(args, context);
+
+            expect(bundle.resourceType).toBe('Bundle');
+            expect(bundle.total).toBe(1);
+            expect(bundle.entry).toHaveLength(4);
+
+            // 1. Mother Patient (match)
+            const motherEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Patient' && e.resource.id === madreId);
+            expect(motherEntry).toBeDefined();
+            expect(motherEntry.search.mode).toBe('match');
+
+            // 2. Two RelatedPerson resources (include)
+            const relatedEntries = bundle.entry.filter((e: any) => e.resource.resourceType === 'RelatedPerson');
+            expect(relatedEntries).toHaveLength(2);
+            expect(relatedEntries.every((e: any) => e.search.mode === 'include')).toBe(true);
+
+            const bebeRelEntry = relatedEntries.find((e: any) => e.resource.id === relBebeId);
+            expect(bebeRelEntry).toBeDefined();
+            expect(bebeRelEntry.resource.patient.reference).toBe(`Patient/${madreId}`);
+            expect(bebeRelEntry.resource.birthDate).toBe('2026-10-15');
+            expect(bebeRelEntry.resource.relationship[0].coding[0].code).toBe('CHILD');
+
+            // 3. Baby temporal Patient (include via _revinclude:iterate=Patient:link)
+            const bebePatientEntry = bundle.entry.find((e: any) => e.resource.resourceType === 'Patient' && e.resource.id === bebeId);
+            expect(bebePatientEntry).toBeDefined();
+            expect(bebePatientEntry.search.mode).toBe('include');
+            expect(bebePatientEntry.resource.link).toEqual([
+                {
+                    other: { reference: `RelatedPerson/${relBebeId}` },
+                    type: 'seealso'
+                }
+            ]);
+        });
+    });
+
     describe('summary', () => {
         it('should throw error when id is missing', async () => {
             await expect(PatientService.summary({ base_version: mockVersion }, {}))

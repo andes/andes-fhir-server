@@ -34,7 +34,7 @@ function isObjectId(value: any): boolean {
  * Recursos FHIR que SÍ deben tener resourceType en el nivel superior
  */
 const VALID_RESOURCE_TYPES = new Set([
-    'Patient', 'Bundle', 'Observation', 'Encounter', 'Practitioner',
+    'Patient', 'Bundle', 'Observation', 'Encounter', 'Practitioner', 'RelatedPerson',
     'Organization', 'Location', 'Medication', 'Procedure', 'Condition',
     'Composition', 'AllergyIntolerance', 'Immunization', 'MedicationStatement',
     'MedicationRequest', 'DocumentReference', 'Device', 'Basic', 'OperationOutcome',

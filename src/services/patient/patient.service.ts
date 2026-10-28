@@ -1,4 +1,4 @@
-import { Patient as fhirPac, getDominio } from '../../encoders';
+import { Patient as fhirPac, RelatedPerson as fhirRelatedPerson, getDominio } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
@@ -11,16 +11,41 @@ const getPatientSchema = (base_version: string) => {
     return resolveSchema(base_version, 'Patient');
 };
 
+const getRelatedPersonSchema = (base_version: string) => {
+    return resolveSchema(base_version, 'RelatedPerson');
+};
+
+function normalizeQueryValues(val: any): string[] {
+    if (!val) {
+        return [];
+    }
+    if (Array.isArray(val)) {
+        return val.map(v => String(v).trim());
+    }
+    return [String(val).trim()];
+}
+
 /**
  * Busca pacientes aplicando filtros y paginación.
+ * Soporta _revinclude=RelatedPerson:patient y _revinclude:iterate=Patient:link.
  */
 async function search(args: any, context: any) {
     try {
         const { base_version } = args;
         const req = context.req;
 
+        const ignoredKeys = new Set([
+            'base_version',
+            '_revinclude',
+            '_revinclude:iterate',
+            '_revinclude:recurse',
+            '_include',
+            '_include:iterate',
+            '_count',
+            '_offset'
+        ]);
         const searchParams = Object.keys(args).filter(
-            key => key !== 'base_version' && args[key] !== undefined && args[key] !== ''
+            key => !ignoredKeys.has(key) && args[key] !== undefined && args[key] !== ''
         );
         if (searchParams.length === 0) {
             throw new ServerError('Se requiere enviar al menos un parámetro de búsqueda', {
@@ -30,7 +55,8 @@ async function search(args: any, context: any) {
         }
         const query = PatientRepository.buildQuery(args);
 
-        const paging = parsePaging(req?.query || {}, {
+        const rawQuery = req?.query || {};
+        const paging = parsePaging(rawQuery, {
             defaultCount: 50,
             maxCount: 200
         });
@@ -44,20 +70,112 @@ async function search(args: any, context: any) {
         const Patient = getPatientSchema(base_version);
         const pacientesFhir = pacientes.map(pac => new Patient(fhirPac.encode(pac)));
 
+        const matchEntries = pacientesFhir.map(p => ({
+            fullUrl: req
+                ? buildEntryFullUrl(req, base_version, 'Patient', p.id)
+                : fullurl(p),
+            resource: p,
+            search: { mode: 'match' }
+        }));
+
+        const revIncludeValues = [
+            ...normalizeQueryValues(rawQuery['_revinclude']),
+            ...normalizeQueryValues(args['_revinclude'])
+        ];
+        const revIncludeIterateValues = [
+            ...normalizeQueryValues(rawQuery['_revinclude:iterate']),
+            ...normalizeQueryValues(rawQuery['_revinclude:recurse']),
+            ...normalizeQueryValues(args['_revinclude:iterate']),
+            ...normalizeQueryValues(args['_revinclude:recurse'])
+        ];
+
+        const includeRelatedPerson = revIncludeValues.some(v => v.toLowerCase() === 'relatedperson:patient');
+        const includeLinkedPatients = revIncludeIterateValues.some(v => v.toLowerCase() === 'patient:link');
+
+        const includedEntries: any[] = [];
+        if (includeRelatedPerson && pacientes.length > 0) {
+            const RelatedPerson = getRelatedPersonSchema(base_version);
+            const referenciaIds: string[] = [];
+
+            for (const pac of pacientes) {
+                for (const rel of pac.relaciones ?? []) {
+                    if (rel?.referencia) {
+                        referenciaIds.push(String(rel.referencia));
+                    }
+                }
+            }
+
+            const relatedDocs = referenciaIds.length > 0
+                ? await PatientRepository.findByIds(referenciaIds)
+                : [];
+            const relatedDocsMap = new Map<string, any>(
+                relatedDocs.map(doc => [String(doc._id ?? doc.id), doc])
+            );
+
+            const seenResourceKeys = new Set<string>(
+                pacientesFhir.map(p => `Patient/${p.id}`)
+            );
+
+            for (const pac of pacientes) {
+                for (const rel of pac.relaciones ?? []) {
+                    const relatedDoc = rel?.referencia
+                        ? relatedDocsMap.get(String(rel.referencia)) ?? null
+                        : null;
+
+                    const encodedRel = fhirRelatedPerson.encode(pac, rel, relatedDoc);
+                    if (!encodedRel) {
+                        continue;
+                    }
+
+                    const rpResource = new RelatedPerson(encodedRel);
+                    const rpKey = `RelatedPerson/${rpResource.id}`;
+                    if (!seenResourceKeys.has(rpKey)) {
+                        seenResourceKeys.add(rpKey);
+                        includedEntries.push({
+                            fullUrl: req
+                                ? buildEntryFullUrl(req, base_version, 'RelatedPerson', rpResource.id)
+                                : fullurl(rpResource),
+                            resource: rpResource,
+                            search: { mode: 'include' }
+                        });
+                    }
+
+                    if (includeLinkedPatients && relatedDoc) {
+                        const encodedLinkedPat = fhirPac.encode(relatedDoc);
+                        if (encodedLinkedPat) {
+                            encodedLinkedPat.link = [
+                                ...(encodedLinkedPat.link ?? []),
+                                {
+                                    other: { reference: `RelatedPerson/${rpResource.id}` },
+                                    type: 'seealso'
+                                }
+                            ];
+                            const linkedPatientResource = new Patient(encodedLinkedPat);
+                            const patKey = `Patient/${linkedPatientResource.id}`;
+                            if (!seenResourceKeys.has(patKey)) {
+                                seenResourceKeys.add(patKey);
+                                includedEntries.push({
+                                    fullUrl: req
+                                        ? buildEntryFullUrl(req, base_version, 'Patient', linkedPatientResource.id)
+                                        : fullurl(linkedPatientResource),
+                                    resource: linkedPatientResource,
+                                    search: { mode: 'include' }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const allEntries = [...matchEntries, ...includedEntries];
+
         const bundle: any = {
             resourceType: 'Bundle',
             type: 'searchset',
             total,
             link: req ? buildPagingLinks(req, total, paging) : undefined,
-            entry: pacientesFhir.length
-                ? pacientesFhir.map(p => ({
-                    fullUrl: req
-                        ? buildEntryFullUrl(req, base_version, 'Patient', p.id)
-                        : fullurl(p),
-                    resource: p,
-                    search: { mode: 'match' }
-                }))
-                : undefined
+            entry: allEntries.length ? allEntries : undefined
         };
 
         return pruneEmpty(bundle);

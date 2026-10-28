@@ -16,7 +16,7 @@ import {
 import { mapAndesRankingToFhirRank, mapFhirRankToAndesRanking } from '../utils/rankingMapping';
 import { formatFHIRDate, formatFHIRDateTime } from '../utils/fhirDate';
 import { escapeHtml } from '../utils/escapeHtml';
-import { FhirIdentifierSystems } from '../../constants';
+import { FhirIdentifierSystems, resolveIdentifierSystem } from '../../constants';
 
 /**
  * Helpers
@@ -317,7 +317,8 @@ export function decode(patient: Patient): AndesPatient {
         key: string
     ): string | undefined {
         if (!items) return undefined;
-        const element = items.find(el => el.system === key);
+        const canonicalKey = resolveIdentifierSystem(key);
+        const element = items.find(el => resolveIdentifierSystem(el.system) === canonicalKey);
         return element?.value;
     }
 

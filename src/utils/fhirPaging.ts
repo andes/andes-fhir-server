@@ -27,15 +27,15 @@ function clamp(n: number, min: number, max: number): number {
  * Express: req.protocol + req.get('host') funciona solo si trust proxy está bien seteado.
  */
 export function getBaseUrl(req: any): string {
-  const xfProto = String(req.headers['x-forwarded-proto'] ?? '')
+  const xfProto = String(req?.headers?.['x-forwarded-proto'] ?? '')
     .split(',')[0]
     .trim();
-  const xfHost = String(req.headers['x-forwarded-host'] ?? '')
+  const xfHost = String(req?.headers?.['x-forwarded-host'] ?? '')
     .split(',')[0]
     .trim();
 
-  const proto = xfProto || req.protocol || 'http';
-  const host = xfHost || (req.get?.('host') ?? req.headers.host);
+  const proto = xfProto || req?.protocol || 'http';
+  const host = xfHost || (req?.get?.('host') ?? req?.headers?.host ?? 'localhost');
 
   return `${proto}://${host}`;
 }
@@ -70,7 +70,7 @@ export function buildPagingLinks(
   paging: PagingParams,
 ): FhirLink[] {
   const base = getBaseUrl(req);
-  const u = new URL(req.originalUrl, base);
+  const u = new URL(req?.originalUrl || '/', base);
 
   u.searchParams.set('_count', String(paging.count));
   u.searchParams.set('_offset', String(paging.offset));
