@@ -26,9 +26,26 @@ export interface AndesDireccion {
 }
 
 export interface AndesRelacion {
-    relacion: { nombre: string };
-    nombre: string;
-    apellido: string;
+    _id?: string;
+    relacion: {
+        _id?: string;
+        nombre: string;
+        opuesto?: string;
+        esConviviente?: boolean;
+    };
+    referencia?: string;
+    nombre?: string;
+    apellido?: string;
+    documento?: string;
+    numeroIdentificacion?: string;
+    tipoIdentificacion?: string | null;
+    fechaNacimiento?: string | Date;
+    fechaFallecimiento?: string | Date | null;
+    sexo?: AndesSexo;
+    genero?: AndesGenero;
+    activo?: boolean;
+    fotoId?: string;
+    foto?: string | null;
 }
 
 export interface AndesCreatedByOrganizacion {

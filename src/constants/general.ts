@@ -10,6 +10,7 @@ export const CONSTANTS = {
     },
     COLLECTION: {
         PATIENT: 'paciente',
+        PARENTESCO: 'parentesco',
         ORGANIZATION: 'organizacion',
         PRACTITIONER: 'profesional',
         PRESTATIONS: 'prestaciones',

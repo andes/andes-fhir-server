@@ -11,11 +11,13 @@ import * as MedicationStatement from './lib/medicationStatement';
 import * as Organization from './lib/organization';
 import * as Patient from './lib/patient';
 import * as Practitioner from './lib/practitioner';
+import * as RelatedPerson from './lib/relatedPerson';
 
 export { getDominio, initialize, makeUrl } from './lib/config';
 export {
     Patient,
     Practitioner,
+    RelatedPerson,
     Organization,
     Immunization,
     Condition,

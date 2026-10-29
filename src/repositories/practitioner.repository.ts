@@ -1,6 +1,6 @@
 import { ObjectId, Collection } from 'mongodb';
 import globals from '../globals';
-import { CONSTANTS, FhirIdentifierSystems } from '../constants';
+import { CONSTANTS, FhirIdentifierSystems, resolveIdentifierSystem } from '../constants';
 import { getDominio } from '../encoders';
 import { tokenQueryBuilder, familyQueryBuilder } from '../utils/querybuilder.util';
 
@@ -44,9 +44,9 @@ function buildAndesSearchQuery(args: any) {
     // Controles de identifier de profesional
     if (identifier) {
         const tokenBuilder: any = tokenQueryBuilder(identifier, 'value', 'identifier', false);
-        switch (tokenBuilder.system) {
+        switch (resolveIdentifierSystem(tokenBuilder.system)) {
             case FhirIdentifierSystems.ANDES_ID:
-            case getDominio():
+            case resolveIdentifierSystem(getDominio()):
                 if (typeof tokenBuilder.value === 'string' && ObjectId.isValid(tokenBuilder.value)) {
                     query._id = new ObjectId(tokenBuilder.value);
                 } else {

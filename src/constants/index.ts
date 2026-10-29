@@ -1,8 +1,8 @@
 import { CONSTANTS } from './general';
-import { FhirIdentifierSystems } from './identifier-systems';
+import { FhirIdentifierSystems, resolveIdentifierSystem } from './identifier-systems';
 
 export {
     CONSTANTS,
-    FhirIdentifierSystems
+    FhirIdentifierSystems,
+    resolveIdentifierSystem
 };
-

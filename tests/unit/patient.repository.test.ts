@@ -136,4 +136,22 @@ describe('Patient Repository - buildQuery', () => {
             PatientRepository.buildQuery({ gender: 'invalid-gender' });
         }).toThrow(ServerError);
     });
+
+    it('should normalize identifier systems regardless of http/https or www prefix', () => {
+        const dniHttpNoWww = PatientRepository.buildQuery({ identifier: 'http://renaper.gob.ar/dni|30111222' });
+        expect(dniHttpNoWww.documento?.$regex.source).toBe('^30111222$');
+
+        const dniHttpsNoWww = PatientRepository.buildQuery({ identifier: 'https://renaper.gob.ar/dni|30111222' });
+        expect(dniHttpsNoWww.documento?.$regex.source).toBe('^30111222$');
+
+        const dniHttpWww = PatientRepository.buildQuery({ identifier: 'http://www.renaper.gob.ar/dni|30111222' });
+        expect(dniHttpWww.documento?.$regex.source).toBe('^30111222$');
+
+        const cuilHttpNoWww = PatientRepository.buildQuery({ identifier: 'http://anses.gob.ar/cuil|20-30111222-9' });
+        expect(cuilHttpNoWww.cuil?.$regex.source).toBe('^20-30111222-9$');
+
+        const validId = '507f1f77bcf86cd799439011';
+        const andesHttpWww = PatientRepository.buildQuery({ identifier: `http://www.andes.gob.ar|${validId}` });
+        expect(andesHttpWww._id?.toString()).toBe(validId);
+    });
 });
