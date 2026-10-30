@@ -1,5 +1,6 @@
 import path from 'path';
 import { constants } from '@bluehalo/node-fhir-server-core';
+import { statementGenerator } from './metadata/statementGenerator';
 
 const { VERSIONS } = constants;
 
@@ -25,6 +26,7 @@ const servicesBase = path.join(__dirname, 'services');
 
 export const fhirServerConfig = {
     auth: AUTH ? {
+        type: 'smart',
         strategy: {
             name: 'bearer',
             service: path.join(servicesBase, 'auth', 'auth.service.js')
@@ -40,6 +42,7 @@ export const fhirServerConfig = {
     logging: {
         level: process.env.LOGGING_LEVEL
     },
+    statementGenerator,
     profiles: {
         patient: {
             service: path.join(servicesBase, 'patient', 'patient.service.js'),

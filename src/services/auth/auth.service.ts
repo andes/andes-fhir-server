@@ -3,6 +3,9 @@ import { Request } from 'express';
 import { searchToken } from '../../controller/auth/auth';
 import { SaludDigitalClient } from '../../controller/ips/autenticacion';
 
+const DEFAULT_FHIR_SCOPE =
+    'patient/*.read patient/*.write relatedperson/*.read relatedperson/*.write practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read';
+
 export interface AuthUser {
     name: string;
     clientId?: string;
@@ -41,7 +44,7 @@ export class HybridAuthStrategy extends Strategy {
             const bypassUser: AuthUser = {
                 name: 'TEST',
                 authType: 'bypass',
-                scope: 'patient/*.read practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read'
+                scope: DEFAULT_FHIR_SCOPE
             };
             return (this as any).success(bypassUser, { scope: bypassUser.scope });
         }
@@ -65,7 +68,7 @@ export class HybridAuthStrategy extends Strategy {
                 name: clientName,
                 clientId: clientName,
                 authType: 'x-road',
-                scope: process.env.XROAD_DEFAULT_SCOPE || 'patient/*.read practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read'
+                scope: process.env.XROAD_DEFAULT_SCOPE || DEFAULT_FHIR_SCOPE
             };
             return (this as any).success(xRoadUser, { scope: xRoadUser.scope });
         }
@@ -98,7 +101,7 @@ export class HybridAuthStrategy extends Strategy {
                         name: app.nombre || 'ANDES App',
                         clientId: app.nombre,
                         authType: 'andes-app',
-                        scope: app.scope || 'patient/*.read practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read'
+                        scope: app.scope || DEFAULT_FHIR_SCOPE
                     };
                     return (this as any).success(appUser, { scope: appUser.scope });
                 } else {
@@ -119,7 +122,7 @@ export class HybridAuthStrategy extends Strategy {
                         const federadorUser: AuthUser = {
                             name: data.name || 'Federador Nacional',
                             authType: 'federador',
-                            scope: 'patient/*.read practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read'
+                            scope: DEFAULT_FHIR_SCOPE
                         };
                         return (this as any).success(federadorUser, { scope: federadorUser.scope });
                     }
