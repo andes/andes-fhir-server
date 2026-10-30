@@ -1,9 +1,10 @@
-import { Patient as fhirPac, RelatedPerson as fhirRelatedPerson, getDominio } from '../../encoders';
+import { Patient as fhirPac, RelatedPerson as fhirRelatedPerson, Immunization as fhirImmunization, getDominio } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
 import PatientRepository from '../../repositories/patient.repository';
+import VaccineRepository from '../../repositories/vaccine.repository';
 import { FhirIdentifierSystems } from '../../constants';
 import IpsService from '../ips/ips.service';
 
@@ -13,6 +14,10 @@ const getPatientSchema = (base_version: string) => {
 
 const getRelatedPersonSchema = (base_version: string) => {
     return resolveSchema(base_version, 'RelatedPerson');
+};
+
+const getImmunizationSchema = (base_version: string) => {
+    return resolveSchema(base_version, 'Immunization');
 };
 
 function normalizeQueryValues(val: any): string[] {
@@ -90,6 +95,7 @@ async function search(args: any, context: any) {
         ];
 
         const includeRelatedPerson = revIncludeValues.some(v => v.toLowerCase() === 'relatedperson:patient');
+        const includeImmunization = revIncludeValues.some(v => v.toLowerCase() === 'immunization:patient');
         const includeLinkedPatients = revIncludeIterateValues.some(v => v.toLowerCase() === 'patient:link');
 
         const includedEntries: any[] = [];
@@ -163,6 +169,51 @@ async function search(args: any, context: any) {
                                 });
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        if (includeImmunization && pacientes.length > 0) {
+            const Immunization = getImmunizationSchema(base_version);
+            const documentos = pacientes
+                .map(pac => String(pac.documento ?? '').trim())
+                .filter(Boolean);
+
+            const vacunas = documentos.length > 0
+                ? await VaccineRepository.findByDocuments(documentos)
+                : [];
+
+            const seenImmKeys = new Set<string>();
+            for (const pac of pacientes) {
+                const docPac = String(pac.documento ?? '').trim();
+                if (!docPac) {
+                    continue;
+                }
+                const patId = String(pac._id ?? pac.id);
+                const patDisplay = `${pac.nombre || ''} ${pac.apellido || ''}`.trim();
+                const patRef = {
+                    reference: `Patient/${patId}`,
+                    ...(patDisplay && { display: patDisplay })
+                };
+
+                const vacunasPac = vacunas.filter(
+                    (v: any) => String(v.documento ?? '').trim() === docPac
+                );
+
+                for (const vac of vacunasPac) {
+                    const encodedImm = fhirImmunization.encode(patRef, vac);
+                    const immResource = new Immunization(pruneEmpty(encodedImm));
+                    const immKey = `Immunization/${immResource.id}`;
+                    if (!seenImmKeys.has(immKey)) {
+                        seenImmKeys.add(immKey);
+                        includedEntries.push({
+                            fullUrl: req
+                                ? buildEntryFullUrl(req, base_version, 'Immunization', immResource.id)
+                                : fullurl(immResource),
+                            resource: immResource,
+                            search: { mode: 'include' }
+                        });
                     }
                 }
             }

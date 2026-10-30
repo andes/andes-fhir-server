@@ -66,6 +66,10 @@ export const fhirServerConfig = {
             service: path.join(servicesBase, 'relatedperson', 'relatedperson.service.js'),
             versions: [VERSIONS['4_0_1']]
         },
+        immunization: {
+            service: path.join(servicesBase, 'immunization', 'immunization.service.js'),
+            versions: [VERSIONS['4_0_1']]
+        },
         practitioner: {
             service: path.join(servicesBase, 'practitioner', 'practitioner.service.js'),
             versions: [VERSIONS['4_0_1']]

@@ -5,6 +5,7 @@ import { resolveSchema } from '@bluehalo/node-fhir-server-core';
 const SUPPORTED_SEARCH_PARAMS: Record<string, string[]> = {
     Patient: ['_id', 'identifier', 'family', 'given', 'gender'],
     RelatedPerson: ['_id', 'patient', 'identifier', 'name', 'relationship', 'gender', 'active'],
+    Immunization: ['_id', 'patient', 'identifier', 'date', 'vaccine-code', 'status'],
     Practitioner: ['_id', 'active', 'family', 'given', 'identifier'],
     Organization: ['_id', 'active', 'identifier', 'name'],
     DocumentReference: ['subject', 'type', 'custodian'],
@@ -13,7 +14,7 @@ const SUPPORTED_SEARCH_PARAMS: Record<string, string[]> = {
 };
 
 const SUPPORTED_REV_INCLUDES: Record<string, string[]> = {
-    Patient: ['RelatedPerson:patient', 'Patient:link'],
+    Patient: ['RelatedPerson:patient', 'Patient:link', 'Immunization:patient'],
 };
 
 function getServerVersion(): string {

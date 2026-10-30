@@ -4,7 +4,7 @@ import { searchToken } from '../../controller/auth/auth';
 import { SaludDigitalClient } from '../../controller/ips/autenticacion';
 
 const DEFAULT_FHIR_SCOPE =
-    'patient/*.read patient/*.write relatedperson/*.read relatedperson/*.write practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read';
+    'patient/*.read patient/*.write relatedperson/*.read relatedperson/*.write immunization/*.read practitioner/*.read organization/*.read bundle/*.read documentreference/*.read basic/*.read';
 
 export interface AuthUser {
     name: string;

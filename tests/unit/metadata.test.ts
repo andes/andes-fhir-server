@@ -110,6 +110,7 @@ describe('CapabilityStatement Metadata Generator', () => {
         expect(patientRes.searchRevInclude).toEqual([
             'RelatedPerson:patient',
             'Patient:link',
+            'Immunization:patient',
         ]);
 
         const relatedPersonRes = capability.rest[0].resource.find((r: any) => r.type === 'RelatedPerson');
