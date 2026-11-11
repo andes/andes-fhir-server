@@ -1,11 +1,13 @@
-import { Patient as fhirPac, RelatedPerson as fhirRelatedPerson, getDominio } from '../../encoders';
+import { Patient as fhirPac, RelatedPerson as fhirRelatedPerson, Immunization as fhirImmunization, getDominio } from '../../encoders';
 import { resolveSchema, ServerError } from '@bluehalo/node-fhir-server-core';
 import { fullurl } from '../../utils/data.util';
 import { pruneEmpty } from '../../utils/pruneFhir';
 import { parsePaging, buildPagingLinks, buildEntryFullUrl } from '../../utils/fhirPaging';
 import PatientRepository from '../../repositories/patient.repository';
+import VaccineRepository from '../../repositories/vaccine.repository';
 import { FhirIdentifierSystems } from '../../constants';
 import IpsService from '../ips/ips.service';
+import McodeService from '../mcode/mcode.service';
 
 const getPatientSchema = (base_version: string) => {
     return resolveSchema(base_version, 'Patient');
@@ -13,6 +15,10 @@ const getPatientSchema = (base_version: string) => {
 
 const getRelatedPersonSchema = (base_version: string) => {
     return resolveSchema(base_version, 'RelatedPerson');
+};
+
+const getImmunizationSchema = (base_version: string) => {
+    return resolveSchema(base_version, 'Immunization');
 };
 
 function normalizeQueryValues(val: any): string[] {
@@ -90,6 +96,7 @@ async function search(args: any, context: any) {
         ];
 
         const includeRelatedPerson = revIncludeValues.some(v => v.toLowerCase() === 'relatedperson:patient');
+        const includeImmunization = revIncludeValues.some(v => v.toLowerCase() === 'immunization:patient');
         const includeLinkedPatients = revIncludeIterateValues.some(v => v.toLowerCase() === 'patient:link');
 
         const includedEntries: any[] = [];
@@ -163,6 +170,51 @@ async function search(args: any, context: any) {
                                 });
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        if (includeImmunization && pacientes.length > 0) {
+            const Immunization = getImmunizationSchema(base_version);
+            const documentos = pacientes
+                .map(pac => String(pac.documento ?? '').trim())
+                .filter(Boolean);
+
+            const vacunas = documentos.length > 0
+                ? await VaccineRepository.findByDocuments(documentos)
+                : [];
+
+            const seenImmKeys = new Set<string>();
+            for (const pac of pacientes) {
+                const docPac = String(pac.documento ?? '').trim();
+                if (!docPac) {
+                    continue;
+                }
+                const patId = String(pac._id ?? pac.id);
+                const patDisplay = `${pac.nombre || ''} ${pac.apellido || ''}`.trim();
+                const patRef = {
+                    reference: `Patient/${patId}`,
+                    ...(patDisplay && { display: patDisplay })
+                };
+
+                const vacunasPac = vacunas.filter(
+                    (v: any) => String(v.documento ?? '').trim() === docPac
+                );
+
+                for (const vac of vacunasPac) {
+                    const encodedImm = fhirImmunization.encode(patRef, vac);
+                    const immResource = new Immunization(pruneEmpty(encodedImm));
+                    const immKey = `Immunization/${immResource.id}`;
+                    if (!seenImmKeys.has(immKey)) {
+                        seenImmKeys.add(immKey);
+                        includedEntries.push({
+                            fullUrl: req
+                                ? buildEntryFullUrl(req, base_version, 'Immunization', immResource.id)
+                                : fullurl(immResource),
+                            resource: immResource,
+                            search: { mode: 'include' }
+                        });
                     }
                 }
             }
@@ -353,12 +405,100 @@ async function summaryByIdentifier(args: any, context: any, _logger?: any) {
     }
 }
 
+/**
+ * Devuelve el mCODE Patient Bundle (collection) para un paciente dado su ID de Andes.
+ * FHIR Operation: GET /Patient/:id/$mcode
+ */
+async function mcode(args: any, context: any, _logger?: any) {
+    try {
+        const { base_version, id } = args;
+        const patientId = id || context?.req?.params?.id;
+
+        if (!patientId) {
+            throw new ServerError('Se requiere el ID del paciente para generar el resumen mCODE', {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'required', diagnostics: 'Se requiere el ID del paciente' }]
+            });
+        }
+
+        const patient = await PatientRepository.findById(patientId);
+        if (!patient) {
+            throw new ServerError(`Paciente con ID ${patientId} no encontrado`, {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'not-found', diagnostics: `Paciente con ID ${patientId} no encontrado` }]
+            });
+        }
+
+        return await McodeService.build(base_version, patient);
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || 'Error al generar el resumen mCODE', {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
+    }
+}
+
+/**
+ * Devuelve el mCODE Patient Bundle buscando al paciente por su identificador.
+ * FHIR Operation: GET /Patient/$mcode?identifier=...
+ */
+async function mcodeByIdentifier(args: any, context: any, _logger?: any) {
+    try {
+        const { base_version, identifier } = args;
+        const rawIdentifier = identifier || context?.req?.query?.identifier;
+
+        if (!rawIdentifier) {
+            throw new ServerError('Se requiere el parámetro identifier para generar el resumen mCODE', {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'required', diagnostics: 'Se requiere el parámetro identifier' }]
+            });
+        }
+
+        const query = PatientRepository.buildQuery({ identifier: rawIdentifier });
+        const patients = await PatientRepository.find(query);
+
+        if (!patients || patients.length === 0) {
+            throw new ServerError(`No se encontró paciente con identificador ${rawIdentifier}`, {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'error', code: 'not-found', diagnostics: `No se encontró paciente con identificador ${rawIdentifier}` }]
+            });
+        }
+
+        if (patients.length > 1) {
+            throw new ServerError(`Se encontró más de un paciente con el identificador ${rawIdentifier}`, {
+                statusCode: 400,
+                resourceType: 'OperationOutcome',
+                issue: [{ severity: 'warning', code: 'multiple-matches', diagnostics: 'Múltiples pacientes encontrados para el identificador suministrado' }]
+            });
+        }
+
+        return await McodeService.build(base_version, patients[0]);
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || 'Error al generar el resumen mCODE por identificador', {
+            resourceType: 'OperationOutcome',
+            issue: [{ severity: 'error', code: err.code || 'exception', diagnostics: err.message || err }]
+        });
+    }
+}
+
 const PatientService = {
     search,
     searchById,
     create,
     summary,
-    summaryByIdentifier
+    summaryByIdentifier,
+    mcode,
+    mcodeByIdentifier
 };
 
 export = PatientService;

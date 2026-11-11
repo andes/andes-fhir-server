@@ -353,6 +353,42 @@ describe('SnowstormService', () => {
         });
     });
 
+    describe('mCODE SNOMED ECL queries', () => {
+        it('should invoke getConceptsByEcl with the expected mCODE ECL expressions', async () => {
+            const eclSpy = jest.spyOn(service, 'getConceptsByEcl').mockResolvedValue([]);
+
+            await service.getSnomedPrimaryCancers();
+            expect(eclSpy).toHaveBeenCalledWith(
+                '(<<363346000 OR <<109355002 OR (<<55342001 MINUS <<20376005)) MINUS <<128462008',
+                expect.objectContaining({ bypassCache: false })
+            );
+
+            await service.getSnomedSecondaryCancers();
+            expect(eclSpy).toHaveBeenCalledWith(
+                '<<128462008',
+                expect.objectContaining({ bypassCache: false })
+            );
+
+            await service.getSnomedTnmStaging();
+            expect(eclSpy).toHaveBeenCalledWith(
+                '<<261612004 OR <<385349001 OR <<399566009',
+                expect.objectContaining({ bypassCache: false })
+            );
+
+            await service.getSnomedRadiotherapyProcedures();
+            expect(eclSpy).toHaveBeenCalledWith(
+                '<<1287742003',
+                expect.objectContaining({ bypassCache: false })
+            );
+
+            await service.getSnomedSurgicalProcedures();
+            expect(eclSpy).toHaveBeenCalledWith(
+                '<<387713003',
+                expect.objectContaining({ bypassCache: false })
+            );
+        });
+    });
+
     describe('getConcepts', () => {
         it('should fetch multiple concepts by ids in batch', async () => {
             const mockBatchResponse = {

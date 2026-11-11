@@ -30,6 +30,17 @@ export const SNOMED_INTOLERANCES = 782197009;
 
 export const DEFAULT_SNOMED_TTL_MS = 60 * 60 * 1000; // 1 hora por defecto
 export const ALLERGIES_INTOLERANCES_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
+export const MCODE_SNOMED_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
+
+// Constantes SNOMED CT para mCODE (Oncología)
+export const SNOMED_MALIGNANT_NEOPLASM = 363346000;
+export const SNOMED_NEOPLASTIC_DISEASE = 55342001;
+export const SNOMED_BENIGN_NEOPLASM = 20376005;
+export const SNOMED_SECONDARY_MALIGNANT_NEOPLASM = 128462008;
+export const SNOMED_CARCINOMA_IN_SITU = 109355002;
+export const SNOMED_SURGICAL_PROCEDURE = 387713003;
+export const SNOMED_RADIOTHERAPY_PROCEDURE = 1287742003; // radioterapia (procedimiento) - Edición Argentina
+export const SNOMED_TNM_STAGING_ECL = '<<261612004 OR <<385349001 OR <<399566009';
 
 export class SnowstormService {
     public host: string;
@@ -250,15 +261,33 @@ export class SnowstormService {
 
     /**
      * Realiza consultas con Expression Constraint Language (ECL) sobre Snowstorm,
-     * paginando automáticamente mediante 'searchAfter' para obtener la totalidad de los conceptos.
+     * paginando automáticamente mediante 'searchAfter' para obtener la totalidad de los conceptos
+     * o filtrando sobre un subconjunto de conceptIds si se proporciona.
      * Soporta almacenamiento en caché en memoria con TTL configurable.
      */
     async getConceptsByEcl(
         ecl: string,
-        options: { limit?: number; languageCode?: string; bypassCache?: boolean; ttlMs?: number } = {}
+        options: {
+            limit?: number;
+            languageCode?: string;
+            bypassCache?: boolean;
+            ttlMs?: number;
+            conceptIds?: (string | number)[];
+        } = {}
     ): Promise<SnomedConceptSummary[]> {
-        const { limit = 1000, languageCode = 'es', bypassCache = false, ttlMs = this.defaultTtlMs } = options;
-        const cacheKey = `ecl:${ecl}:${languageCode}`;
+        const {
+            limit = 1000,
+            languageCode = 'es',
+            bypassCache = false,
+            ttlMs = this.defaultTtlMs,
+            conceptIds
+        } = options;
+
+        const conceptIdsKey =
+            conceptIds && conceptIds.length > 0
+                ? `:${[...conceptIds].map(String).sort().join(',')}`
+                : '';
+        const cacheKey = `ecl:${ecl}:${languageCode}${conceptIdsKey}`;
 
         if (!bypassCache) {
             const cached = this.cache.get(cacheKey);
@@ -279,6 +308,9 @@ export class SnowstormService {
             };
             if (searchAfter) {
                 qs.searchAfter = searchAfter;
+            }
+            if (conceptIds && conceptIds.length > 0) {
+                qs.conceptIds = conceptIds;
             }
 
             const response = await this.httpGetSnowstorm(`${this.branch}/concepts`, qs, languageCode);
@@ -315,6 +347,79 @@ export class SnowstormService {
         }
 
         return allConcepts;
+    }
+
+    /**
+     * Obtiene los conceptos de neoplasias malignas primarias, carcinoma in situ y enfermedades neoplásicas
+     * no benignas ni secundarias/metastásicas según mCODE PrimaryCancerCondition.
+     */
+    async getSnomedPrimaryCancers(
+        bypassCache = false,
+        conceptIds?: (string | number)[]
+    ): Promise<SnomedConceptSummary[]> {
+        const ecl = `(<<${SNOMED_MALIGNANT_NEOPLASM} OR <<${SNOMED_CARCINOMA_IN_SITU} OR (<<${SNOMED_NEOPLASTIC_DISEASE} MINUS <<${SNOMED_BENIGN_NEOPLASM})) MINUS <<${SNOMED_SECONDARY_MALIGNANT_NEOPLASM}`;
+        return this.getConceptsByEcl(ecl, {
+            bypassCache,
+            ttlMs: MCODE_SNOMED_TTL_MS,
+            ...(conceptIds && conceptIds.length > 0 && { conceptIds })
+        });
+    }
+
+    /**
+     * Obtiene los conceptos de neoplasias malignas secundarias (metástasis)
+     * según el ValueSet de mCODE SecondaryCancerCondition.
+     */
+    async getSnomedSecondaryCancers(
+        bypassCache = false,
+        conceptIds?: (string | number)[]
+    ): Promise<SnomedConceptSummary[]> {
+        return this.getConceptsByEcl(`<<${SNOMED_SECONDARY_MALIGNANT_NEOPLASM}`, {
+            bypassCache,
+            ttlMs: MCODE_SNOMED_TTL_MS,
+            ...(conceptIds && conceptIds.length > 0 && { conceptIds })
+        });
+    }
+
+    /**
+     * Obtiene los conceptos de estadificación TNM y categorías de estadio en SNOMED CT.
+     */
+    async getSnomedTnmStaging(
+        bypassCache = false,
+        conceptIds?: (string | number)[]
+    ): Promise<SnomedConceptSummary[]> {
+        return this.getConceptsByEcl(SNOMED_TNM_STAGING_ECL, {
+            bypassCache,
+            ttlMs: MCODE_SNOMED_TTL_MS,
+            ...(conceptIds && conceptIds.length > 0 && { conceptIds })
+        });
+    }
+
+    /**
+     * Obtiene los procedimientos de radioterapia oncológica en SNOMED CT.
+     */
+    async getSnomedRadiotherapyProcedures(
+        bypassCache = false,
+        conceptIds?: (string | number)[]
+    ): Promise<SnomedConceptSummary[]> {
+        return this.getConceptsByEcl(`<<${SNOMED_RADIOTHERAPY_PROCEDURE}`, {
+            bypassCache,
+            ttlMs: MCODE_SNOMED_TTL_MS,
+            ...(conceptIds && conceptIds.length > 0 && { conceptIds })
+        });
+    }
+
+    /**
+     * Obtiene los procedimientos quirúrgicos en SNOMED CT.
+     */
+    async getSnomedSurgicalProcedures(
+        bypassCache = false,
+        conceptIds?: (string | number)[]
+    ): Promise<SnomedConceptSummary[]> {
+        return this.getConceptsByEcl(`<<${SNOMED_SURGICAL_PROCEDURE}`, {
+            bypassCache,
+            ttlMs: MCODE_SNOMED_TTL_MS,
+            ...(conceptIds && conceptIds.length > 0 && { conceptIds })
+        });
     }
 
     /**
