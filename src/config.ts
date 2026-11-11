@@ -55,6 +55,18 @@ export const fhirServerConfig = {
                     reference: 'https://hl7.org/fhir/uv/ips/OperationDefinition-summary.html',
                 },
                 {
+                    name: 'mcode',                // → busca "mcode"
+                    route: '/:id/$mcode',
+                    method: 'GET',
+                    reference: 'http://hl7.org/fhir/us/mcode/StructureDefinition/mcode-patient-bundle',
+                },
+                {
+                    name: 'mcode-by-identifier',  // → busca "mcodeByIdentifier"
+                    route: '/$mcode',
+                    method: 'GET',
+                    reference: 'http://hl7.org/fhir/us/mcode/StructureDefinition/mcode-patient-bundle',
+                },
+                {
                     name: 'summary-by-identifier', // → busca "summaryByIdentifier"
                     route: '/$summary',
                     method: 'GET',
@@ -68,6 +80,18 @@ export const fhirServerConfig = {
         },
         immunization: {
             service: path.join(servicesBase, 'immunization', 'immunization.service.js'),
+            versions: [VERSIONS['4_0_1']]
+        },
+        condition: {
+            service: path.join(servicesBase, 'condition', 'condition.service.js'),
+            versions: [VERSIONS['4_0_1']]
+        },
+        observation: {
+            service: path.join(servicesBase, 'observation', 'observation.service.js'),
+            versions: [VERSIONS['4_0_1']]
+        },
+        procedure: {
+            service: path.join(servicesBase, 'procedure', 'procedure.service.js'),
             versions: [VERSIONS['4_0_1']]
         },
         practitioner: {

@@ -111,7 +111,17 @@ function mapEstadoCivilFHIRToAndes(estadoCivil?: string): string {
 /**
  * Encode a patient from ANDES to FHIR
  */
-export function encode(patient: AndesPatient | null | undefined): Patient | null {
+export const MCODE_CANCER_PATIENT_PROFILE =
+    'http://hl7.org/fhir/us/mcode/StructureDefinition/mcode-cancer-patient';
+
+export interface PatientEncodeOptions {
+    profile?: string;
+}
+
+export function encode(
+    patient: AndesPatient | null | undefined,
+    options: PatientEncodeOptions = {}
+): Patient | null {
     if (!patient) {
         return null;
     }
@@ -298,12 +308,23 @@ export function encode(patient: AndesPatient | null | undefined): Patient | null
         pacienteFHIR.managingOrganization = managingOrganization;
     }
 
+    if (options.profile) {
+        pacienteFHIR.meta = {
+            ...pacienteFHIR.meta,
+            profile: [options.profile]
+        };
+    }
+
     return pacienteFHIR;
 }
 
 /**
  * Decode a patient from FHIR to ANDES
  */
+export function encodeCancerPatient(patient: AndesPatient | null | undefined): Patient | null {
+    return encode(patient, { profile: MCODE_CANCER_PATIENT_PROFILE });
+}
+
 export function decode(patient: Patient): AndesPatient {
     let genero: string | undefined;
     let sexo: string | undefined;
