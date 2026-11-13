@@ -108,10 +108,50 @@ export function encode(
     }
 
     const valueConcept = extractValueConcept(registro);
-    if (typeof registro?.valor === 'number') {
-        observation.valueInteger = registro.valor;
+    const unit = registro?.valor?.unidad ?? registro?.params?.unit;
+
+    if (typeof registro?.valor === 'boolean') {
+        observation.valueBoolean = registro.valor;
+    } else if (typeof registro?.valor === 'number') {
+        if (unit) {
+            observation.valueQuantity = {
+                value: registro.valor,
+                unit: String(unit)
+            };
+        } else if (Number.isInteger(registro.valor)) {
+            observation.valueInteger = registro.valor;
+        } else {
+            observation.valueQuantity = {
+                value: registro.valor
+            };
+        }
     } else if (typeof registro?.valor === 'string' && registro.valor.trim() !== '') {
         observation.valueString = registro.valor.trim();
+    } else if (
+        registro?.valor &&
+        typeof registro.valor === 'object' &&
+        registro.valor.valor !== undefined &&
+        registro.valor.valor !== null
+    ) {
+        const innerVal = registro.valor.valor;
+        if (typeof innerVal === 'boolean') {
+            observation.valueBoolean = innerVal;
+        } else if (typeof innerVal === 'number') {
+            if (unit) {
+                observation.valueQuantity = {
+                    value: innerVal,
+                    unit: String(unit)
+                };
+            } else if (Number.isInteger(innerVal)) {
+                observation.valueInteger = innerVal;
+            } else {
+                observation.valueQuantity = {
+                    value: innerVal
+                };
+            }
+        } else if (typeof innerVal === 'string' && innerVal.trim() !== '') {
+            observation.valueString = innerVal.trim();
+        }
     } else if (valueConcept) {
         const valDisplay = valueConcept.term || valueConcept.fsn;
         observation.valueCodeableConcept = {
@@ -171,6 +211,8 @@ export function encodeTnmStageGroup(
         };
         delete obs.valueString;
         delete obs.valueInteger;
+        delete obs.valueQuantity;
+        delete obs.valueBoolean;
     }
 
     obs.code = {

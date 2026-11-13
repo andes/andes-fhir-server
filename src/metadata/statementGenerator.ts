@@ -6,6 +6,18 @@ const SUPPORTED_SEARCH_PARAMS: Record<string, string[]> = {
     Patient: ['_id', 'identifier', 'family', 'given', 'gender'],
     RelatedPerson: ['_id', 'patient', 'identifier', 'name', 'relationship', 'gender', 'active'],
     Immunization: ['_id', 'patient', 'identifier', 'date', 'vaccine-code', 'status'],
+    AllergyIntolerance: [
+        '_id',
+        'patient',
+        'identifier',
+        'code',
+        'clinical-status',
+        'verification-status',
+        'category',
+        'type',
+        'criticality',
+        '_profile'
+    ],
     Condition: ['_id', 'patient', 'subject', 'code', 'clinical-status', 'category', '_profile'],
     Observation: ['_id', 'patient', 'subject', 'code', 'category', 'status', '_profile'],
     Procedure: ['_id', 'patient', 'subject', 'code', 'status', '_profile'],

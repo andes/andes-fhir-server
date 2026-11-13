@@ -82,6 +82,10 @@ export const fhirServerConfig = {
             service: path.join(servicesBase, 'immunization', 'immunization.service.js'),
             versions: [VERSIONS['4_0_1']]
         },
+        allergyIntolerance: {
+            service: path.join(servicesBase, 'allergyintolerance', 'allergyintolerance.service.js'),
+            versions: [VERSIONS['4_0_1']]
+        },
         condition: {
             service: path.join(servicesBase, 'condition', 'condition.service.js'),
             versions: [VERSIONS['4_0_1']]
