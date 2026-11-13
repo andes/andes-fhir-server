@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import {
+    AllergyIntolerance,
     Bundle,
     Condition,
     Observation,
@@ -15,11 +16,15 @@ import PrestationRepository from '../../repositories/prestation.repository';
 import PatientRepository from '../../repositories/patient.repository';
 import { FhirIdentifierSystems, resolveIdentifierSystem } from '../../constants';
 import { SnomedCodingInput } from '../../encoders/lib/condition';
+import {
+    AndesPrestacion,
+    AndesPrestacionRegistro
+} from '../../encoders/types/andes/prestacion.types';
 
 const getPatientSchema = (base_version: string) => resolveSchema(base_version, 'Patient');
 
 export interface FlattenedRupRecord {
-    registro: any;
+    registro: AndesPrestacionRegistro & Record<string, any>;
     prestacionId: string;
     ejecucionFecha?: Date | string;
     parentRegistroId?: string;
@@ -30,8 +35,16 @@ export interface ExtractedMcodeResources {
     conditions: any[];
     observations: any[];
     procedures: any[];
+    allergyIntolerances: any[];
 }
 
+export interface ExtractResourcesOptions {
+    onlyMcode?: boolean;
+    prestaciones?: AndesPrestacion[];
+}
+
+const ALLERGY_OR_INTOLERANCE_TERM_REGEX =
+    /\b(alergia|alérgic[oa]|alergic[oa]|intolerancia|hipersensibilidad|reacción adversa a)\b/i;
 const PRIMARY_CANCER_TERM_REGEX =
     /neoplasia|carcinoma|adenocarcinoma|sarcoma|melanoma|linfoma|leucemia|mieloma|blastoma|tumor maligno|cáncer|cancer/i;
 const SECONDARY_CANCER_TERM_REGEX =
@@ -44,6 +57,14 @@ const SURGICAL_OR_ONCO_PROC_TERM_REGEX =
 
 function getRecordText(registro: any): string {
     return `${registro?.concepto?.term || ''} ${registro?.concepto?.fsn || ''} ${registro?.nombre || ''}`.trim();
+}
+
+function isAllergyOrIntoleranceByTerm(registro: any): boolean {
+    const semTag = String(registro?.concepto?.semanticTag ?? '').toLowerCase();
+    if (semTag !== 'trastorno' && semTag !== 'hallazgo' && semTag !== 'situación') {
+        return false;
+    }
+    return ALLERGY_OR_INTOLERANCE_TERM_REGEX.test(getRecordText(registro));
 }
 
 function isPrimaryCancerByTerm(registro: any): boolean {
@@ -82,6 +103,43 @@ function isSurgicalOrBiopsyByTerm(registro: any): boolean {
         return false;
     }
     return SURGICAL_OR_ONCO_PROC_TERM_REGEX.test(getRecordText(registro));
+}
+
+function hasProblemEvolutionStructure(registro: any): boolean {
+    if (registro?.esDiagnosticoPrincipal === true) {
+        return true;
+    }
+    const val = registro?.valor;
+    if (val && typeof val === 'object') {
+        return (
+            val.estado !== undefined ||
+            val.evolucion !== undefined ||
+            val.fechaInicio !== undefined ||
+            val.idEvolucion !== undefined
+        );
+    }
+    return false;
+}
+
+function hasMeasuredObservationValue(registro: any): boolean {
+    const val = registro?.valor;
+    if (val === undefined || val === null || val === '') {
+        return false;
+    }
+    if (typeof val === 'number' || typeof val === 'boolean' || typeof val === 'string') {
+        return true;
+    }
+    if (typeof val === 'object') {
+        if (hasProblemEvolutionStructure(registro)) {
+            return false;
+        }
+        return (
+            val.valor !== undefined ||
+            val.conceptId !== undefined ||
+            val.concepto?.conceptId !== undefined
+        );
+    }
+    return false;
 }
 
 /**
@@ -148,7 +206,9 @@ export async function resolvePatientFromClinicalSearch(
 }
 
 /**
- * Filtra recursos FHIR en memoria según parámetros comunes (_id, code, category, status, clinical-status, _profile).
+ * Filtra recursos FHIR en memoria según parámetros comunes
+ * (_id, code, category, status, clinical-status, verification-status, type, criticality, _profile).
+ * Soporta alias cortos en _profile ('mcode', 'ips') además de URLs canónicas.
  */
 export function filterClinicalResources(
     resources: any[],
@@ -156,13 +216,19 @@ export function filterClinicalResources(
     rawQuery: Record<string, any> = {}
 ): any[] {
     const idParam = args['_id'] ?? args['id'] ?? rawQuery['_id'] ?? rawQuery['id'];
-    const codeParam = args['code'] ?? rawQuery['code'];
+    const codeParam = args['code'] ?? args['vaccine-code'] ?? rawQuery['code'];
     const categoryParam = args['category'] ?? rawQuery['category'];
     const statusParam = args['status'] ?? rawQuery['status'];
     const clinicalStatusParam =
         args['clinical-status'] ??
         args['clinical_status'] ??
         rawQuery['clinical-status'];
+    const verificationStatusParam =
+        args['verification-status'] ??
+        args['verification_status'] ??
+        rawQuery['verification-status'];
+    const typeParam = args['type'] ?? rawQuery['type'];
+    const criticalityParam = args['criticality'] ?? rawQuery['criticality'];
     const profileParam = args['_profile'] ?? rawQuery['_profile'];
 
     return resources.filter(res => {
@@ -175,8 +241,17 @@ export function filterClinicalResources(
 
         if (profileParam) {
             const targetProfile = String(profileParam).trim();
+            const targetProfileLower = targetProfile.toLowerCase();
             const profiles: string[] = res.meta?.profile || [];
-            if (!profiles.some(p => p === targetProfile || p.endsWith(targetProfile))) {
+            if (targetProfileLower === 'mcode') {
+                if (!profiles.some(p => p.toLowerCase().includes('/mcode/'))) {
+                    return false;
+                }
+            } else if (targetProfileLower === 'ips') {
+                if (!profiles.some(p => p.toLowerCase().includes('/ips/'))) {
+                    return false;
+                }
+            } else if (!profiles.some(p => p === targetProfile || p.endsWith(targetProfile))) {
                 return false;
             }
         }
@@ -198,6 +273,30 @@ export function filterClinicalResources(
             }
         }
 
+        if (verificationStatusParam) {
+            const targetVerStatus = String(verificationStatusParam).includes('|')
+                ? String(verificationStatusParam).split('|').pop()!.trim().toLowerCase()
+                : String(verificationStatusParam).trim().toLowerCase();
+            const codes: any[] = res.verificationStatus?.coding || [];
+            if (!codes.some(c => String(c.code || '').toLowerCase() === targetVerStatus)) {
+                return false;
+            }
+        }
+
+        if (typeParam) {
+            const targetType = String(typeParam).trim().toLowerCase();
+            if (String(res.type || '').toLowerCase() !== targetType) {
+                return false;
+            }
+        }
+
+        if (criticalityParam) {
+            const targetCrit = String(criticalityParam).trim().toLowerCase();
+            if (String(res.criticality || '').toLowerCase() !== targetCrit) {
+                return false;
+            }
+        }
+
         if (codeParam) {
             const targetCode = String(codeParam).includes('|')
                 ? String(codeParam).split('|').pop()!.trim()
@@ -213,11 +312,14 @@ export function filterClinicalResources(
                 ? String(categoryParam).split('|').pop()!.trim().toLowerCase()
                 : String(categoryParam).trim().toLowerCase();
             const categories: any[] = Array.isArray(res.category) ? res.category : [];
-            const matchedCat = categories.some(cat =>
-                (cat.coding || []).some(
+            const matchedCat = categories.some(cat => {
+                if (typeof cat === 'string') {
+                    return cat.toLowerCase() === targetCat;
+                }
+                return (cat?.coding || []).some(
                     (c: any) => String(c.code || '').toLowerCase() === targetCat
-                )
-            );
+                );
+            });
             if (!matchedCat) {
                 return false;
             }
@@ -231,7 +333,7 @@ export function filterClinicalResources(
  * Recorre recursivamente los registros de una prestación (incluyendo moléculas y secciones)
  * tal como define PrestacionSchema.methods.getRegistros(true) en ANDES RUP.
  */
-export function flattenRegistrosFromPrestacion(prestacion: any): FlattenedRupRecord[] {
+export function flattenRegistrosFromPrestacion(prestacion: AndesPrestacion | any): FlattenedRupRecord[] {
     const result: FlattenedRupRecord[] = [];
     const prestacionId = String(prestacion?._id ?? prestacion?.id ?? '');
     const ejecucionFecha = prestacion?.ejecucion?.fecha ?? prestacion?.createdAt;
@@ -267,7 +369,7 @@ export function flattenRegistrosFromPrestacion(prestacion: any): FlattenedRupRec
     return result;
 }
 
-function deduplicateByConceptId(items: FlattenedRupRecord[]): FlattenedRupRecord[] {
+export function deduplicateByConceptId(items: FlattenedRupRecord[]): FlattenedRupRecord[] {
     const mapping: Record<string, FlattenedRupRecord> = {};
     const sorted = [...items].sort((a, b) => {
         const dateA = new Date(a.registro?.createdAt ?? a.ejecucionFecha ?? 0).getTime();
@@ -366,12 +468,20 @@ function resolveRecordId(registro: any, fallbackPrefix: string, index: number): 
 
 export class McodeService {
     /**
-     * Extrae todos los recursos mCODE (CancerPatient, Condition, Observation, Procedure)
+     * Extrae los recursos clínicos RUP (Condition, Observation, Procedure, AllergyIntolerance)
      * asociados a un paciente a partir de sus prestaciones RUP validadas.
+     *
+     * - Si `options.onlyMcode === true` (usado en `/$mcode`), devuelve únicamente los recursos
+     *   pertenecientes al perfil oncológico HL7 mCODE.
+     * - Si `options.onlyMcode === false` (por defecto para `/Condition`, `/Observation`,
+     *   `/Procedure`, `/AllergyIntolerance`), devuelve todos los recursos clínicos del paciente
+     *   según su `semanticTag` deduplicados por `conceptId` (conservando el más reciente),
+     *   manteniendo el perfilado mCODE en aquellos registros que sean oncológicos.
      */
     static async extractResources(
         version: string,
-        patientRaw: any
+        patientRaw: any,
+        options: ExtractResourcesOptions = {}
     ): Promise<ExtractedMcodeResources> {
         if (!patientRaw) {
             throw new ServerError('Patient not found', {
@@ -387,10 +497,12 @@ export class McodeService {
             });
         }
 
+        const { onlyMcode = false } = options;
         const pacienteId = patientRaw._id?.toString() || patientRaw.id;
 
         // 1. Obtener prestaciones validadas de la historia clínica del paciente
-        const prestaciones = await PrestationRepository.findByPatientId(pacienteId);
+        const prestaciones =
+            options.prestaciones ?? (await PrestationRepository.findByPatientId(pacienteId));
 
         // 2. Aplanar todos los registros RUP (incluyendo moléculas y secciones)
         const allFlattened: FlattenedRupRecord[] = [];
@@ -411,16 +523,20 @@ export class McodeService {
             secondaryCancerConcepts,
             tnmStagingConcepts,
             radiotherapyConcepts,
-            surgicalConcepts
+            surgicalConcepts,
+            allergyConcepts
         ] = candidateConceptIds.length > 0
             ? await Promise.all([
                 snowstormService.getSnomedPrimaryCancers(false, candidateConceptIds),
                 snowstormService.getSnomedSecondaryCancers(false, candidateConceptIds),
                 snowstormService.getSnomedTnmStaging(false, candidateConceptIds),
                 snowstormService.getSnomedRadiotherapyProcedures(false, candidateConceptIds),
-                snowstormService.getSnomedSurgicalProcedures(false, candidateConceptIds)
+                snowstormService.getSnomedSurgicalProcedures(false, candidateConceptIds),
+                onlyMcode
+                    ? Promise.resolve([])
+                    : snowstormService.getSnomedAllergiesAndIntolerances()
             ])
-            : [[], [], [], [], []];
+            : [[], [], [], [], [], []];
 
         const primaryCancerSet = new Set(
             (primaryCancerConcepts || []).map(c => String(c.conceptId))
@@ -437,24 +553,48 @@ export class McodeService {
         const surgicalSet = new Set(
             (surgicalConcepts || []).map(c => String(c.conceptId))
         );
+        const allergySet = new Set(
+            (allergyConcepts || []).map(c => String(c.conceptId))
+        );
 
+        const allergyRecords: FlattenedRupRecord[] = [];
         const primaryCancerRecords: FlattenedRupRecord[] = [];
         const secondaryCancerRecords: FlattenedRupRecord[] = [];
+        const generalConditionRecords: FlattenedRupRecord[] = [];
         const tnmRecords: FlattenedRupRecord[] = [];
         const ecogRecords: FlattenedRupRecord[] = [];
         const diseaseStatusRecords: FlattenedRupRecord[] = [];
+        const generalObservationRecords: FlattenedRupRecord[] = [];
         const radiotherapyRecords: FlattenedRupRecord[] = [];
         const surgicalRecords: FlattenedRupRecord[] = [];
+        const generalProcedureRecords: FlattenedRupRecord[] = [];
 
         for (const item of allFlattened) {
             const reg = item.registro;
-            const conceptId = String(reg?.concepto?.conceptId ?? '');
-            const semTag = String(reg?.concepto?.semanticTag ?? '').toLowerCase();
+            const conceptId = String(reg?.concepto?.conceptId ?? '').trim();
+            const semTag = String(reg?.concepto?.semanticTag ?? '').trim().toLowerCase();
 
             if (!conceptId) {
                 continue;
             }
 
+            if (
+                reg?.isEmpty === true ||
+                reg?.esSolicitud === true ||
+                reg?.privacy?.scope === 'private'
+            ) {
+                continue;
+            }
+
+            // 1. Alergias e Intolerancias (se separan primero para no contaminar Condition u Observation)
+            if (allergySet.has(conceptId) || isAllergyOrIntoleranceByTerm(reg)) {
+                if (!onlyMcode) {
+                    allergyRecords.push(item);
+                }
+                continue;
+            }
+
+            // 2. Condiciones y Observaciones/Procedimientos oncológicos (mCODE)
             if (secondaryCancerSet.has(conceptId) || isSecondaryCancerByTerm(reg)) {
                 secondaryCancerRecords.push(item);
             } else if (primaryCancerSet.has(conceptId) || isPrimaryCancerByTerm(reg)) {
@@ -472,6 +612,32 @@ export class McodeService {
                 radiotherapyRecords.push(item);
             } else if (surgicalSet.has(conceptId) || isSurgicalOrBiopsyByTerm(reg)) {
                 surgicalRecords.push(item);
+            } else if (!onlyMcode) {
+                // 3. Clasificación clínica general por semanticTag (Condition, Observation, Procedure)
+                if (semTag === 'trastorno') {
+                    generalConditionRecords.push(item);
+                } else if (semTag === 'hallazgo') {
+                    if (hasMeasuredObservationValue(reg)) {
+                        generalObservationRecords.push(item);
+                    } else {
+                        generalConditionRecords.push(item);
+                    }
+                } else if (semTag === 'entidad observable') {
+                    generalObservationRecords.push(item);
+                } else if (
+                    semTag === 'elemento de registro' &&
+                    !reg.hasSections &&
+                    !reg.isSection &&
+                    (!Array.isArray(reg.registros) || reg.registros.length === 0) &&
+                    hasMeasuredObservationValue(reg)
+                ) {
+                    generalObservationRecords.push(item);
+                } else if (
+                    (semTag === 'procedimiento' || semTag === 'régimen/tratamiento') &&
+                    !reg.hasSections
+                ) {
+                    generalProcedureRecords.push(item);
+                }
             }
         }
 
@@ -490,6 +656,7 @@ export class McodeService {
 
         const uniquePrimaryRecords = deduplicateByConceptId(primaryCancerRecords);
         const uniqueSecondaryRecords = deduplicateByConceptId(secondaryCancerRecords);
+        const uniqueGeneralConditionRecords = deduplicateByConceptId(generalConditionRecords);
         const uniqueTnmRecords = deduplicateByConceptId(tnmRecords);
 
         const primaryConditionIdByRecordId = new Map<string, string>();
@@ -600,6 +767,28 @@ export class McodeService {
             FHIRConditions.push(secondaryCond);
         });
 
+        if (!onlyMcode) {
+            uniqueGeneralConditionRecords.forEach((item, index) => {
+                const condId = resolveRecordId(item.registro, 'condition', index);
+                const bodySiteConcepts = extractBodySitesForRecord(item.registro, allFlattened);
+                const registroNormalizado = {
+                    ...item.registro,
+                    _id: condId,
+                    createdAt: item.registro.createdAt ?? item.ejecucionFecha,
+                    valor: {
+                        estado: item.registro.valor?.estado || 'active',
+                        evolucion: item.registro.valor?.evolucion || '',
+                        ...item.registro.valor
+                    }
+                };
+
+                const generalCond = Condition.encode(patientUrl, registroNormalizado, {
+                    bodySiteConcepts
+                });
+                FHIRConditions.push(generalCond);
+            });
+        }
+
         deduplicateByConceptId(diseaseStatusRecords).forEach((item, index) => {
             const obsId = resolveRecordId(item.registro, 'disease-status', index);
             const obs = Observation.encodeCancerDiseaseStatus(
@@ -625,8 +814,23 @@ export class McodeService {
             FHIRObservations.push(obs);
         });
 
+        if (!onlyMcode) {
+            deduplicateByConceptId(generalObservationRecords).forEach((item, index) => {
+                const obsId = resolveRecordId(item.registro, 'observation', index);
+                const obs = Observation.encode(
+                    patientUrl,
+                    { ...item.registro, _id: obsId },
+                    {
+                        effectiveDate: item.ejecucionFecha
+                    }
+                );
+                FHIRObservations.push(obs);
+            });
+        }
+
         const FHIRProcedures: any[] = [];
-        const hasCancerContext = primaryConditionFullUrls.length > 0 || uniqueSecondaryRecords.length > 0;
+        const hasCancerContext =
+            primaryConditionFullUrls.length > 0 || uniqueSecondaryRecords.length > 0;
 
         if (hasCancerContext) {
             deduplicateByConceptId(surgicalRecords).forEach((item, index) => {
@@ -638,6 +842,20 @@ export class McodeService {
                     {
                         performedDate: item.ejecucionFecha,
                         reasonReferences: primaryConditionFullUrls,
+                        bodySiteConcepts
+                    }
+                );
+                FHIRProcedures.push(proc);
+            });
+        } else if (!onlyMcode) {
+            deduplicateByConceptId(surgicalRecords).forEach((item, index) => {
+                const procId = resolveRecordId(item.registro, 'proc', index);
+                const bodySiteConcepts = extractBodySitesForRecord(item.registro, allFlattened);
+                const proc = Procedure.encode(
+                    patientUrl,
+                    { ...item.registro, _id: procId },
+                    {
+                        performedDate: item.ejecucionFecha,
                         bodySiteConcepts
                     }
                 );
@@ -660,12 +878,96 @@ export class McodeService {
             FHIRProcedures.push(proc);
         });
 
+        if (!onlyMcode) {
+            deduplicateByConceptId(generalProcedureRecords).forEach((item, index) => {
+                const procId = resolveRecordId(item.registro, 'proc-gen', index);
+                const bodySiteConcepts = extractBodySitesForRecord(item.registro, allFlattened);
+                const proc = Procedure.encode(
+                    patientUrl,
+                    { ...item.registro, _id: procId },
+                    {
+                        performedDate: item.ejecucionFecha,
+                        bodySiteConcepts
+                    }
+                );
+                FHIRProcedures.push(proc);
+            });
+        }
+
+        const FHIRAllergyIntolerances: any[] = [];
+        if (!onlyMcode) {
+            deduplicateByConceptId(allergyRecords).forEach((item, index) => {
+                const algId = resolveRecordId(item.registro, 'allergy', index);
+                const registroNormalizado = {
+                    ...item.registro,
+                    _id: algId,
+                    createdAt: item.registro.createdAt ?? item.ejecucionFecha,
+                    valor: item.registro.valor || {
+                        fechaInicio: item.registro.createdAt ?? item.ejecucionFecha ?? new Date()
+                    }
+                };
+                const encodedAlg = AllergyIntolerance.encode(patientUrl, registroNormalizado);
+                FHIRAllergyIntolerances.push(encodedAlg);
+            });
+        }
+
         return {
             patient: FHIRPatient,
             conditions: FHIRConditions,
             observations: FHIRObservations,
-            procedures: FHIRProcedures
+            procedures: FHIRProcedures,
+            allergyIntolerances: FHIRAllergyIntolerances
         };
+    }
+
+    /**
+     * Busca un recurso clínico puntual (Condition, Observation, Procedure, AllergyIntolerance)
+     * por el ID de su registro RUP dentro de las prestaciones validadas.
+     */
+    static async findClinicalResourceById(
+        version: string,
+        resourceKey: 'conditions' | 'observations' | 'procedures' | 'allergyIntolerances',
+        id: string
+    ): Promise<any | null> {
+        if (!id) {
+            return null;
+        }
+        const targetId = String(id).trim();
+        const prestacion = await PrestationRepository.findByRegistroId(targetId);
+        if (!prestacion) {
+            return null;
+        }
+
+        const rawPatId = prestacion.paciente?.id ?? prestacion.paciente?._id;
+        let patient = rawPatId ? await PatientRepository.findById(String(rawPatId)) : null;
+        if (!patient && prestacion.paciente) {
+            patient = {
+                _id: rawPatId ?? new ObjectId(),
+                id: String(rawPatId ?? ''),
+                ...prestacion.paciente
+            };
+        }
+        if (!patient) {
+            return null;
+        }
+
+        const extracted = await McodeService.extractResources(version, patient);
+        const matchInDeduplicated = (extracted[resourceKey] || []).find(
+            (r: any) => String(r.id) === targetId
+        );
+        if (matchInDeduplicated) {
+            return matchInDeduplicated;
+        }
+
+        // Si el registro fue desplazado por uno más reciente en la deduplicación,
+        // extraemos sobre la prestación específica donde se encontró el _id.
+        const singleExtracted = await McodeService.extractResources(version, patient, {
+            prestaciones: [prestacion]
+        });
+        return (
+            (singleExtracted[resourceKey] || []).find((r: any) => String(r.id) === targetId) ??
+            null
+        );
     }
 
     /**
@@ -674,7 +976,7 @@ export class McodeService {
      */
     static async build(version: string, patientRaw: any): Promise<any> {
         const { patient, conditions, observations, procedures } =
-            await McodeService.extractResources(version, patientRaw);
+            await McodeService.extractResources(version, patientRaw, { onlyMcode: true });
 
         const BundleID = new ObjectId();
         const rawResources = [

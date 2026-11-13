@@ -18,6 +18,7 @@ import { createResource, fullurl } from '../../utils/data.util';
 import { FhirIdentifierSystems } from '../../constants';
 import PrestationRepository from '../../repositories/prestation.repository';
 import VaccineRepository from '../../repositories/vaccine.repository';
+import { flattenRegistrosFromPrestacion } from '../mcode/mcode.service';
 
 const getMedication = (base_version: string) => resolveSchema(base_version, 'medication');
 const getMedicationStatement = (base_version: string) => resolveSchema(base_version, 'medicationstatement');
@@ -39,27 +40,32 @@ function filtrarDuplicados(registros: any[]): any[] {
 }
 
 function filtrarRegistrosClinicos(prestaciones: any[], semanticTags: string[], snomedAlergias: any[] = []) {
-    let registrosMedicos: any[] = [];
-    let prestacionMedicamentos: any[] = [];
-    let registrosAlergias: any[] = [];
+    const registrosMedicos: any[] = [];
+    const prestacionMedicamentos: any[] = [];
+    const registrosAlergias: any[] = [];
     const snomedAlergiasSet = new Set(snomedAlergias.map(al => String(al.conceptId)));
 
     prestaciones.forEach(prestacion => {
-        if (!prestacion.ejecucion?.registros) {
-            return;
-        }
-        prestacion.ejecucion.registros.forEach((registro: any) => {
-            const semTag = registro.concepto?.semanticTag;
+        const flattened = flattenRegistrosFromPrestacion(prestacion);
+        flattened.forEach(({ registro, ejecucionFecha }) => {
+            if (!registro || registro.isEmpty === true || registro.esSolicitud === true || registro.privacy?.scope === 'private') {
+                return;
+            }
+            const registroConFecha = {
+                ...registro,
+                createdAt: registro.createdAt ?? ejecucionFecha
+            };
+            const semTag = registroConFecha.concepto?.semanticTag;
             if (semTag === 'producto' || semTag === 'fármaco de uso clínico') {
                 // Actualmente no se incluyen fármacos desde prestaciones directamente
             } else {
-                const conceptId = registro.concepto?.conceptId ? String(registro.concepto.conceptId) : null;
+                const conceptId = registroConFecha.concepto?.conceptId ? String(registroConFecha.concepto.conceptId) : null;
                 const isAlergia = conceptId ? snomedAlergiasSet.has(conceptId) : false;
                 const exist = semanticTags.includes(semTag);
                 if (isAlergia) {
-                    registrosAlergias.push(registro);
+                    registrosAlergias.push(registroConFecha);
                 } else if (exist) {
-                    registrosMedicos.push(registro);
+                    registrosMedicos.push(registroConFecha);
                 }
             }
         });
@@ -154,8 +160,9 @@ export class IpsService {
         const FHIRMedicationStatement = await procesarMedicamentos(version, prestacionMedicamentos, FHIRPatient);
 
         const AllergyIntoleranceSchema = getAllergyIntolerance(version);
-        const FHIRAllergyIntolerance = registrosAlergias.length
-            ? registrosAlergias.map(registro => {
+        const alergiasUnicas = filtrarDuplicados(registrosAlergias);
+        const FHIRAllergyIntolerance = alergiasUnicas.length
+            ? alergiasUnicas.map(registro => {
                 const registroNormalizado = {
                     ...registro,
                     valor: registro.valor || { fechaInicio: registro.createdAt || new Date() }

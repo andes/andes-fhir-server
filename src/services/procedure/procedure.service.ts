@@ -112,6 +112,47 @@ async function search(args: any, context: any) {
     }
 }
 
+/**
+ * GET /4_0_1/Procedure/:id
+ */
+async function searchById(args: any, _context?: any) {
+    try {
+        const { base_version, id } = args;
+        const found = await McodeService.findClinicalResourceById(base_version, 'procedures', id);
+        if (!found) {
+            throw new ServerError('Procedure not found', {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [
+                    {
+                        severity: 'error',
+                        code: 'not-found',
+                        diagnostics: 'Procedure not found'
+                    }
+                ]
+            });
+        }
+
+        const ProcedureSchema = getProcedureSchema(base_version);
+        return new ProcedureSchema(pruneEmpty(found));
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || String(err), {
+            resourceType: 'OperationOutcome',
+            issue: [
+                {
+                    severity: 'error',
+                    code: err.code || 'exception',
+                    diagnostics: err.message || String(err)
+                }
+            ]
+        });
+    }
+}
+
 export = {
-    search
+    search,
+    searchById
 };

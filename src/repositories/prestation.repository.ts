@@ -58,12 +58,64 @@ export class PrestationRepository {
 
         // Filtramos en memoria el último estado para asegurar consistencia sin recurrir a $where en MongoDB
         return prestaciones.filter(prestacion => {
+            if (prestacion.estadoActual?.tipo) {
+                return prestacion.estadoActual.tipo === estado;
+            }
             if (!prestacion.estados || !prestacion.estados.length) {
                 return false;
             }
             const ultimoEstado = prestacion.estados[prestacion.estados.length - 1];
             return ultimoEstado && ultimoEstado.tipo === estado;
         });
+    }
+
+    /**
+     * Busca la prestación validada que contiene un registro RUP específico por su _id o id
+     * (incluyendo registros anidados en moléculas o secciones).
+     */
+    static async findByRegistroId(registroId: string, options: PrestationFilterOptions = {}) {
+        if (!registroId) {
+            return null;
+        }
+        const cleanId = String(registroId).trim().replace(/-status$/, '');
+        if (!cleanId) {
+            return null;
+        }
+
+        const candidateValues: (string | ObjectId)[] = [cleanId];
+        if (ObjectId.isValid(cleanId)) {
+            candidateValues.push(new ObjectId(cleanId));
+        }
+
+        const paths = [
+            'ejecucion.registros._id',
+            'ejecucion.registros.id',
+            'ejecucion.registros.registros._id',
+            'ejecucion.registros.registros.id',
+            'ejecucion.registros.registros.registros._id',
+            'ejecucion.registros.registros.registros.id'
+        ];
+
+        const orConditions = paths.map(path => ({
+            [path]: { $in: candidateValues }
+        }));
+
+        const estado = options.estado || 'validada';
+        const collection = getCollection();
+        const prestaciones = await collection.find({ $or: orConditions }).toArray();
+
+        const validPrestaciones = prestaciones.filter(prestacion => {
+            if (prestacion.estadoActual?.tipo) {
+                return prestacion.estadoActual.tipo === estado;
+            }
+            if (!prestacion.estados || !prestacion.estados.length) {
+                return false;
+            }
+            const ultimoEstado = prestacion.estados[prestacion.estados.length - 1];
+            return ultimoEstado && ultimoEstado.tipo === estado;
+        });
+
+        return validPrestaciones[0] ?? null;
     }
 }
 

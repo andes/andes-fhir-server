@@ -6,6 +6,7 @@ import PatientService from '../../src/services/patient/patient.service';
 import ConditionService from '../../src/services/condition/condition.service';
 import ObservationService from '../../src/services/observation/observation.service';
 import ProcedureService from '../../src/services/procedure/procedure.service';
+import AllergyIntoleranceService from '../../src/services/allergyintolerance/allergyintolerance.service';
 import { snowstormService } from '../../src/services/snomed/snowstorm.service';
 import {
     Bundle,
@@ -46,6 +47,10 @@ describe('mCODE Encoders & McodeService', () => {
         ]);
         jest.spyOn(snowstormService, 'getSnomedSurgicalProcedures').mockResolvedValue([
             { conceptId: '172043006', term: 'mastectomía simple', fsn: 'mastectomía simple (procedimiento)', semanticTag: 'procedimiento' }
+        ]);
+        jest.spyOn(snowstormService, 'getSnomedAllergiesAndIntolerances').mockResolvedValue([
+            { conceptId: '300916003', term: 'alergia a penicilina', fsn: 'alergia a penicilina (hallazgo)', semanticTag: 'hallazgo' },
+            { conceptId: '235719003', term: 'intolerancia a la lactosa', fsn: 'intolerancia a la lactosa (trastorno)', semanticTag: 'trastorno' }
         ]);
     });
 
@@ -382,6 +387,206 @@ describe('mCODE Encoders & McodeService', () => {
             );
             expect(byIdentifierBundle.resourceType).toBe('Bundle');
             expect(byIdentifierBundle.meta.profile).toContain(Bundle.MCODE_PATIENT_BUNDLE_PROFILE);
+        });
+
+        it('should return all clinical resources by semanticTag without filter, deduplicate keeping the most recent, and filter by _profile=mcode when requested', async () => {
+            const mockPrestaciones = [
+                {
+                    _id: new ObjectId(),
+                    paciente: { id: new ObjectId(patientId), nombre: 'MARIA', apellido: 'LOPEZ', documento: '25678901' },
+                    estadoActual: { tipo: 'validada' },
+                    estados: [{ tipo: 'validada' }],
+                    ejecucion: {
+                        fecha: new Date('2026-01-10T10:00:00Z'),
+                        registros: [
+                            // Trastorno general antiguo (será reemplazado por la evolución más reciente)
+                            {
+                                _id: 'asma-old',
+                                createdAt: new Date('2026-01-10T10:00:00Z'),
+                                valor: { estado: 'activo', evolucion: 'Crisis leve' },
+                                concepto: { conceptId: '195967001', term: 'asma', semanticTag: 'trastorno' }
+                            },
+                            // Signo vital antiguo (será reemplazado por el control más reciente)
+                            {
+                                _id: 'peso-old',
+                                createdAt: new Date('2026-01-10T10:00:00Z'),
+                                valor: 68.5,
+                                params: { unit: 'kg' },
+                                concepto: { conceptId: '27113001', term: 'peso corporal', semanticTag: 'entidad observable' }
+                            }
+                        ]
+                    }
+                },
+                {
+                    _id: new ObjectId(),
+                    paciente: { id: new ObjectId(patientId), nombre: 'MARIA', apellido: 'LOPEZ', documento: '25678901' },
+                    estadoActual: { tipo: 'validada' },
+                    estados: [{ tipo: 'validada' }],
+                    ejecucion: {
+                        fecha: new Date('2026-05-15T12:00:00Z'),
+                        registros: [
+                            // Trastorno general más reciente
+                            {
+                                _id: 'asma-new',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                valor: { estado: 'resuelto', evolucion: 'Controlada sin medicación' },
+                                concepto: { conceptId: '195967001', term: 'asma', semanticTag: 'trastorno' }
+                            },
+                            // Condición oncológica primaria
+                            {
+                                _id: 'prim-reg-1',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                valor: { estado: 'activo' },
+                                concepto: { conceptId: '254837009', term: 'neoplasia maligna de mama', semanticTag: 'trastorno' }
+                            },
+                            // Alergia e intolerancia (no deben filtrarse hacia Condition u Observation)
+                            {
+                                _id: 'alg-penicilina',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                concepto: { conceptId: '300916003', term: 'alergia a penicilina', semanticTag: 'hallazgo' }
+                            },
+                            {
+                                _id: 'intol-lactosa',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                concepto: { conceptId: '235719003', term: 'intolerancia a la lactosa', semanticTag: 'trastorno' }
+                            },
+                            // Molécula contenedora de signos vitales (no debe listarse como Observation vacía)
+                            {
+                                _id: 'mol-signos-vitales',
+                                hasSections: true,
+                                concepto: { conceptId: '46680005', term: 'signos vitales', semanticTag: 'elemento de registro' },
+                                registros: [
+                                    {
+                                        _id: 'peso-new',
+                                        createdAt: new Date('2026-05-15T12:00:00Z'),
+                                        valor: 71.2,
+                                        params: { unit: 'kg' },
+                                        concepto: { conceptId: '27113001', term: 'peso corporal', semanticTag: 'entidad observable' }
+                                    },
+                                    {
+                                        _id: 'ecog-reg-1',
+                                        createdAt: new Date('2026-05-15T12:00:00Z'),
+                                        valor: 1,
+                                        concepto: { conceptId: '423740007', term: 'ECOG', semanticTag: 'entidad observable' }
+                                    }
+                                ]
+                            },
+                            // Procedimiento general (no oncológico)
+                            {
+                                _id: 'proc-nebulizacion',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                concepto: { conceptId: '56251003', term: 'terapia con nebulizador', semanticTag: 'procedimiento' }
+                            },
+                            // Procedimiento oncológico
+                            {
+                                _id: 'radio-reg-1',
+                                createdAt: new Date('2026-05-15T12:00:00Z'),
+                                concepto: { conceptId: '33195004', term: 'radioterapia con haz externo', semanticTag: 'procedimiento' }
+                            }
+                        ]
+                    }
+                }
+            ];
+
+            jest.spyOn(PatientRepository, 'findById').mockResolvedValue(mockPatient as any);
+            jest.spyOn(PrestationRepository, 'findByPatientId').mockResolvedValue(mockPrestaciones as any);
+
+            // 1. Condition sin filtro: devuelve tanto Asma (el más reciente) como Cáncer de mama, sin alergias
+            const allCondBundle = await ConditionService.search(
+                { base_version: mockVersion, patient: patientId },
+                {}
+            );
+            expect(allCondBundle.total).toBe(2);
+            const condIds = allCondBundle.entry.map((e: any) => e.resource.id);
+            expect(condIds).toContain('prim-reg-1');
+            expect(condIds).toContain('asma-new');
+            expect(condIds).not.toContain('asma-old');
+            const asmaRes = allCondBundle.entry.find((e: any) => e.resource.id === 'asma-new').resource;
+            expect(asmaRes.clinicalStatus.coding[0].code).toBe('resolved');
+
+            // Condition con _profile=mcode: solo devuelve Cáncer de mama
+            const mcodeCondBundle = await ConditionService.search(
+                { base_version: mockVersion, patient: patientId, _profile: 'mcode' },
+                {}
+            );
+            expect(mcodeCondBundle.total).toBe(1);
+            expect(mcodeCondBundle.entry[0].resource.id).toBe('prim-reg-1');
+
+            // 2. Observation sin filtro: devuelve Peso (más reciente, con valueQuantity), ECOG y CancerDiseaseStatus
+            const allObsBundle = await ObservationService.search(
+                { base_version: mockVersion, patient: patientId },
+                {}
+            );
+            expect(allObsBundle.total).toBe(3);
+            const pesoObs = allObsBundle.entry.find((e: any) => e.resource.id === 'peso-new')?.resource;
+            expect(pesoObs).toBeDefined();
+            expect(pesoObs.valueQuantity).toEqual({ value: 71.2, unit: 'kg' });
+            expect(allObsBundle.entry.some((e: any) => e.resource.id === 'peso-old')).toBe(false);
+            expect(allObsBundle.entry.some((e: any) => e.resource.id === 'mol-signos-vitales')).toBe(false);
+
+            // Observation con _profile=mcode: solo devuelve las 2 observaciones mCODE (ECOG y DiseaseStatus)
+            const mcodeObsBundle = await ObservationService.search(
+                { base_version: mockVersion, patient: patientId, _profile: 'mcode' },
+                {}
+            );
+            expect(mcodeObsBundle.total).toBe(2);
+
+            // 3. Procedure sin filtro: devuelve tanto la nebulización general como la radioterapia mCODE
+            const allProcBundle = await ProcedureService.search(
+                { base_version: mockVersion, patient: patientId },
+                {}
+            );
+            expect(allProcBundle.total).toBe(2);
+            expect(allProcBundle.entry.map((e: any) => e.resource.id)).toEqual(
+                expect.arrayContaining(['proc-nebulizacion', 'radio-reg-1'])
+            );
+
+            // Procedure con _profile=mcode: solo devuelve la radioterapia
+            const mcodeProcBundle = await ProcedureService.search(
+                { base_version: mockVersion, patient: patientId, _profile: 'mcode' },
+                {}
+            );
+            expect(mcodeProcBundle.total).toBe(1);
+            expect(mcodeProcBundle.entry[0].resource.id).toBe('radio-reg-1');
+
+            // 4. AllergyIntolerance: devuelve alergia a penicilina (allergy) e intolerancia a la lactosa (intolerance)
+            const allergyBundle = await AllergyIntoleranceService.search(
+                { base_version: mockVersion, patient: patientId },
+                {}
+            );
+            expect(allergyBundle.total).toBe(2);
+            const intolRes = allergyBundle.entry.find((e: any) => e.resource.id === 'intol-lactosa')?.resource;
+            expect(intolRes.type).toBe('intolerance');
+
+            // 5. Operación $mcode (McodeService.build): solo incluye recursos mCODE en el bundle oncológico
+            const mcodePatientBundle = await McodeService.build(mockVersion, mockPatient);
+            const mcodeIds = mcodePatientBundle.entry.map((e: any) => e.resource.id);
+            expect(mcodeIds).toContain('prim-reg-1');
+            expect(mcodeIds).toContain('ecog-reg-1');
+            expect(mcodeIds).toContain('radio-reg-1');
+            expect(mcodeIds).not.toContain('asma-new');
+            expect(mcodeIds).not.toContain('peso-new');
+            expect(mcodeIds).not.toContain('proc-nebulizacion');
+            expect(mcodeIds).not.toContain('alg-penicilina');
+
+            // 6. searchById en Condition, Observation, Procedure y AllergyIntolerance
+            jest.spyOn(PrestationRepository, 'findByRegistroId').mockResolvedValue(mockPrestaciones[1] as any);
+
+            const singleCond = await ConditionService.searchById({ base_version: mockVersion, id: 'asma-new' });
+            expect(singleCond.resourceType).toBe('Condition');
+            expect(singleCond.id).toBe('asma-new');
+
+            const singleObs = await ObservationService.searchById({ base_version: mockVersion, id: 'peso-new' });
+            expect(singleObs.resourceType).toBe('Observation');
+            expect(singleObs.id).toBe('peso-new');
+
+            const singleProc = await ProcedureService.searchById({ base_version: mockVersion, id: 'proc-nebulizacion' });
+            expect(singleProc.resourceType).toBe('Procedure');
+            expect(singleProc.id).toBe('proc-nebulizacion');
+
+            const singleAllergy = await AllergyIntoleranceService.searchById({ base_version: mockVersion, id: 'alg-penicilina' });
+            expect(singleAllergy.resourceType).toBe('AllergyIntolerance');
+            expect(singleAllergy.id).toBe('alg-penicilina');
         });
     });
 });

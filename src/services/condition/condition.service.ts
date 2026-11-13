@@ -13,7 +13,7 @@ const getConditionSchema = (base_version: string) => {
 
 /**
  * GET /4_0_1/Condition
- * Soporta filtros: patient, subject, patient.identifier / identifier, _id, code, clinical-status, category, _profile
+ * Soporta filtros: patient, subject, patient.identifier / identifier, _id, code, clinical-status, verification-status, category, _profile
  */
 async function search(args: any, context: any) {
     try {
@@ -112,6 +112,47 @@ async function search(args: any, context: any) {
     }
 }
 
+/**
+ * GET /4_0_1/Condition/:id
+ */
+async function searchById(args: any, _context?: any) {
+    try {
+        const { base_version, id } = args;
+        const found = await McodeService.findClinicalResourceById(base_version, 'conditions', id);
+        if (!found) {
+            throw new ServerError('Condition not found', {
+                statusCode: 404,
+                resourceType: 'OperationOutcome',
+                issue: [
+                    {
+                        severity: 'error',
+                        code: 'not-found',
+                        diagnostics: 'Condition not found'
+                    }
+                ]
+            });
+        }
+
+        const ConditionSchema = getConditionSchema(base_version);
+        return new ConditionSchema(pruneEmpty(found));
+    } catch (err: any) {
+        if (err instanceof ServerError) {
+            throw err;
+        }
+        throw new ServerError(err.message || String(err), {
+            resourceType: 'OperationOutcome',
+            issue: [
+                {
+                    severity: 'error',
+                    code: err.code || 'exception',
+                    diagnostics: err.message || String(err)
+                }
+            ]
+        });
+    }
+}
+
 export = {
-    search
+    search,
+    searchById
 };
